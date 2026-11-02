@@ -15,7 +15,9 @@
       "gif": "previews/M2.gif",
       "poster": "posters/M2.png",
       "style_basis": "米白纸面、墨黑主字、单一黄色马克笔强调；标题与三条要点用左到右裁切+笔尖模拟手写，粗马克笔下划线、星号涂鸦、红笔圈选；4.82s 整屏啪地切到炭灰、白色手写字，对应原文『偶尔整个画面啪一下切到深色』。1.5–2 秒出一个新点子。",
-      "limitations": "手写字用系统黑体裁切揭示模拟，不是真实手写字体或逐字矢量笔顺；深色切镜只保留约 0.5 秒。"
+      "limitations": "手写字用系统黑体裁切揭示模拟，不是真实手写字体或逐字矢量笔顺；深色切镜只保留约 0.5 秒。",
+      "delivered_html_sha256": "f8fb460fbe15e3de0f3b2a7d6d182eee1face7a70cdd13252104da289ea0a909",
+      "codex_modifications": "Cancel pending animation frames on pause to prevent duplicate loops after rapid toggles; scene/renderAt output unchanged."
     },
     "M18": {
       "name": "数学/科学讲解（3Blue1Brown 那种）",
@@ -27,7 +29,9 @@
       "gif": "previews/M18.gif",
       "poster": "posters/M18.png",
       "style_basis": "原文：『用 Manim 做一个讲 [概念] 的视频，要通俗易懂，有例子，能引人思考。配音用 edge-tts，中文』。实现：近黑底 #0d1016 + 淡网格 + 坐标轴（箭头、刻度），用蓝 #58c4dd 一笔笔画出 y = sin x，画到哪儿留一个笔尖点；一个切点从左滑到右，金色切线跟着转，切点处画出 dx/dy 的斜率三角形并半透明填充，右侧用等宽字体实时显示斜率（由 cos 真算出来的数，不是编的）；顶部用衬线斜体写 f(x) = sin x，4.4 秒后接上 f′(x) = cos x；末尾一句话「切点每挪一点，切线的斜率就变一点」把结论说白。构图、配色、逐笔推导都按 3Blue1Brown 那套黑板推导的语法。",
-      "limitations": "没有 Manim 的排版引擎与摄像机运动，公式是系统衬线体近似的 LaTeX 观感；没有 edge-tts 中文配音（任务静音）；只讲了一个概念一个例子，没有练习与追问；斜率读数用的是屏幕坐标系换算后的数学斜率，四舍五入到两位。"
+      "limitations": "没有 Manim 的排版引擎与摄像机运动，公式是系统衬线体近似的 LaTeX 观感；没有 edge-tts 中文配音（任务静音）；只讲了一个概念一个例子，没有练习与追问；斜率读数用的是屏幕坐标系换算后的数学斜率，四舍五入到两位。",
+      "delivered_html_sha256": "4276a50878a785bbdc8eadc6f3061fe3c1d57c66471d732570538ad0280b5053",
+      "codex_modifications": "Cancel pending animation frames on pause to prevent duplicate loops after rapid toggles; scene/renderAt output unchanged."
     },
     "M19": {
       "name": "零基础科普",
@@ -39,7 +43,9 @@
       "gif": "previews/M19.gif",
       "poster": "posters/M19.png",
       "style_basis": "原文：『做一个讲 [主题] 的视频，要深入浅出，让一个完全没有相关基础的人也能看懂。先用一个生活里的例子开头，再讲专业的说法。要有声音，中文讲』。实现：讲「缓存」，先给生活例子再给术语。暖米色纸底 + 点阵 + 柔光；左上三个步骤徽标 01/02/03 跟着进度点亮；主体是一台平涂冰箱（圆角箱体、门缝、橙把手、绿磁贴、两层架子、上层一瓶奶、下层一盘菜），第 2 拍时门绕左边压缩打开（scaleX 1→0.1）露出里面的东西，配「想吃的时候，打开就拿」；第 3 拍一条橙色虚线箭头从盘子指向右边一张描边卡片：CACHE / 缓存 / 把常用的，先放在手边；最后一句「术语只是把生活里的道理，说得更准一点」收口。",
-      "limitations": "没有声音（任务要求静音），所以只能靠字幕和画面节奏代替讲解；冰箱与卡片是纯平涂图形，没有真实材质；只有一个类比一个术语，没有展开讲淘汰策略等真正的难点；6 秒比原意的讲解片短很多，信息密度被压到最低。"
+      "limitations": "没有声音（任务要求静音），所以只能靠字幕和画面节奏代替讲解；冰箱与卡片是纯平涂图形，没有真实材质；只有一个类比一个术语，没有展开讲淘汰策略等真正的难点；6 秒比原意的讲解片短很多，信息密度被压到最低。",
+      "delivered_html_sha256": "4e4fa3f426dea349c833cbda9147176daf61fb8c5bd69c682f8e5cc085903603",
+      "codex_modifications": "Cancel pending animation frames on pause to prevent duplicate loops after rapid toggles; scene/renderAt output unchanged."
     },
     "M20": {
       "name": "时间线/历史",
@@ -51,7 +57,9 @@
       "gif": "previews/M20.gif",
       "poster": "posters/M20.png",
       "style_basis": "原文：『做一段时间线动画，讲 [从什么时候到什么时候] 的几个关键节点。时间轴从左往右推进，每到一个节点，画面放大讲这一件事，再缩回来继续走』。实现：做旧纸底（520 根纸纤维 + 柔光 + 左侧装订孔）上一条横轴，轴上 25px 刻度、三个红点节点、走过的部分是一条更粗的红线，还有一个红三角跟着进度走；三个节点「三月·一个念头 / 六月·第一次动手 / 十月·它跑起来了」；镜头按 12 段关键帧做 广角(1.0) → 推近到 2.2–2.6 倍对准某个节点 → 拉回 1.0 的循环，推近时该节点的卡片（日期+编号+标题+一句说明）才展开、并有一根细引线连到轴上，广角时只留节点短标题与日期。",
-      "limitations": "原文是较长的一段历史，这里 6 秒只能放三个节点、每个停留约 1 秒，推近/拉回的过渡占了相当篇幅；没有配音与年代背景资料；节点内容是通用的成长叙事（念头→动手→跑起来），没有具体史实，避免虚构数据。"
+      "limitations": "原文是较长的一段历史，这里 6 秒只能放三个节点、每个停留约 1 秒，推近/拉回的过渡占了相当篇幅；没有配音与年代背景资料；节点内容是通用的成长叙事（念头→动手→跑起来），没有具体史实，避免虚构数据。",
+      "delivered_html_sha256": "b5871963e56628df110e02c22d86a4622ce2369ce094bab9809fdf49c9aef1c8",
+      "codex_modifications": "Cancel pending animation frames on pause to prevent duplicate loops after rapid toggles; scene/renderAt output unchanged."
     },
     "M21": {
       "name": "原理拆解（它是怎么工作的）",
@@ -63,7 +71,9 @@
       "gif": "previews/M21.gif",
       "poster": "posters/M21.png",
       "style_basis": "原文：『做一段动态图形，讲清楚 [东西] 是怎么工作的。把过程拆成 [3 到 5] 步，每一步一个画面，前一步的结果变成下一步的开头，最后合起来看全貌』。实现：拆成四步「定时 / 抓取 / 筛选 / 提醒」，每步一个蓝图模块（正面 + 顶面 + 侧面做出厚度、投影、编号 01–04、名字 18px、图标：钟/扫描框/漏斗/铃），模块之间用虚线管道与箭头相连；一枚白芯片沿模块上方的一条虚线轨道从左往右走，走到哪个模块，哪个模块的描边与图标就变亮（青色 → 暖橙），表示「上一步的产物进到这一步」；最后（5 秒后）一条暖橙虚线把第四步绕回第一步并写「第二天，从头再来一次」，镜头同时轻轻拉远给出全貌。",
-      "limitations": "四步只是示意，没有真实的输入输出数据；模块的『立体』是伪等距（正面+顶面+侧面），不是真正的三维投影；6 秒里每步只有约 1.35 秒，讲解全靠画面与短标签，没有配音与旁白。"
+      "limitations": "四步只是示意，没有真实的输入输出数据；模块的『立体』是伪等距（正面+顶面+侧面），不是真正的三维投影；6 秒里每步只有约 1.35 秒，讲解全靠画面与短标签，没有配音与旁白。",
+      "delivered_html_sha256": "0392c6e667dd8aaaf15397ba69d0421743ed6a9671e50b7e6bbc2076621341da",
+      "codex_modifications": "Cancel pending animation frames on pause to prevent duplicate loops after rapid toggles; scene/renderAt output unchanged."
     },
     "M22": {
       "name": "配方式步骤",
@@ -75,7 +85,9 @@
       "gif": "previews/M22.gif",
       "poster": "posters/M22.png",
       "style_basis": "按『配方式步骤』原文：从空杯开始，每加一样就同时标出名字和分量，最后成品。实现为深色吧台 + 直身杯剖面：三层配料（基酒30ml琥珀、酸汁20ml石榴红、气泡水10ml青柠）按 0.55/1.70/2.85s 依次从上方细流倒入，液面高度用像素级分层叠加；左侧弹出带色条的配料标签并用引线指向杯壁，右侧配方卡同步逐条打勾，杯右还有 ml 刻度尺；3.9s 起搅拌棒转半圈 + 杯口挂柠檬片，4.6s 完成提示，5.6s 退场回到空杯完成循环。",
-      "limitations": "分量刻度是示意图（10ml≈30px），并非真实体积；没有声音与倒酒音效；结尾 0.35s 快速淡出以接回空杯，气质略快。"
+      "limitations": "分量刻度是示意图（10ml≈30px），并非真实体积；没有声音与倒酒音效；结尾 0.35s 快速淡出以接回空杯，气质略快。",
+      "delivered_html_sha256": "08d27f6c60be24b161b16bafd1b123070a3ace6ba175d9f1bba0715446d04fff",
+      "codex_modifications": "Cancel pending animation frames on pause to prevent duplicate loops after rapid toggles; scene/renderAt output unchanged."
     },
     "M23": {
       "name": "五幕讲解（万能讲解模板）",
@@ -87,7 +99,9 @@
       "gif": "previews/M23.gif",
       "poster": "posters/M23.png",
       "style_basis": "按『五幕讲解』原文：五幕讲完一件事、字大要粗、转场要顺。实现为五种平涂色块（米白/深靛/亮黄/米白/番茄红），每幕 1.2s，用整屏横推 wipe 转场（前一幕左移、下一幕右移进来），底部五个进度点：1) 问题=散落倾斜的文档卡+红字；2) 是什么=收纳盒描边放大、卡片飞入；3) 三步=深色胶囊 01收起来/02分好类/03找得到 依次弹簧弹入；4) 例子=搜索框逐字打字『上个月的报价单』，结果卡与『翻到了』标签；5) 收尾=大字『这一期，讲完了』+『下期继续』+ 淡色大编号 05。",
-      "limitations": "6 秒里塞五幕，每幕只有 1.2s，无法展开细节；没有旁白/音效；横推转场只保留 0.16s，节奏偏快。"
+      "limitations": "6 秒里塞五幕，每幕只有 1.2s，无法展开细节；没有旁白/音效；横推转场只保留 0.16s，节奏偏快。",
+      "delivered_html_sha256": "01e569e2cf85b320d852788bc391877c9bcd4c9cfe022422a0475e71413213cd",
+      "codex_modifications": "Cancel pending animation frames on pause to prevent duplicate loops after rapid toggles; scene/renderAt output unchanged."
     },
     "M24": {
       "name": "四段式发布片",
@@ -99,7 +113,9 @@
       "gif": "previews/M24.gif",
       "poster": "posters/M24.png",
       "style_basis": "按『四段式发布片』原文：为什么现在/大家麻烦/怎么解决/用了以后四段 + logo 动画收尾，文字逐词出现、弹簧物理、元素踩节拍进场。实现为深色渐变底 + 底部透视网格 + 顶部四段进度轨；逐词用 1-exp(-6.5p)cos(10.5p) 弹簧位移+缩放进场（略带过冲），四段分别为：上升柱状图 + 荧光绿强调词、交错乱线 + v3/v7/final? 版本标签、节点管线从左往右连线亮起、勾选清单逐条弹入 + 荧光笔横扫；4.72s 起三块碎片从画外旋转飞入拼成几何标志，字标『成 形 / 把想法推出去。』弹簧就位。",
-      "limitations": "原文要的『很轻的音效』在本任务静音，无法交付；logo 是原创抽象三块拼形，不是任何真实品牌；切点有短暗幕，严格说不是完全无缝。"
+      "limitations": "原文要的『很轻的音效』在本任务静音，无法交付；logo 是原创抽象三块拼形，不是任何真实品牌；切点有短暗幕，严格说不是完全无缝。",
+      "delivered_html_sha256": "c528acb5dc6de685aecd4281b713e4008fbfc8dfc1ba19de75f1e9ee1a934770",
+      "codex_modifications": "Cancel pending animation frames on pause to prevent duplicate loops after rapid toggles; scene/renderAt output unchanged."
     },
     "M8": {
       "name": "口播 + 逐字字幕",
@@ -111,7 +127,9 @@
       "gif": "previews/M8.gif",
       "poster": "posters/M8.png",
       "style_basis": "原文：『以口播录音为主线。字幕跟着说话逐词出现…白底，只用一种字体，黑字。镜头每段只做一次慢慢的漂移。图片在音乐的 16 分音符上换。屏幕上的字不要句号。不要给字加选中框一样的底色』。实现：纯白底、只用系统黑体一种字体、黑字 31px 字幕，按词（先把 / 话说 / 清楚 / 画面 / 自然 / 就会 / 跟上）逐个出现并微微上浮，词间不加底色块；上方是 560×216 的画面框，三段代码绘制的静物『照片』（窗边的光、桌上一杯水、一叠纸和笔），每段 1.5 秒；画面每 0.15 秒（16 分音符）换一格同一场景的四格微差（位移 1–2px、明暗微变），像逐帧换片；每段镜头只做一次 14px 的慢漂移；画面里叠了 900 点文件加载时预算好的胶片颗粒；一条细声波表示口播的气息。",
-      "limitations": "没有真实录音与 Whisper 逐词对齐（任务要求静音），逐词时间是我按口播节奏手工定的；『真实的图片』用代码绘制的静物近似，不是实拍素材；16 分音符按固定 0.15s 近似，没有跟具体 BPM；-14 LUFS 等音频要求不适用（静音）。"
+      "limitations": "没有真实录音与 Whisper 逐词对齐（任务要求静音），逐词时间是我按口播节奏手工定的；『真实的图片』用代码绘制的静物近似，不是实拍素材；16 分音符按固定 0.15s 近似，没有跟具体 BPM；-14 LUFS 等音频要求不适用（静音）。",
+      "delivered_html_sha256": "3c4e69916e611b15bd954ed5a60e52d28042fa9de46e4288e7245d3f1efd331c",
+      "codex_modifications": "Cancel pending animation frames on pause to prevent duplicate loops after rapid toggles; scene/renderAt output unchanged."
     },
     "M9": {
       "name": "情绪弧线：混乱、掌控、清晰",
@@ -123,7 +141,9 @@
       "gif": "previews/M9.gif",
       "poster": "posters/M9.png",
       "style_basis": "原文：『全片是一条连续的弧线：从混乱，到掌控，到清晰，最后落到 [结尾那句话]。场景之间用同一个物体、同一个形状变过去，不要硬切…动作要有高级的缓动和错开的层次，有一点景深和光感。不要满屏模糊、不要弹来弹去的界面、不要粒子。每一个重要的画面单独截出来都能当海报用』。实现：全片只有一个形状——一个环，被切成 16 段圆弧。开始每段带随机位移/半径偏移/旋转散在画面里（冷灰蓝），2.15s 起按各自的 delay（0–0.6s 错开）逐段归位到同一半径上，颜色在中段过渡到琥珀；3.9s 起 0.95 秒内缝隙从 0.62 rad 收到 0.008，收成一整圈米白的环并加内圈暖光。没有硬切、没有粒子、没有满屏模糊；景深靠一层很粗的 34px 半透明辅环和上下两处冷暖光斑做出。文案三段跟着弧线走：脑子里同时有十件事 → 一件，一件来 → 慢下来，就清楚了。",
-      "limitations": "『同一个物体变过去』只用了圆环一种形状，没有第二个物体接力；景深是伪的（辅环+光斑），不是真实景深；错开层次用每段固定 delay，不是手动编排的关键帧节奏。"
+      "limitations": "『同一个物体变过去』只用了圆环一种形状，没有第二个物体接力；景深是伪的（辅环+光斑），不是真实景深；错开层次用每段固定 delay，不是手动编排的关键帧节奏。",
+      "delivered_html_sha256": "37be0fd3e1cfde0d837aaa249a97f2c61f6a9e3f82fecdf05a764d0893a44863",
+      "codex_modifications": "Cancel pending animation frames on pause to prevent duplicate loops after rapid toggles; scene/renderAt output unchanged."
     },
     "M10": {
       "name": "把一个抽象概念、一种情绪做成画面",
@@ -135,7 +155,9 @@
       "gif": "previews/M10.gif",
       "poster": "posters/M10.png",
       "style_basis": "原文：『没有具体的人和物，用形状、文字和颜色的变化表现一种感觉…比如焦虑、对未知的恐惧、想太多。从 [一种状态] 慢慢变到 [另一种状态]』。实现：主题取『想太多』。画面只有 44 根 0.7–1.8px 的细线和三个字。每根线在加载时算好两个状态——『缠住』（挤在画面中部、上下翻折、带着随机抖动）和『松开』（按行排成一片很缓的波），再按各自 delay 在 0.5–5s 之间缓慢插值过去；三个字「想太多」起始分别带 26px 位移、±0.1 rad 旋转和重影，随线条一起站回一条基线。颜色从暗红褐底 + 铁锈红细线 + 米白字，一路插值到墨绿灰底 + 灰绿细线 + 灰白字。整体只有一次从 A 到 B 的连续变化，无切镜。",
-      "limitations": "没有真正的手写/矢量笔触，细线是 6 点二次贝塞尔，松开的末端会出现轻微的折角；颜色只是两段线性插值，不是调色分层；原文 15 秒的篇幅被压到 6 秒，变化速度比原意快。"
+      "limitations": "没有真正的手写/矢量笔触，细线是 6 点二次贝塞尔，松开的末端会出现轻微的折角；颜色只是两段线性插值，不是调色分层；原文 15 秒的篇幅被压到 6 秒，变化速度比原意快。",
+      "delivered_html_sha256": "c49bad123963f933dba43e7c5ee2fc51166b517526b567f9af514a69605ad716",
+      "codex_modifications": "Cancel pending animation frames on pause to prevent duplicate loops after rapid toggles; scene/renderAt output unchanged."
     },
     "M11": {
       "name": "人生循环",
@@ -147,7 +169,9 @@
       "gif": "previews/M11.gif",
       "poster": "posters/M11.png",
       "style_basis": "原文：『同一个人从 [阶段1] 到 [阶段2] 到 [阶段3]……最后无缝接回开头，可以循环播放』。实现：用一个『钟表环』当寿命刻度——环上 12 个刻度、一段铁锈色的已走弧和一个沿环移动的点，6 秒正好绕一圈；环里站着同一个人，身高/头/肩宽/驼背四个参数在『小时候 → 读书时 → 工作时 → 后来』四种状态之间用 smooth 连续插值，道具也跟着阶段交叉淡入（皮球→书→包→拐杖）；到了 t=6 参数与 t=0 完全一致（u=(t/6)*4 取模），所以循环无跳变；地上一条短线与影子把人物钉在画面里。",
-      "limitations": "人物是极简剪影，只有头/躯干/四肢和道具四类元素，没有面部与服装细节；四种阶段的插值有中间态（比如半个小孩半个少年），是为了无缝循环做的取舍；没有音效与旁白。"
+      "limitations": "人物是极简剪影，只有头/躯干/四肢和道具四类元素，没有面部与服装细节；四种阶段的插值有中间态（比如半个小孩半个少年），是为了无缝循环做的取舍；没有音效与旁白。",
+      "delivered_html_sha256": "c0889e23f44c467492b81c8516116f51890f8e0f88742b84f4cabc4970fdc8cb",
+      "codex_modifications": "Cancel pending animation frames on pause to prevent duplicate loops after rapid toggles; scene/renderAt output unchanged."
     },
     "M12": {
       "name": "剪纸皮影",
@@ -159,7 +183,9 @@
       "gif": "previews/M12.gif",
       "poster": "posters/M12.png",
       "style_basis": "原文：『用纯 JavaScript 做一段竖屏 9:16 动画，剪纸皮影戏的风格。配轻柔合适的声音，声音也用代码做。主题是：是什么让一个地方变成家』。实现：先搭一个戏台——暖光纸幕（中心 #ffe0ad → #e9a95e → 边缘 #8a4820 的径向渐变 + 640 点纸纹 + 暗角），外面套木框和一圈剪纸花边（四边各一排半圆）；顶部压一块剪纸屋檐（瓦当圆点、檐下镂空），檐下挂一盏纸灯（灯身椭球 + 纵向灯肋 + 顶盖底盖 + 流苏），光晕随「暖」的程度增强；两个皮影人都是近黑剪影：袍子上有镂空圆点、两节手臂带黄铜铆钉、侧影头 + 发髻，所有关节动作按 8 格/秒定格（m12step）；小孩从画面右侧小跑进来停在奶奶身边，奶奶抬手去迎，最后两个人的影子在灯下叠成一片，出「家，是有人等你」。",
-      "limitations": "原文要竖屏 9:16、30–60 秒、代码合成的声音；本预览按任务合同统一成 640×360 / 6 秒 / 静音，因此改成横向戏台构图，并砍掉夜色中的长调度与音效；皮影是剪影 + 关节近似，没有真正的半透明皮质纹理、杆件操作与幕布投射，只是『看起来像』。"
+      "limitations": "原文要竖屏 9:16、30–60 秒、代码合成的声音；本预览按任务合同统一成 640×360 / 6 秒 / 静音，因此改成横向戏台构图，并砍掉夜色中的长调度与音效；皮影是剪影 + 关节近似，没有真正的半透明皮质纹理、杆件操作与幕布投射，只是『看起来像』。",
+      "delivered_html_sha256": "a0083832cf0a07fae0cb28cd457c6d69ce95f2c8ac53851c9e08304e11b5a3a6",
+      "codex_modifications": "Cancel pending animation frames on pause to prevent duplicate loops after rapid toggles; scene/renderAt output unchanged."
     },
     "M13": {
       "name": "手绘定格，第一人称",
@@ -171,7 +197,9 @@
       "gif": "previews/M13.gif",
       "poster": "posters/M13.png",
       "style_basis": "原文：『做一段手绘定格动画。你就是 [东西]，用第一人称跟观众介绍你自己』。实现：让一张手绘便签当主角——贴在木桌上（木纹 + 620 点颗粒 + 右上角光 + 暗角），便签边是一圈固定的手绘抖动轮廓、纸纤维、胶带和两层错位纸影；脸上是手绘眼睛（瞳孔会左右看）和定格三格的嘴；所有动作按 1/12 秒一格采样（蹦两下、落地挤压、机位 0.6px 抖动），每一格的抖动量用 m13hash 固定算出来，保证同一时间同一帧；第一人称的字写在另外贴的两张小纸条上：「我是你桌上那张便签」「你写下的，我先记着」；便签随后自己写下「记得喝水」，最后被红笔圈出来。",
-      "limitations": "『手写』是用黑体 + 轻微旋转 + 遮罩擦出来模拟的，没有真实手写字体与笔顺；定格是 12 格/秒的采样而不是逐帧手拍，所以没有真实的材质位移与曝光跳动；没有声音与口播。"
+      "limitations": "『手写』是用黑体 + 轻微旋转 + 遮罩擦出来模拟的，没有真实手写字体与笔顺；定格是 12 格/秒的采样而不是逐帧手拍，所以没有真实的材质位移与曝光跳动；没有声音与口播。",
+      "delivered_html_sha256": "e5c9cac3280799bdce3dd715fb6355c795597dde4f2a8b874613ccc4bbca665d",
+      "codex_modifications": "Cancel pending animation frames on pause to prevent duplicate loops after rapid toggles; scene/renderAt output unchanged."
     },
     "M27": {
       "name": "无对白短片，声音讲一半",
@@ -183,7 +211,9 @@
       "gif": "previews/M27.gif",
       "poster": "posters/M27.png",
       "style_basis": "按『无对白短片，声音讲一半』原文：没有台词，靠画面和声音讲故事。实现为 2.39:1 宽银幕黑边 + 海夜灯塔：0–1s 灯塔暗着、星空与远山脊；1s 灯亮起；1s 起光束以正弦角速度左右扫过海面（灯是唯一「说话」的东西）；2.5/3.0/3.5s 远处小船用灯光闪三下回应，4.5s 起出字幕「灯亮三下，就是回来了。」；镜头全程只做 4.5% 的缓慢推近再退回，海浪短线横移、胶片颗粒与暗角压在画面上。",
-      "limitations": "原文要求「声音讲出一半故事」，本任务全静音，只能用灯光节奏替代声音线索；灯塔、渔船都是几何剪影，没有真实材质；字幕是否算「对白」有争议，我按字幕处理。"
+      "limitations": "原文要求「声音讲出一半故事」，本任务全静音，只能用灯光节奏替代声音线索；灯塔、渔船都是几何剪影，没有真实材质；字幕是否算「对白」有争议，我按字幕处理。",
+      "delivered_html_sha256": "b297b031082b49ad175061285262c7180baea7c1ab08667d908c6d97f1a00ca4",
+      "codex_modifications": "Cancel pending animation frames on pause to prevent duplicate loops after rapid toggles; scene/renderAt output unchanged."
     },
     "M28": {
       "name": "对称暖色的电影感空镜",
@@ -195,7 +225,9 @@
       "gif": "previews/M28.gif",
       "poster": "posters/M28.png",
       "style_basis": "按『对称暖色的电影感空镜』原文：火车窗外四季流过、车厢温暖、桌上咖啡、左右对称、粉嫩暖色、镜头很稳。实现为正中一扇大圆角窗（左右完全对称的窗帘、两侧对称壁灯、正中带双耳的咖啡杯与对称热气），窗外用视差滚动画四季：春粉花树→夏绿树→秋橙叶→冬枯枝落雪，每 1.45s 交叉淡入 0.26s；窗外天空、日晕、云带、树影与花瓣/落叶/雪点各自不同速度横移，前景桌沿有窗光溢出；镜头完全锁定，只有窗外在动。",
-      "limitations": "四季是四段离散交叉淡化，不是连续渐变；杯子为风格化双耳杯（为满足对称），不是真实器型；没有车厢内景的纵深透视。"
+      "limitations": "四季是四段离散交叉淡化，不是连续渐变；杯子为风格化双耳杯（为满足对称），不是真实器型；没有车厢内景的纵深透视。",
+      "delivered_html_sha256": "931c4b3e922c30ad71f250a487823b8ed4865ac9567496eb920b94b74abbbb2c",
+      "codex_modifications": "Cancel pending animation frames on pause to prevent duplicate loops after rapid toggles; scene/renderAt output unchanged."
     },
     "M29": {
       "name": "日落天空的 3D 空镜加一句话",
@@ -207,7 +239,9 @@
       "gif": "previews/M29.gif",
       "poster": "posters/M29.png",
       "style_basis": "按『日落天空的 3D 空镜加一句话』原文：日落海面、紫色积云、海面反光，镜头像动画电影一样慢慢飞过去，画面上写一句话。实现为紫→珊瑚→橙的五段天空渐变 + 压在海平线的太阳与横向镜头光斑；七团紫色积云用「同色多圆」拼出实心轮廓、再在内部裁切画出朝太阳一侧的暖色受光面和压深的云底，远近云用不同速度横移并按 fly 值放大，模拟飞越纵深；海面有太阳反光柱 + 碎金线 + 横向波纹；镜头 6 秒缓慢前推 3.5%；2s 起浮出「此刻，就很好。」并配一条细引线。",
-      "limitations": "不是真 3D（无透视矩阵与环境光照），云是贴片式的伪体积；镜头只有缓慢前推与横移，没有真正的穿越航线；文字写死在代码里。"
+      "limitations": "不是真 3D（无透视矩阵与环境光照），云是贴片式的伪体积；镜头只有缓慢前推与横移，没有真正的穿越航线；文字写死在代码里。",
+      "delivered_html_sha256": "ed7aae550febec9029d8a93e71272165a1e5d2c087cb9a4edb6da689d7bbfbbc",
+      "codex_modifications": "Cancel pending animation frames on pause to prevent duplicate loops after rapid toggles; scene/renderAt output unchanged."
     },
     "M30": {
       "name": "东方意境",
@@ -219,7 +253,9 @@
       "gif": "previews/M30.gif",
       "poster": "posters/M30.png",
       "style_basis": "按『东方意境』原文：月夜、江水、楼阁这类古典画面。实现为靛青夜空 + 带柔光晕的月与月面淡斑；三层远山淡雾叠出纵深，山间横向雾带缓慢平移；右侧两层翘檐水榭（起翘檐口、栏杆小柱、宝顶、暖色窗格与灯），灯光在江面拉出一串倒影；左侧竖排诗句「江天一色无纤尘」逐字浮出（每字 0.12s 错开、上浮 8px）；一叶小舟从右往左划过江心并带尾迹涟漪；镜头全程只做 8px 的极慢横移，最后压暗角。",
-      "limitations": "楼阁是几何拼的剪影，没有斗拱/瓦面细节；江面波纹与月影是程序化横线，不是流体模拟；6 秒只能容纳一联诗句，交互网页版未做（本任务只交付动画示例）。"
+      "limitations": "楼阁是几何拼的剪影，没有斗拱/瓦面细节；江面波纹与月影是程序化横线，不是流体模拟；6 秒只能容纳一联诗句，交互网页版未做（本任务只交付动画示例）。",
+      "delivered_html_sha256": "965388c684fa46e3e2926820bdcf9054a2227d0d1ce51108aabcc57c27186226",
+      "codex_modifications": "Cancel pending animation frames on pause to prevent duplicate loops after rapid toggles; scene/renderAt output unchanged."
     },
     "M31": {
       "name": "粘土定格 MV",
@@ -231,7 +267,9 @@
       "gif": "previews/M31.gif",
       "poster": "posters/M31.png",
       "style_basis": "按『粘土定格 MV』原文：粘土小人有手指印和手作质感，动作一顿一顿。实现为全局 8 格/秒的定格量化（所有动作只在这 8 个时刻变化），每格叠加 1–2px 的确定性走片抖动；角色是压扁的黏土团：圆角泥块身体、豆子眼、腮红、泥条手臂手脚，六拍一个姿势循环（左倾举手→蹦起→右倾举手→蹦起→回中），并带轻微 squash；场景里粘土太阳带放射泥条光芒与指压弧纹、两朵泥云、三座泥丘、按拍冒出的泥音符；墙面与地面用预计算的黏土颗粒与手抹痕，四角压暗像拍小模型的台灯。",
-      "limitations": "指压纹是几道同心弧线，不能真的做出指纹凹凸；定格只量化到 8fps，没有逐帧手摆的细微误差；原创短句只有一句、没有真正配乐。"
+      "limitations": "指压纹是几道同心弧线，不能真的做出指纹凹凸；定格只量化到 8fps，没有逐帧手摆的细微误差；原创短句只有一句、没有真正配乐。",
+      "delivered_html_sha256": "81f7e75d2e12aa36f4bb704cccda3f59d2b369f0a121a27e9b553dc524b67f29",
+      "codex_modifications": "Cancel pending animation frames on pause to prevent duplicate loops after rapid toggles; scene/renderAt output unchanged."
     },
     "M3": {
       "name": "文字建筑（口播金句专用）",
@@ -243,7 +281,9 @@
       "gif": "previews/M3.gif",
       "poster": "posters/M3.png",
       "style_basis": "原文：『每个关键词有一个结构上的角色，比如学习是地基、相信是柱子、自己是站在上面的人』『文字用真实的字形轮廓搭出来，每一句都改变画面的结构』『最后一句必须站在前面那些词搭好的东西上』『深色背景、纸色字、一个强调色』『不要麦克风、人群、旗子』。实现：深色图纸网格+地平线；词语被当作预制构件——『先做』是地基横板、『坚持』『相信』是两根竖柱、『积累』是横梁，构件用钢索吊入落位、内嵌斜排线剖面与包边；最后『相信自己』落成一整块平台架在梁上，金色小人从右侧走上来站住（“自己”）；强调色只有金色一种；全程无人物群像/麦克风。6 秒的节拍是 地基→柱→梁→顶句→人。",
-      "limitations": "字形只作为构件里的文字，没有真的用字的笔画轮廓当梁柱（那需要矢量字形拆解）；原文要求挑 8 帧检查，这里用 6 帧接触条；没有口播音轨与金句台词，只有极短文案。"
+      "limitations": "字形只作为构件里的文字，没有真的用字的笔画轮廓当梁柱（那需要矢量字形拆解）；原文要求挑 8 帧检查，这里用 6 帧接触条；没有口播音轨与金句台词，只有极短文案。",
+      "delivered_html_sha256": "c0440fdf1a693af4715e979afc60cf3c362c12925f99ae6fb36262da9b98f194",
+      "codex_modifications": "Cancel pending animation frames on pause to prevent duplicate loops after rapid toggles; scene/renderAt output unchanged."
     },
     "M25": {
       "name": "歌词卡点",
@@ -255,7 +295,9 @@
       "gif": "previews/M25.gif",
       "poster": "posters/M25.png",
       "style_basis": "按『歌词卡点』原文：歌词跟人声与节拍一个字一个字跳出来。实现为 120 BPM 的节拍网格（0.5s 一拍）：两行原创短词逐字起拍弹出（位移+轻微旋转+缩放回弹），每个字唱到时用剪裁矩形做卡拉 OK 从左到右填色（第一行米白、第二行玫红）；背景径向光与竖光带随拍点衰减闪动，底部 30 根条形按节拍起伏，顶部 12 个拍点刻度逐个点亮，左侧显示 BPM 与拍号，4s 起给「亮起来」扫一条冷色下划线。",
-      "limitations": "本任务静音，节拍是数学网格而非真实音轨分析结果；歌词为原创短句，只有两句；6 秒内只有 11 拍，无法展示完整段落结构。"
+      "limitations": "本任务静音，节拍是数学网格而非真实音轨分析结果；歌词为原创短句，只有两句；6 秒内只有 11 拍，无法展示完整段落结构。",
+      "delivered_html_sha256": "891d13175d2c18e832c10c4b8c9728efbab7ff9652d158d659669e19a5af32fc",
+      "codex_modifications": "Cancel pending animation frames on pause to prevent duplicate loops after rapid toggles; scene/renderAt output unchanged."
     },
     "M36": {
       "name": "破框",
@@ -267,7 +309,9 @@
       "gif": "previews/M36.gif",
       "poster": "posters/M36.png",
       "style_basis": "按『破框』原文：一张海报里的东西冲出海报自己的边框。实现为墙面（暖灰渐变+聚光+细颗粒）上贴一张纸质海报，海报上印着「边界 / 之内」、红色圆点与条码；0.9s 起这个印刷红点鼓成带高光与投影的立体球（还带小脸），1.6s 纸面被挤出一个不规则纸洞（径向渐变深色洞底+纸白撕边），2.5s 球越过右边框滚到墙上；右侧边框在球穿过的位置断开、纸边向上翘起，破口飞出碎纸并炸出放射短线；球在墙上带柔投影并轻微浮动，4.35s 落下「冲出去。」；镜头 6 秒缓推 3.5%，突破瞬间有短促震动。",
-      "limitations": "纸洞是程序化的不规则圆，不是真实撕纸的纤维边缘；球的材质是渐变而不是手绘质感；海报印刷内容为原创，不含真实品牌。"
+      "limitations": "纸洞是程序化的不规则圆，不是真实撕纸的纤维边缘；球的材质是渐变而不是手绘质感；海报印刷内容为原创，不含真实品牌。",
+      "delivered_html_sha256": "9c078b34e18641bd6be3b1ef8a8c8a28fb70271645653d3bad4e8223e9a7ecba",
+      "codex_modifications": "Cancel pending animation frames on pause to prevent duplicate loops after rapid toggles; scene/renderAt output unchanged."
     },
     "M4": {
       "name": "一个元素串全片",
@@ -279,7 +323,9 @@
       "gif": "previews/M4.gif",
       "poster": "posters/M4.png",
       "style_basis": "原文：『一个橙色小圆点串起每一个场景：先是开关，再变成字母上的点，再变成曲线，再变成一个图形，最后回到结尾卡片。圆点不能瞬移，只能连续地动过去。动作干脆利落，弹簧回弹很小，没有空档。不用素材视频、渐变、发光、粒子爆炸、随机转场。最后一帧和第一帧一样，可以循环』。实现：橙色圆点按 11 段关键帧连续移动（直线拨动、弧线飞行、沿正弦曲线滑行），全程路径先以虚线预告、走过的部分变成橙线；四个角色依次成立——开关的钮（拨到右，带一下小回弹）→ 无点字母 i 的点（点飞走后留虚线圆，i 仍可辨）→ 曲线上的珠子 → 圆环中心并分出四个短柄 → 结尾卡片上的橙点，最后 0.45 秒沿弧线回到开关位置与首帧重合。无渐变、发光、粒子、随机转场。",
-      "limitations": "不是真实弹簧物理，用 cubic easeOut 加一次 -1.6px 回弹近似；字母 i 是几何笔画（圆角竖笔+基线刻度），不是字体轮廓；循环靠最后一腿位移对齐，末帧与首帧的像素级一致性未逐像素比对。"
+      "limitations": "不是真实弹簧物理，用 cubic easeOut 加一次 -1.6px 回弹近似；字母 i 是几何笔画（圆角竖笔+基线刻度），不是字体轮廓；循环靠最后一腿位移对齐，末帧与首帧的像素级一致性未逐像素比对。",
+      "delivered_html_sha256": "45b2d8f16903dd57d1de667129f43d310f06b2f7097069591d906392edaa7071",
+      "codex_modifications": "Cancel pending animation frames on pause to prevent duplicate loops after rapid toggles; scene/renderAt output unchanged."
     },
     "M5": {
       "name": "一镜到底",
@@ -291,7 +337,9 @@
       "gif": "previews/M5.gif",
       "poster": "posters/M5.png",
       "style_basis": "原文：『一镜到底。每个场景都从上一个场景里变出来：文字从一条线里升起来，按钮展开成页面，用一种颜色铺满画面切到下一段。不要淡入淡出、不要模糊、不要硬切。每个场景镜头只做一次缓动』。实现：一张约 1800px 宽的世界横带，镜头只向右推、分 4 段各一次 smoothstep 缓动（外加 1.03 的轻微推近），全程零切镜；第一段横线从左擦出并顶起『有个想法』；线头继续爬到『开始』按钮，按钮本体原地长大成白卡片（填色松绿→纸白、字换成标题栏+三行），不是新镜头；随后松绿大色块从右侧扫入直到占满画面，完成转场；最后落在『它自己会走』——一个胶囊沿轨道自己滑走。没有淡入淡出、模糊、硬切。",
-      "limitations": "世界只有约 1800px，最多容纳三段，不是真正无限的一镜空间；『只做一次缓动』用 smoothstep 近似，没有自定义贝塞尔曲线；没有音效与旁白；色块转场时左侧会残留一小条上一段的卡片边缘（真实一镜扫色的必然残影，未做遮罩修掉）。"
+      "limitations": "世界只有约 1800px，最多容纳三段，不是真正无限的一镜空间；『只做一次缓动』用 smoothstep 近似，没有自定义贝塞尔曲线；没有音效与旁白；色块转场时左侧会残留一小条上一段的卡片边缘（真实一镜扫色的必然残影，未做遮罩修掉）。",
+      "delivered_html_sha256": "5e8aa28fc80c72f09ef190e1c689987bece7dbe622a265da1c7d6e6ef1f99f56",
+      "codex_modifications": "Cancel pending animation frames on pause to prevent duplicate loops after rapid toggles; scene/renderAt output unchanged."
     },
     "M33": {
       "name": "从一个点拉远到宇宙",
@@ -303,7 +351,9 @@
       "gif": "previews/M33.gif",
       "poster": "posters/M33.png",
       "style_basis": "按『从一个点拉远到宇宙』原文：黑屏上一个点展开成画面，镜头在多个尺度上推拉，一直拉远到整个画面像太空里的一个点，再推进到另一个画面，最后落到一句话。实现为六层嵌套：点→卡片→桌面（键盘/台灯/杯子）→亮灯窗的城市夜景→星球→星系→另一扇暖窗；每层先满帧停住再被下一层「缩成一张带细边和投影的卡片」，用 12px 圆角裁切强化『画面套画面』；右侧有 1/10/1K/1M/1B/∞ 的尺度刻度和逐级点亮的标记，最后推进暖窗并落到「从一点，到一整片。」。",
-      "limitations": "不是连续的真实缩放（每层在自身窗口内独立缩放），层与层之间靠缩放+淡入衔接，属于「嵌套卡片」式近似而非几何统一透视；星系与星球是程序化点阵/渐变球，不是 3D 模型。"
+      "limitations": "不是连续的真实缩放（每层在自身窗口内独立缩放），层与层之间靠缩放+淡入衔接，属于「嵌套卡片」式近似而非几何统一透视；星系与星球是程序化点阵/渐变球，不是 3D 模型。",
+      "delivered_html_sha256": "a062b49facc5fbbc11744cd2728de96423ab2a31c5bcee82b300a6991a1f207b",
+      "codex_modifications": "Cancel pending animation frames on pause to prevent duplicate loops after rapid toggles; scene/renderAt output unchanged."
     },
     "M38": {
       "name": "一个形状变到底",
@@ -315,7 +365,9 @@
       "gif": "previews/M38.gif",
       "poster": "posters/M38.png",
       "style_basis": "按『一个形状变到底』原文：一个形状从头到尾不切，依次变成按钮、加载圈、播放器、滑块、开关，每次变化都由鼠标真的点击或拖动触发，到处用弹簧，镜头跟着放大，最后一帧和第一帧一样。实现为同一个圆角形状在 7 个状态间插值（宽/高/圆角/双色渐变全部 lerp），过渡用 7/11 阻尼弹簧；镜头按 max(w,h) 反推缩放（1.15–2.6 倍）把每个状态推到接近满画面；光标按关键帧从画外移入，0.8s 点按钮、2.56s 点播放、2.95–3.5s 拖动滑杆、4.12s 拨开关，配点击涟漪；左下角有状态标签、五个状态点与操作提示，4.98s 起变回最初的按钮，5.9s 光标回到起始位置以贴合首帧。",
-      "limitations": "形状是圆角矩形参数化变形，不是路径级 morph；光标是箭头图标不是真实指针轨迹；最后回到首帧是「参数一致」而不是逐像素完全一致（光标路径结束点已对齐）。"
+      "limitations": "形状是圆角矩形参数化变形，不是路径级 morph；光标是箭头图标不是真实指针轨迹；最后回到首帧是「参数一致」而不是逐像素完全一致（光标路径结束点已对齐）。",
+      "delivered_html_sha256": "e4a9e0e32231bb6b650e0cfb9f2b1bf77a15c244f19212a45da16775c3ac56c7",
+      "codex_modifications": "Cancel pending animation frames on pause to prevent duplicate loops after rapid toggles; scene/renderAt output unchanged."
     },
     "M37": {
       "name": "Logo 慢慢拼出来（片头片尾）",
@@ -327,7 +379,9 @@
       "gif": "previews/M37.gif",
       "poster": "posters/M37.png",
       "style_basis": "按『Logo 慢慢拼出来（片头片尾）』原文：碎片一点点聚拢，最后拼出 logo 的慢揭示转场。实现为深紫黑场+三道同心细环与金色微光：六块梯形金属碎片（金 4 + 青 2）从画外不同角度、不同旋转与缩放飞入，用 5.2 阻尼的弹簧慢慢收敛落位，每块落位时闪一个小圆环；成品是六个楔形围成的环形标志+中心点+一圈缓慢转动的青色弧；字标「拼合」字距从 16 收到 4（3.6–4.6s），4.35s 起一道被裁在标志范围内的斜向高光扫过；左下角实时显示「碎片 0X / 06」。",
-      "limitations": "碎片是同一楔形的旋转副本，不是真正不规则的模型碎片；没有金属反射/环境贴图，只有线性渐变与高光边；字标为通用汉字，不是真实品牌 logo。"
+      "limitations": "碎片是同一楔形的旋转副本，不是真正不规则的模型碎片；没有金属反射/环境贴图，只有线性渐变与高光边；字标为通用汉字，不是真实品牌 logo。",
+      "delivered_html_sha256": "5c20af428b07c1dc5f66f65d5c534ee739531d7c68b41f48915cd2dfb9cfd906",
+      "codex_modifications": "Cancel pending animation frames on pause to prevent duplicate loops after rapid toggles; scene/renderAt output unchanged."
     },
     "M6": {
       "name": "苹果发布会风",
@@ -339,7 +393,9 @@
       "gif": "previews/M6.gif",
       "poster": "posters/M6.png",
       "style_basis": "原文：『柔和、白、亮蓝、玻璃质感。镜头从不在静止画面上切，每个镜头进来时已经在动，离开时加速或者带运动模糊。字体用 Inter。不要出现紫色、品红和橙色』。实现：白→#e1ecfb 的柔和纵向渐变加右上角柔光；主体是一块圆角玻璃板（多层线性渐变、白色高光边、淡蓝内光带、两层淡投影、skew 制造玻璃倾角），进场与离场都带 3 层按速度偏移的残影，离场用 easeIn 加速；1.5/3/4.5 三处切镜时前后两个画面都在动；镜头全程 1.0→1.05 缓慢推近；一道白光斜扫过玻璃；文字用 Inter 优先的字体栈并用负字距收紧；四个镜头是「薄一点 / 亮得安静 / 一次就够 / 让工具退到身后」，第三镜配白卡片与蓝色进度线；全片配色只有白、浅蓝、#0a84ff、墨 #1d1d1f、灰，无紫、品红、橙。",
-      "limitations": "本机没有 Inter，实际回退到 Helvetica Neue / PingFang SC；『运动模糊』用多层位移残影近似，不是真实快门采样；没有音效，也没有真机的景深与反射；玻璃质感靠渐变与高光边模拟，不是实时折射。"
+      "limitations": "本机没有 Inter，实际回退到 Helvetica Neue / PingFang SC；『运动模糊』用多层位移残影近似，不是真实快门采样；没有音效，也没有真机的景深与反射；玻璃质感靠渐变与高光边模拟，不是实时折射。",
+      "delivered_html_sha256": "5ef6e003c89f4990f4cb011169d6c055de4fcc3391ccf8e5b7ba13d526f11759",
+      "codex_modifications": "Cancel pending animation frames on pause to prevent duplicate loops after rapid toggles; scene/renderAt output unchanged."
     },
     "M7": {
       "name": "极简卡点",
@@ -351,7 +407,9 @@
       "gif": "previews/M7.gif",
       "poster": "posters/M7.png",
       "style_basis": "原文：『高级极简。一个镜头只讲一件事，大量留白，只用一个强调色，字距收紧的无衬线字体，文字用遮罩显出来，镜头稳。每一刀都切在重拍上，每个界面动作踩在拍子上。屏幕上的字不要句号。不要冲击波、粒子、RGB 分离、抖动、光晕、霓虹、闪烁、弹来弹去的缓动』。实现：米白 #fafaf7 底、大面积留白，内容只占左侧；四个 1.5 秒镜头在 1.5/3.0/4.5 硬切（重拍），一镜只讲一件事——表格 / 周报 / 交给它 / 一件小事，也别自己扛；标题 60–66px、字距 -2px，用矩形遮罩从左擦出，并且切点上已经擦到一半，画面不会空白；强调色只有一个朱红 #ff4526，每镜只用一次（进度条首段 / 句末方块 / 方块右移）；镜头完全静止（无缩放无位移）；每镜的界面小动作（一条双色进度线、三行条目、一个方块平移）都落在该镜第二拍；全片没有句号、没有粒子/抖动/霓虹/弹跳。",
-      "limitations": "遮罩擦字是矩形裁切，不是逐字重绘；『每一刀切在重拍上』以 1.5 秒等距近似（原片要跟具体 BPM）；没有音乐与音效（任务静音），所以『卡点』只能靠画面节拍表达。"
+      "limitations": "遮罩擦字是矩形裁切，不是逐字重绘；『每一刀切在重拍上』以 1.5 秒等距近似（原片要跟具体 BPM）；没有音乐与音效（任务静音），所以『卡点』只能靠画面节拍表达。",
+      "delivered_html_sha256": "b978fd441a52478d3fb41025c8cd0e3e9dcb3f8ab87952187f14167b6eac56e3",
+      "codex_modifications": "Cancel pending animation frames on pause to prevent duplicate loops after rapid toggles; scene/renderAt output unchanged."
     },
     "M32": {
       "name": "竖屏快节奏 POV",
@@ -363,7 +421,9 @@
       "gif": "previews/M32.gif",
       "poster": "posters/M32.png",
       "style_basis": "按『竖屏快节奏 POV』原文：竖屏 9:16、快节奏碎剪、第一人称视角、动作和音效都满。实现为中间一块 200×356 的竖屏画框（周围压暗并标 9:16 / FIRST PERSON），框内 8 个第一人称镜头每 0.75 秒硬切一次：抓杯、灌咖啡、拿钥匙、关门、下楼、上街、按门锁、坐下；每个镜头都带手持晃动（按帧哈希抖动）、切点 1.1→1.02 的推镜、首帧白闪与速度线（首镜头不加，避免整帧发白）、顶部 REC 状态条与时间码、底部镜头标签与 8 段进度，字幕带压暗条保证在手上也读得清。",
-      "limitations": "只有 8 个镜头，不是真 12 段碎剪；每个镜头是几何图形拼的第一人称道具，没有真实手部；音效全静音，只能用白闪/速度线暗示；竖屏只作为画面中的画框，不是真正 9:16 输出。"
+      "limitations": "只有 8 个镜头，不是真 12 段碎剪；每个镜头是几何图形拼的第一人称道具，没有真实手部；音效全静音，只能用白闪/速度线暗示；竖屏只作为画面中的画框，不是真正 9:16 输出。",
+      "delivered_html_sha256": "a20ffca46eb2b0ddb0ceaa01f837fac9a8b8bb57ddf3a744fcd7aa19f491cfbf",
+      "codex_modifications": "Cancel pending animation frames on pause to prevent duplicate loops after rapid toggles; scene/renderAt output unchanged."
     },
     "M34": {
       "name": "新闻快讯盘点",
@@ -375,7 +435,9 @@
       "gif": "previews/M34.gif",
       "poster": "posters/M34.png",
       "style_basis": "按『新闻快讯盘点』原文：像新闻节目一样一条一条过，每条点出看点。实现为深蓝底 + 顶部「本周快讯 / WEEKLY·人话版」栏、闪烁 LIVE 标签与条数；正文三条（工具/写作/自动化）各 1.85 秒，左侧超大编号 01–03、上方色块标签、大字标题、带色条的「看点」短句，右侧抽象配图（节点连线 / 文字与钢笔 / 循环箭头）；第 2 条起用色块擦除（clip 从右往左展开）替换硬切；底部固定下三分之一「快讯台 · 每条只说清好在哪」、三条进度与滚动字幕条；5.55s 收尾一句「这一周，就这些。」。",
-      "limitations": "六秒只能放三条，没有真实新闻事件或数据；配图是抽象符号而非新闻画面；字幕条循环是程序化文字，不是真字幕流。"
+      "limitations": "六秒只能放三条，没有真实新闻事件或数据；配图是抽象符号而非新闻画面；字幕条循环是程序化文字，不是真字幕流。",
+      "delivered_html_sha256": "3c0b3bb895c8a839813a4afb2f7fb0e19ee6d820ec2d1f36e4782ed9b2a6fbed",
+      "codex_modifications": "Cancel pending animation frames on pause to prevent duplicate loops after rapid toggles; scene/renderAt output unchanged."
     },
     "K1": {
       "name": "扁平矢量",
@@ -387,7 +449,9 @@
       "gif": "previews/K1.gif",
       "poster": "posters/K1.png",
       "style_basis": "全画面统一 4px 描边、纯平涂、无阴影无渐变；明亮蓝绿黄粉配色；圆头小人、灯泡、太阳、云、远山、桌子与杯子都是扁平矢量基本形；出现用弹性 pop，光芒线逐根长出，眨眼循环。",
-      "limitations": "云朵由多个圆形叠加，内部接缝可见；角色只有正面固定姿势，没有走路循环。"
+      "limitations": "云朵由多个圆形叠加，内部接缝可见；角色只有正面固定姿势，没有走路循环。",
+      "delivered_html_sha256": "55059cc45d88b8942639b51134c466c36ce7aa3704e11c6f17a8931b2da20da2",
+      "codex_modifications": "Cancel pending animation frames on pause to prevent duplicate loops after rapid toggles; scene/renderAt output unchanged."
     },
     "K2": {
       "name": "Q 版",
@@ -399,7 +463,9 @@
       "gif": "previews/K2.gif",
       "poster": "posters/K2.png",
       "style_basis": "Q 版比例：头径约 132px 占画面高度三分之一强，小身子与短手短脚（腿只到脚踝、手臂两节），眼睛占脸宽一半以上并带两颗高光；柔和粉紫/奶油/薄荷配色，无硬阴影，只有一圈更浅的底色圆做衬；出场用挤压回弹（squash & stretch）+ 落地小跳，接住星星后眼睛变星星眼、嘴巴变 O，整体是弹软的 chibi 动作语言。",
-      "limitations": "手臂用旋转的粗描边线段表现，没有手肘关节；角色只有正面站姿，没有走路循环；星星落到手心时与头轮廓距离较近，边缘略有贴近。"
+      "limitations": "手臂用旋转的粗描边线段表现，没有手肘关节；角色只有正面站姿，没有走路循环；星星落到手心时与头轮廓距离较近，边缘略有贴近。",
+      "delivered_html_sha256": "6a8eaf9b0635d58d518191ea9c629e2cfcc00ed1a7d0ebb9dd20ce669728a36b",
+      "codex_modifications": "Cancel pending animation frames on pause to prevent duplicate loops after rapid toggles; scene/renderAt output unchanged."
     },
     "K3": {
       "name": "卡哇伊",
@@ -411,7 +477,9 @@
       "gif": "previews/K3.gif",
       "poster": "posters/K3.png",
       "style_basis": "圆滚滚一整只（没有脖子，头和身体合成一个圆），两只外凸圆耳、草莓发饰；纯黑豆豆眼 + 单点高光、ω 小嘴、粉红椭圆腮红；粉彩玫瑰/奶油/薄荷配色，软渐变高光、无硬阴影；动作是挤压回弹、原地小跳、短手臂向外撇着晃，爱心从画面两侧持续上浮。",
-      "limitations": "手脚仍是简化小椭圆，没有手指；爱心为程序化贝塞尔心形，不是手绘贴纸质感；耳朵位置贴近头顶，某些帧像发箍。"
+      "limitations": "手脚仍是简化小椭圆，没有手指；爱心为程序化贝塞尔心形，不是手绘贴纸质感；耳朵位置贴近头顶，某些帧像发箍。",
+      "delivered_html_sha256": "c0ee4e8264490ce63016c422a4c22f27372ab567e85fed00514e17225dff2114",
+      "codex_modifications": "Cancel pending animation frames on pause to prevent duplicate loops after rapid toggles; scene/renderAt output unchanged."
     },
     "K4": {
       "name": "极简线条小人",
@@ -423,7 +491,9 @@
       "gif": "previews/K4.gif",
       "poster": "posters/K4.png",
       "style_basis": "只用一种近黑墨色、统一 2.2px 等粗线、线头圆角，无填充无阴影；人物用「一个圆 + 一条竖线 + 四条短线」构成，大块米白留白加一条极淡地平线；先把线条逐段画出来（按折线长度揭示、起笔有墨点），再走两步（腿前后摆、身体轻微上下），最后抬手在方框外画一个小圆圈 + 一个点，用一根淡线连到手。",
-      "limitations": "走路只有两条腿前后摆，没有膝盖弯曲与手臂反相摆动；人物没有五官，靠标题与动作说明含义；右侧留白偏多，属于该画风的取舍。"
+      "limitations": "走路只有两条腿前后摆，没有膝盖弯曲与手臂反相摆动；人物没有五官，靠标题与动作说明含义；右侧留白偏多，属于该画风的取舍。",
+      "delivered_html_sha256": "69f9314d3406ecf817dabfbb214fe7169c424a289004d58fae81880085db29b6",
+      "codex_modifications": "Cancel pending animation frames on pause to prevent duplicate loops after rapid toggles; scene/renderAt output unchanged."
     },
     "K5": {
       "name": "孟菲斯扁平人",
@@ -435,7 +505,9 @@
       "gif": "previews/K5.gif",
       "poster": "posters/K5.png",
       "style_basis": "孟菲斯扁平人：无五官、长手长脚、超大手掌与大鞋、圆角几何躯干；背景是孟菲斯招牌元素（大色块圆、会扭动的波浪线、三角、圆点阵、十字、半圆），扁平纯色、无描边无阴影；弹入用回弹出场；手臂绕肩旋转把手掌举到灯泡下方，灯泡由几何圆 + 方灯座 + 珊瑚色放射短线组成，手掌到灯泡有一条虚线。为保持整段有动作，人物持续上下呼吸、波浪线相位滚动、小色块持续横移飘过。",
-      "limitations": "人物只有正面站立与单臂上举两个姿态，没有走路循环；手掌是一整块圆形，没有手指；几何小色块是循环滚动而不是物理运动。"
+      "limitations": "人物只有正面站立与单臂上举两个姿态，没有走路循环；手掌是一整块圆形，没有手指；几何小色块是循环滚动而不是物理运动。",
+      "delivered_html_sha256": "0a97b75e8e5079335dbfb42c895bee88e6b36c454fe728e19ef5e18bcc61b467",
+      "codex_modifications": "Cancel pending animation frames on pause to prevent duplicate loops after rapid toggles; scene/renderAt output unchanged."
     },
     "K6": {
       "name": "清线漫画",
@@ -447,7 +519,9 @@
       "gif": "previews/K6.gif",
       "poster": "posters/K6.png",
       "style_basis": "清线漫画：全画面统一 2.4px 均匀墨线、无排线无渐变、纯平涂色块；欧洲街角立面（青绿窗、赭黄门、红白条纹遮阳棚、石板路）与远处的平顶屋；少年有翘起的额发、点眼、圆鼻，穿深蓝风衣、红围巾、棕色长裤；纸飞机与对话气泡都是等线平涂。",
-      "limitations": "少年走路只是两条腿绕髋摆动，没有膝盖与脚踝结构；风衣下摆不会摆动；对话气泡固定尺寸，没有逐字出现。"
+      "limitations": "少年走路只是两条腿绕髋摆动，没有膝盖与脚踝结构；风衣下摆不会摆动；对话气泡固定尺寸，没有逐字出现。",
+      "delivered_html_sha256": "dcad7d8c67a427ad48bbf0cfaa3a779313d32f1d7503b58160b0d266d8ec6212",
+      "codex_modifications": "Cancel pending animation frames on pause to prevent duplicate loops after rapid toggles; scene/renderAt output unchanged."
     },
     "K7": {
       "name": "日式动画",
@@ -459,7 +533,9 @@
       "gif": "previews/K7.gif",
       "poster": "posters/K7.png",
       "style_basis": "日式赛璐璐：大眼（虹膜竖向渐变 + 上下两颗高光 + 粗上眼线带眼尾）、尖下巴脸型、齐眉厚刘海分五缕发绺、及肩直发 + 呆毛 + 红发卡、水手服深蓝领 + 红领结；黄昏天空分层渐变（深蓝→紫→橘）、平涂云带、远山剪影、太阳光晕、镜头光斑横扫、飘落花瓣与光尘；镜头全程缓慢推近，头发与两侧长发被风吹动。",
-      "limitations": "角色是正面半身固定姿势，没有口型与身体动作；眼睛只有眨眼，没有视线移动；头发用填充形状而非逐根发丝，发梢略显块面；光斑为程序化渐变，不是真实镜头虚化。"
+      "limitations": "角色是正面半身固定姿势，没有口型与身体动作；眼睛只有眨眼，没有视线移动；头发用填充形状而非逐根发丝，发梢略显块面；光斑为程序化渐变，不是真实镜头虚化。",
+      "delivered_html_sha256": "e22f45501015cda8c6ee1f6b337d23cdcbc391fef6143e0e000a0029272bdaae",
+      "codex_modifications": "Cancel pending animation frames on pause to prevent duplicate loops after rapid toggles; scene/renderAt output unchanged."
     },
     "K8": {
       "name": "绘本",
@@ -471,7 +547,9 @@
       "gif": "previews/K8.gif",
       "poster": "posters/K8.png",
       "style_basis": "儿童绘本：暖米色纸底 + 预生成纸颗粒与四角压暗、两遍水彩晕染的天空；造型全是软边形状（红雨衣小孩、圆身小熊、钟形雨衣、圆兜帽），没有硬描边，只用比填色略深的同色系勾边；层叠的三层圆丘与摇摆草叶，太阳从山后升起；风筝用菱形 + 抖动尾巴，动作是慢速的走上坡与随风摆。",
-      "limitations": "纸纹是随机颗粒而非真实纸张纤维；水彩边缘用半透明叠色模拟，没有真正的水痕；人物只有正面偏侧的角度，走路靠上下轻浮而不是迈腿。"
+      "limitations": "纸纹是随机颗粒而非真实纸张纤维；水彩边缘用半透明叠色模拟，没有真正的水痕；人物只有正面偏侧的角度，走路靠上下轻浮而不是迈腿。",
+      "delivered_html_sha256": "78e81952e086e6b4d1d08adf0a577c7c841b9b8d26672c4fac582fcbc159d19e",
+      "codex_modifications": "Cancel pending animation frames on pause to prevent duplicate loops after rapid toggles; scene/renderAt output unchanged."
     },
     "K9": {
       "name": "涂鸦",
@@ -483,7 +561,9 @@
       "gif": "previews/K9.gif",
       "poster": "posters/K9.png",
       "style_basis": "涂鸦草稿：淡横线本子上，先画蓝灰虚线辅助线（定位圆、中心线、肩线、十字），再用深灰墨线描一遍歪歪扭扭的轮廓，辅助线一直不擦；线条每帧都有 1px 级抖动（手绘 line boil）；红色圆珠笔圈住画大的头并补一条手写批注，黄色马克笔划出结论，还有一条画歪的手臂以虚线保留。",
-      "limitations": "人物比例与轮廓是刻意画歪的，换风格看会显得粗糙；批注字体用系统字体加旋转模拟手写，不是真实手写笔迹；没有橡皮擦除的过程。"
+      "limitations": "人物比例与轮廓是刻意画歪的，换风格看会显得粗糙；批注字体用系统字体加旋转模拟手写，不是真实手写笔迹；没有橡皮擦除的过程。",
+      "delivered_html_sha256": "6bf3edab2dbfe3b9542784acbcb4915506525639e94d350b7ac515aac484cad7",
+      "codex_modifications": "Cancel pending animation frames on pause to prevent duplicate loops after rapid toggles; scene/renderAt output unchanged."
     },
     "K10": {
       "name": "粉笔黑板",
@@ -495,7 +575,9 @@
       "gif": "previews/K10.gif",
       "poster": "posters/K10.png",
       "style_basis": "粉笔黑板：墨绿板面 + 木质外框、板面竖向色差与淡擦痕；粉笔线用「主笔画 + 更宽的低透明度粉雾 + 每帧轻微抖动」模拟颗粒感，白、黄、粉、青、橙五种粉笔色；绿板持续落粉笔灰；内容按教学板书节奏画：先写「为什么？」并圈问号，再画小孩（头→身体→手脚），再画灯泡与放射光线，虚线箭头连过去，最后补答案与黄色下划线。",
-      "limitations": "粉笔颗粒是程序化描边与抖动，不是真实粉笔压感；文字用系统字体的裁切揭示，不是逐笔手写；板书布局固定，没有擦除重写过程。"
+      "limitations": "粉笔颗粒是程序化描边与抖动，不是真实粉笔压感；文字用系统字体的裁切揭示，不是逐笔手写；板书布局固定，没有擦除重写过程。",
+      "delivered_html_sha256": "c290a922f7c78e789b6439525482aa55470de7a220de81c78821ff913acc118b",
+      "codex_modifications": "Cancel pending animation frames on pause to prevent duplicate loops after rapid toggles; scene/renderAt output unchanged."
     },
     "K11": {
       "name": "手账笔记",
@@ -507,7 +589,9 @@
       "gif": "previews/K11.gif",
       "poster": "posters/K11.png",
       "style_basis": "手账笔记：淡蓝方格纸 + 左侧粉色页边线、四角压暗；两条锯齿边半透明和纸胶带（薄荷、粉色带白斜纹）；右侧黄色便利贴有折角、横线、投影，贴着一张手绘小涂鸦（豆豆眼、腮红、呆毛）；待办清单是方框 + 手写体，勾选逐条完成并划一道，再用黄色荧光笔划过；还有蓝色回形针与手写备注。",
-      "limitations": "字迹用系统黑体，不是真实手写字体；胶带、便利贴都是程序化图形，没有真实纸纤维；勾选动作是描边揭示，不是笔尖摩擦。"
+      "limitations": "字迹用系统黑体，不是真实手写字体；胶带、便利贴都是程序化图形，没有真实纸纤维；勾选动作是描边揭示，不是笔尖摩擦。",
+      "delivered_html_sha256": "1ca8389064569633ef07a0349066c5c5c92e7e14d57b12c075ecb923c21d5a34",
+      "codex_modifications": "Cancel pending animation frames on pause to prevent duplicate loops after rapid toggles; scene/renderAt output unchanged."
     },
     "K12": {
       "name": "报纸四格",
@@ -519,7 +603,9 @@
       "gif": "previews/K12.gif",
       "poster": "posters/K12.png",
       "style_basis": "报纸四格：泛黄新闻纸底 + 预生成颗粒与四角压暗，报头「小日报」加双细线、期号与栏目；2×2 四格，每格细黑边框、格内是均匀细线黑白线稿（圆头、点眼、大鼻子、细四肢的小人），格子左上角有编号说明；整页有 6 秒周期的轻微摇晃，像手里拿着的报纸；第四个格子里花按 8 瓣程序化张开，最后立起「急不得」的小牌子。",
-      "limitations": "线条是 1.8px 均匀描边，没有报纸印刷的网点与油墨溢出；四格内容为程序化图形，人物只有站立姿势与手臂变化；纸张颗粒是随机点而非真实新闻纸纹理。"
+      "limitations": "线条是 1.8px 均匀描边，没有报纸印刷的网点与油墨溢出；四格内容为程序化图形，人物只有站立姿势与手臂变化；纸张颗粒是随机点而非真实新闻纸纹理。",
+      "delivered_html_sha256": "70c14bf6b4d2d83e7f7c1617cc01b9430aa6a6064f24ed5b77ebaa6a5b764dec",
+      "codex_modifications": "Cancel pending animation frames on pause to prevent duplicate loops after rapid toggles; scene/renderAt output unchanged."
     },
     "K13": {
       "name": "美漫网点",
@@ -531,7 +617,9 @@
       "gif": "previews/K13.gif",
       "poster": "posters/K13.png",
       "style_basis": "美漫网点：粗黑轮廓（5–10px）+ 实心黑阴影 + 预生成网点 pattern（下巴、肩部、爆炸星下半部）；放射状速度线、黄色尖刺爆炸星、红蓝黄主色、黑边框；主角是戴多米诺眼罩、尖刺黑发、握拳张嘴的漫画式英雄，按「砸进画面 → 抬拳 → 爆炸字弹出」的强节奏演出，前 2.6 秒还有整体震动。",
-      "limitations": "网点是规则圆点 pattern，没有随明暗渐变的网点过渡；英雄只有半身与一个抬拳动作，没有连续打斗；爆炸字「砰！」用系统字体描边，不是手绘字母。"
+      "limitations": "网点是规则圆点 pattern，没有随明暗渐变的网点过渡；英雄只有半身与一个抬拳动作，没有连续打斗；爆炸字「砰！」用系统字体描边，不是手绘字母。",
+      "delivered_html_sha256": "9d8eed3a8478f6b4889a8c995332b7935e9f29626c1c4305fe3911a4663ba1a9",
+      "codex_modifications": "Cancel pending animation frames on pause to prevent duplicate loops after rapid toggles; scene/renderAt output unchanged."
     },
     "K14": {
       "name": "波普",
@@ -543,7 +631,9 @@
       "gif": "previews/K14.gif",
       "poster": "posters/K14.png",
       "style_basis": "粗黑描边（6–10px）、红黄蓝三原色、预生成红色网点图案铺满底并裁进裙摆与腮红；人物为大眼黄发女郎，对话框白底黑框带尾巴，背后蓝色爆炸星缓慢旋转，四角星闪光与左下黑色旁白条构成漫画分格。",
-      "limitations": "网点用重复图案而非沿形体透视，贴到曲面时会略显均匀；人物只有抬手指上方一个姿势，没有更多分镜。"
+      "limitations": "网点用重复图案而非沿形体透视，贴到曲面时会略显均匀；人物只有抬手指上方一个姿势，没有更多分镜。",
+      "delivered_html_sha256": "c88da3083ae0d0415806b5dfc85d3fef6a89432b688078ad4c877c300ab342c6",
+      "codex_modifications": "Cancel pending animation frames on pause to prevent duplicate loops after rapid toggles; scene/renderAt output unchanged."
     },
     "K15": {
       "name": "橡皮管 1930",
@@ -555,7 +645,9 @@
       "gif": "previews/K15.gif",
       "poster": "posters/K15.png",
       "style_basis": "1930 橡皮管动画：黑猫软管式手脚、白手套、大鞋、饼形眼（白眼球+黑扇形瞳孔）、白嘴套与胡须；旧奶油色胶片底，预生成颗粒、灰尘、竖向划痕与暗角，放映亮度闪烁，灯泡以暖黄弹出。",
-      "limitations": "软管肢体用折线贝塞尔近似，缺少真正的挤压拉伸；胶片划痕是循环平铺位置，没有随机跳帧。"
+      "limitations": "软管肢体用折线贝塞尔近似，缺少真正的挤压拉伸；胶片划痕是循环平铺位置，没有随机跳帧。",
+      "delivered_html_sha256": "47fb5a0bdd27b19999425005c58e7a4ba0214cae2626d8136a3ca44b93124ce3",
+      "codex_modifications": "Cancel pending animation frames on pause to prevent duplicate loops after rapid toggles; scene/renderAt output unchanged."
     },
     "K16": {
       "name": "中世纪现代",
@@ -567,7 +659,9 @@
       "gif": "previews/K16.gif",
       "poster": "posters/K16.png",
       "style_basis": "50 年代广告版式：奶油底、青绿大圆、芥末回旋镖与几何星芒，颜色少而大胆且全部平涂无渐变；人物为页童头短发、A 字珊瑚裙、细线四肢，标题压细横线，右上角编号 NO.03，右侧星标内嵌黑圆写「想法」，动作是阶梯式旋转出现。",
-      "limitations": "人物是正面平面剪影，星标旋转是 5 段离散旋转；版式只做单栏，没有真正的广告主副标题层级。"
+      "limitations": "人物是正面平面剪影，星标旋转是 5 段离散旋转；版式只做单栏，没有真正的广告主副标题层级。",
+      "delivered_html_sha256": "8f30927dc3fb9eedab8d6256d2badbd586af3872c7507ded173d4a272562a80b",
+      "codex_modifications": "Cancel pending animation frames on pause to prevent duplicate loops after rapid toggles; scene/renderAt output unchanged."
     },
     "K17": {
       "name": "几何",
@@ -579,7 +673,9 @@
       "gif": "previews/K17.gif",
       "poster": "posters/K17.png",
       "style_basis": "全部角色只用圆、方、三角与半圆拼装：黄色圆头、红色三角身体、蓝色长方手臂、黑长方腿、红色/蓝色半圆脚；背景有 40px 方格、虚线中轴、四角定位十字与 R40 尺寸线，部件从画外带过冲飞入，最后冒出圆形「想法」气泡。",
-      "limitations": "部件飞入只有平移和少量旋转，没有真正的爆炸视图拆解；尺寸标注只在开场短暂停留。"
+      "limitations": "部件飞入只有平移和少量旋转，没有真正的爆炸视图拆解；尺寸标注只在开场短暂停留。",
+      "delivered_html_sha256": "e2c84b43596d2d5ca5948943fb427d2dbf3e936df648abe8e10d78fb6ab0de9c",
+      "codex_modifications": "Cancel pending animation frames on pause to prevent duplicate loops after rapid toggles; scene/renderAt output unchanged."
     },
     "K18": {
       "name": "水彩",
@@ -591,7 +687,9 @@
       "gif": "previews/K18.gif",
       "poster": "posters/K18.png",
       "style_basis": "预生成冷压纸纹（纤维、凹坑、颗粒）铺底；天空、草坡、暖光都用 blur(30px) 的淡彩晕染块；角色以多层半透明色块叠画、边缘 blur 后不描线，靠一条波浪形湿边从下往上显影；配色淡（雾蓝、草绿、赭黄、砖红气球），标题带一层错位淡影。",
-      "limitations": "显影是遮罩实现，颜料并没有真正向外扩散；人物各色块之间仍有较清楚的边界，湿画法只到近似程度。"
+      "limitations": "显影是遮罩实现，颜料并没有真正向外扩散；人物各色块之间仍有较清楚的边界，湿画法只到近似程度。",
+      "delivered_html_sha256": "abfa9ba00c5e07015f5e1db56ab6d941a7521f2f98e4b1a9ef85b74fa740f026",
+      "codex_modifications": "Cancel pending animation frames on pause to prevent duplicate loops after rapid toggles; scene/renderAt output unchanged."
     },
     "K19": {
       "name": "厚涂",
@@ -603,7 +701,9 @@
       "gif": "previews/K19.gif",
       "poster": "posters/K19.png",
       "style_basis": "深青底上 300 条短粗斜笔触预画成背景；狐狸由 470 余条带暗边与笔尖高光的短笔触按头、身、尾、耳、吻、胸分区逐条出现，先铺平面底色稿再堆颜色；暖光从右上打来，亮点是厚涂的「想法」光核，眼睛与鼻子最后点睛。",
-      "limitations": "笔触是程序生成的短曲线，缺少真实厚涂的堆叠高度和刮刀痕；狐狸仍能看出底稿平涂的轮廓。"
+      "limitations": "笔触是程序生成的短曲线，缺少真实厚涂的堆叠高度和刮刀痕；狐狸仍能看出底稿平涂的轮廓。",
+      "delivered_html_sha256": "42fda0fd0c7b343684832605b02374fdc313ae2343152d7224ef983579512b2b",
+      "codex_modifications": "Cancel pending animation frames on pause to prevent duplicate loops after rapid toggles; scene/renderAt output unchanged."
     },
     "K20": {
       "name": "剪纸",
@@ -615,7 +715,9 @@
       "gif": "previews/K20.gif",
       "poster": "posters/K20.png",
       "style_basis": "所有元素都是分层纸片：远山、中山、草坡、松树、云、太阳、小孩、风筝分别带 5px 投影与 1.8px 纸厚边；前景草坡有锯齿草叶与剪纸缺口；小孩由红纸外套、米色圆头、锯齿黑发、纸围巾等独立纸片拼成；标题写在带投影的纸片上。",
-      "limitations": "纸片边缘的抖动幅度较小，近看仍像矢量形；纸纤维是统一覆盖的纹理，没有逐张纸的差异。"
+      "limitations": "纸片边缘的抖动幅度较小，近看仍像矢量形；纸纤维是统一覆盖的纹理，没有逐张纸的差异。",
+      "delivered_html_sha256": "6ded6aaa561ba0ae003ce420867494b09c8c1c6fb5d2c9b39a159e42e16a1d8c",
+      "codex_modifications": "Cancel pending animation frames on pause to prevent duplicate loops after rapid toggles; scene/renderAt output unchanged."
     },
     "K21": {
       "name": "手工纸艺",
@@ -627,7 +729,9 @@
       "gif": "previews/K21.gif",
       "poster": "posters/K21.png",
       "style_basis": "瓦楞纸板机器人现场组装：身体与头是带暗边、亮边和瓦楞切口的纸盒，眼睛是红蓝两粒带四孔与缝线十字的纽扣，嘴巴是麻线虚线加缝针，手臂是绿色毛根，头顶毛根天线挑一颗折纸星星；桌面为带网格的牛皮纸，配线轴、散扣、铅笔、剪刀，胶带压住纸角。",
-      "limitations": "瓦楞只画在盒子边缘；组装是部件位移加回弹，没有真实纸张的弯折与折痕。"
+      "limitations": "瓦楞只画在盒子边缘；组装是部件位移加回弹，没有真实纸张的弯折与折痕。",
+      "delivered_html_sha256": "1a56a1273e39a4143c41d22f0706edc39d3eaddd5a2f9f038b1e60aa0335cbfb",
+      "codex_modifications": "Cancel pending animation frames on pause to prevent duplicate loops after rapid toggles; scene/renderAt output unchanged."
     },
     "K22": {
       "name": "折纸",
@@ -639,7 +743,9 @@
       "gif": "previews/K22.gif",
       "poster": "posters/K22.png",
       "style_basis": "折纸的二维投影：方纸先画出对角线与中线折痕，再沿对角线把上半三角按 cos 压缩翻折，完成第一次对折；随后沿中线把右半折到左半，得到更小的三角；纸鹤由带明暗面的多面片（身体菱形、双翼、长颈、头喙、尾）组成，折痕保留为细线，翼部绕支点扇动，碎纸屑上飘。",
-      "limitations": "第二次折叠后直接以面片方式「变」出纸鹤，没有继续折出鹤的每个步骤；纸鹤面片是设计图，不是严格的折纸展开图。"
+      "limitations": "第二次折叠后直接以面片方式「变」出纸鹤，没有继续折出鹤的每个步骤；纸鹤面片是设计图，不是严格的折纸展开图。",
+      "delivered_html_sha256": "614c6adf505d40089202abdc3754d881ac52c6a5dfc6b38eb4ef03d4bcc91dbf",
+      "codex_modifications": "Cancel pending animation frames on pause to prevent duplicate loops after rapid toggles; scene/renderAt output unchanged."
     },
     "K23": {
       "name": "拼贴",
@@ -651,7 +757,9 @@
       "gif": "previews/K23.gif",
       "poster": "posters/K23.png",
       "style_basis": "撕边纸片拼贴：每块纸都有白色纤维毛边与投影，照片部分用预生成的网点渐变（暖肤色/冷蓝布料）模拟杂志照片；旧报纸底纹、半透明胶带、红色缝线；标题四个字各贴在一块彩色剪报上，正文是剪下来的字块。",
-      "limitations": "撕边是抖动多边形，照片是程序化网点纹理而非真实照片；纸片只做平移旋转落位，没有翘边和褶皱。"
+      "limitations": "撕边是抖动多边形，照片是程序化网点纹理而非真实照片；纸片只做平移旋转落位，没有翘边和褶皱。",
+      "delivered_html_sha256": "c1e06164179b708101aa13849f4209f2bf4ba76b7673bc2f2c790933ed5b3596",
+      "codex_modifications": "Cancel pending animation frames on pause to prevent duplicate loops after rapid toggles; scene/renderAt output unchanged."
     },
     "K24": {
       "name": "粘土",
@@ -663,7 +771,9 @@
       "gif": "previews/K24.gif",
       "poster": "posters/K24.png",
       "style_basis": "粘土定格：每个形体用偏移的径向渐变做出圆润体积，配底部接地暗边与顶部柔光；头部、身体有同心弧指印和多道刮痕，落位时做挤压回弹；背景是陶土色工作台，配鼠尾草绿大圆、木刮刀、散落泥球，最后捏出一颗粘土小心。",
-      "limitations": "粘土颗粒是整幅叠加的噪点，指印是平面弧线而不是真实凹陷；角色结构简单，只有落位和表情变化。"
+      "limitations": "粘土颗粒是整幅叠加的噪点，指印是平面弧线而不是真实凹陷；角色结构简单，只有落位和表情变化。",
+      "delivered_html_sha256": "d024cc6eca847a6ed2366181ebb81aea4d9a0fb9aaa9102cd7113ac5cce2e151",
+      "codex_modifications": "Cancel pending animation frames on pause to prevent duplicate loops after rapid toggles; scene/renderAt output unchanged."
     },
     "K25": {
       "name": "皮克斯式 3D",
@@ -675,7 +785,9 @@
       "gif": "previews/K25.gif",
       "poster": "posters/K25.png",
       "style_basis": "皮克斯式 3D 的二维模拟：大眼球分层画眼白、虹膜、瞳孔与两处高光，皮肤用偏左上的径向渐变和右侧冷调轮廓光，底部加环境暗部；角色是夸张大头小身的橙色圆团，有天线和接地软阴影；背景为深色摄影棚、焦外光斑和发光小球，角色会追光、睁大眼、跳起伸手。",
-      "limitations": "所有体积都是二维渐变与色带，没有真实法线和反射；角色肢体只有简单旋转，没有完整绑定。"
+      "limitations": "所有体积都是二维渐变与色带，没有真实法线和反射；角色肢体只有简单旋转，没有完整绑定。",
+      "delivered_html_sha256": "6e7e4793e508261ef38776ccca03f857cf9b2040d8c32a07d7cbfbe65185d929",
+      "codex_modifications": "Cancel pending animation frames on pause to prevent duplicate loops after rapid toggles; scene/renderAt output unchanged."
     },
     "K26": {
       "name": "卡通渲染 3D",
@@ -687,7 +799,9 @@
       "gif": "previews/K26.gif",
       "poster": "posters/K26.png",
       "style_basis": "卡通渲染 3D：每块形体先铺平涂底色，再压上弯曲的硬边明暗交界与底部第二层暗面，阴影里加细斜排线，全部包 4px 黑描边；角色为圆头盔、深色面罩、青色圆眼、珊瑚色方身、青绿手臂、黄色耳钮的机器人，另有平涂青绿圆、珊瑚斜纹地面与一个三面硬阴影的悬浮方块；阴影偏移随光照左右扫动。",
-      "limitations": "硬边阴影是二维曲线裁切，不是真实法线光照；悬浮方块的旋转只是面偏移，不是真正的三维转台。"
+      "limitations": "硬边阴影是二维曲线裁切，不是真实法线光照；悬浮方块的旋转只是面偏移，不是真正的三维转台。",
+      "delivered_html_sha256": "2aadd9e7fc0e27dfbc362b9f89ccc4adae1961df2973005ece5d2fdc7a87e7c0",
+      "codex_modifications": "Cancel pending animation frames on pause to prevent duplicate loops after rapid toggles; scene/renderAt output unchanged."
     },
     "K27": {
       "name": "低多边形",
@@ -699,7 +813,9 @@
       "gif": "previews/K27.gif",
       "poster": "posters/K27.png",
       "style_basis": "低多边形：整幅画面由平面三角面拼成，天空、远山、地面、太阳都是少面片，每个面用深浅两档平涂表现受光；小人头部、躯干、四肢也拆成三角面；核心道具是一颗八面体棱晶，由散片飞入拼合并缓慢旋转；配色为靛蓝夜色配橙红地平线，冷色地面对比暖色人物；标题用无衬线粗体压在左上。",
-      "limitations": "三角剖分是手工网格而非真实 3D 光照，转动晶体只是横向压缩与面片错位，没有真正的透视旋转；人物只有固定姿势和一只手臂抬起，没有走路循环。"
+      "limitations": "三角剖分是手工网格而非真实 3D 光照，转动晶体只是横向压缩与面片错位，没有真正的透视旋转；人物只有固定姿势和一只手臂抬起，没有走路循环。",
+      "delivered_html_sha256": "04fd9e475e63d7f37cd925796bde14d017d163aff5f4b14d75d2c22de593bada",
+      "codex_modifications": "Cancel pending animation frames on pause to prevent duplicate loops after rapid toggles; scene/renderAt output unchanged."
     },
     "K28": {
       "name": "像素",
@@ -711,7 +827,9 @@
       "gif": "previews/K28.gif",
       "poster": "posters/K28.png",
       "style_basis": "像素画：原生 160×90 网格、4 倍最近邻放大，所有形状只落在整数像素；限定约 12 色（深靛夜、月光黄、草绿、泥棕、角色蓝）；方块小人 1px 描边、两点眼睛、斜举手臂用阶梯像素；问号砖、像素灯泡、四角星屑都是 8-bit 游戏道具；叠加 27px 硬阴影中文标题与 LEVEL 1-1 HUD。",
-      "limitations": "像素素材是矩形拼的，不是手绘逐像素图，头发与手臂造型只能取 2–3 个姿态；扫描线/CRT 效果没有加，画面偏干净。"
+      "limitations": "像素素材是矩形拼的，不是手绘逐像素图，头发与手臂造型只能取 2–3 个姿态；扫描线/CRT 效果没有加，画面偏干净。",
+      "delivered_html_sha256": "11b62614c358b28dbdd50ce2a2868e4b20cce0641fe14fb2074b38960b910baf",
+      "codex_modifications": "Cancel pending animation frames on pause to prevent duplicate loops after rapid toggles; scene/renderAt output unchanged."
     },
     "K29": {
       "name": "蓝图",
@@ -723,7 +841,9 @@
       "gif": "previews/K29.gif",
       "poster": "posters/K29.png",
       "style_basis": "蓝图：深蓝图纸底配 20/100px 双层网格与暗角、白色细线框；一盏「想法灯」用等距投影（0.866/0.5）画成线框装配图，底板、立柱、横臂、灯头逐笔描出；带引出线的编号①②③、竖向 2.3 尺寸线与箭头、底板 3.0 标注、1:20 标题栏与「已校核」黄色圆章；另加一个 1.75 m 使用者立面比例人形。",
-      "limitations": "等距投影是手写公式，箱体的遮挡关系没有隐藏线处理，所有棱线都可见；「使用者」是立面比例人形，不是等距人形；灯泡发光只是低透明度径向渐变，不是真的光晕渲染。"
+      "limitations": "等距投影是手写公式，箱体的遮挡关系没有隐藏线处理，所有棱线都可见；「使用者」是立面比例人形，不是等距人形；灯泡发光只是低透明度径向渐变，不是真的光晕渲染。",
+      "delivered_html_sha256": "98444b5b0bf63e0a10323fe99ecd1d9bacb9e30eb2d53805d39cf51108b1ebf8",
+      "codex_modifications": "Cancel pending animation frames on pause to prevent duplicate loops after rapid toggles; scene/renderAt output unchanged."
     },
     "K30": {
       "name": "说明书线稿",
@@ -735,7 +855,9 @@
       "gif": "previews/K30.gif",
       "poster": "posters/K30.png",
       "style_basis": "说明书线稿：纯白底、黑色 2.2px 等粗线、无阴影无渐变、四格等宽圆角面板；步骤号实心圆；素材只保留必要轮廓——扁箱、板、螺丝（圆圈加十字）、螺丝刀、小灯，全是简笔图形；无脸小人（点眼、实心头发、梯形躯干）在每一格重复做动作；箭头、×4、勾选沿用宜家式说明符号。",
-      "limitations": "面板内容是整体裁剪上滑揭示，不是逐笔手绘线条；四格的小人造型一致，只有手臂姿势不同，缺少真正的工序分解（如拆包装细节）；第三格拧螺丝的动作在 142px 面板里偏小，需要近看。"
+      "limitations": "面板内容是整体裁剪上滑揭示，不是逐笔手绘线条；四格的小人造型一致，只有手臂姿势不同，缺少真正的工序分解（如拆包装细节）；第三格拧螺丝的动作在 142px 面板里偏小，需要近看。",
+      "delivered_html_sha256": "930a1ce357f4f4d6527dc7bd32317889045b121c6643d02da2c83a0048f9f9f9",
+      "codex_modifications": "Cancel pending animation frames on pause to prevent duplicate loops after rapid toggles; scene/renderAt output unchanged."
     },
     "K31": {
       "name": "平铺整理",
@@ -747,7 +869,9 @@
       "gif": "previews/K31.gif",
       "poster": "posters/K31.png",
       "style_basis": "平铺整理（knolling）：严格 4×3 网格、物件沿对齐线均匀留白，全部俯拍 90°；木纹桌面 + 极淡编排线；十二件物品（本子、尺、耳机、杯子、剪刀、胶带、钥匙、便签、回形针、橡皮、绿植、笔）各有独立配色与柔影；两只手从画外伸入（袖子是牛仔布、手指有指甲与掌纹），把一支笔放进唯一空位并压住本子；完成时出现细描边高亮圈与「都归位了」纸条。",
-      "limitations": "物件是矢量简笔，不是照片级材质；回形针与剪刀在 36px 尺度下辨识度一般；桌面没有真实纸纹/木纹贴图，只有程序化细线与噪点。"
+      "limitations": "物件是矢量简笔，不是照片级材质；回形针与剪刀在 36px 尺度下辨识度一般；桌面没有真实纸纹/木纹贴图，只有程序化细线与噪点。",
+      "delivered_html_sha256": "cc6beac379fec24b872e981d7ffe3392fb95752633729df7b9492779eb0e3a33",
+      "codex_modifications": "Cancel pending animation frames on pause to prevent duplicate loops after rapid toggles; scene/renderAt output unchanged."
     },
     "K32": {
       "name": "积木",
@@ -759,7 +883,9 @@
       "gif": "previews/K32.gif",
       "poster": "posters/K32.png",
       "style_basis": "积木：斜二测积木（正面渐变 + 顶面高光 + 侧面暗部）带圆柱凸点与投影，限量红黄蓝绿白配色；底板是一整块带两排凸点的长板；小黄人由圆角头、印刷红色躯干、C 形手、短腿组成，最后一块黄色积木落下、白色砖上冒出灯泡；整体无描边靠明暗区分体块。",
-      "limitations": "凸点用椭圆近似，俯角固定；小人的手是简化的 C 形，不是真正的夹口；积木落下的回弹只有轻微挤压，没有物理碰撞。"
+      "limitations": "凸点用椭圆近似，俯角固定；小人的手是简化的 C 形，不是真正的夹口；积木落下的回弹只有轻微挤压，没有物理碰撞。",
+      "delivered_html_sha256": "15b520613ea96db995d6aadd674b8c8ef259c985bbe2202002bbb142956a7508",
+      "codex_modifications": "Cancel pending animation frames on pause to prevent duplicate loops after rapid toggles; scene/renderAt output unchanged."
     },
     "K33": {
       "name": "地铁图",
@@ -771,7 +897,9 @@
       "gif": "previews/K33.gif",
       "poster": "posters/K33.png",
       "style_basis": "地铁线路图：米白底 + 极淡网格，8–9px 圆头折线，严格直角与 45° 折弯；三条线（红主线、蓝 2 号线、绿 3 号线）各配号线牌；普通站为白心彩环小圆，换乘站为白心深环大圆；站名 13px 带纸色描边；左下角淡绿公园块与图例；小人做成地铁象形乘客（圆头、红色身体、蓝挎包）沿线移动。",
-      "limitations": "线路是手摆的折线，没有真实站点间距比例；乘客沿弧长匀速插值，换乘处没有停顿；图例与公园只是氛围元素，没有和信息图层级严格绑定。"
+      "limitations": "线路是手摆的折线，没有真实站点间距比例；乘客沿弧长匀速插值，换乘处没有停顿；图例与公园只是氛围元素，没有和信息图层级严格绑定。",
+      "delivered_html_sha256": "622bf44ee76583e92b50e5ad953f93a1019bbef3161120741736e28f3af1e440",
+      "codex_modifications": "Cancel pending animation frames on pause to prevent duplicate loops after rapid toggles; scene/renderAt output unchanged."
     },
     "K34": {
       "name": "赛博霓虹",
@@ -783,7 +911,9 @@
       "gif": "previews/K34.gif",
       "poster": "posters/K34.png",
       "style_basis": "赛博霓虹：深紫黑渐变夜底 + 带窗灯的远景楼群 + 透视网格地面 + 双层雨丝；霓虹用 shadowBlur 叠涂，右侧竖排「霓虹」招牌带闪烁，旁边有琥珀色 24H 小灯箱；角色是戴渐变面罩的半身人形，左侧青色、右侧洋红轮廓光，胸口有霓虹接缝；掌心全息球由散点拼成，带经纬扫描线、旋转光环与「念头」二字。",
-      "limitations": "人物是剪影式半身，没有复杂机甲结构；光晕靠 shadowBlur 叠加，不是真实体积光；网格地面是纯二维透视，没有反射。"
+      "limitations": "人物是剪影式半身，没有复杂机甲结构；光晕靠 shadowBlur 叠加，不是真实体积光；网格地面是纯二维透视，没有反射。",
+      "delivered_html_sha256": "ec523f409b784a320c46fcc92784e614edea538a4d06f2a987294d5492f89c56",
+      "codex_modifications": "Cancel pending animation frames on pause to prevent duplicate loops after rapid toggles; scene/renderAt output unchanged."
     },
     "K35": {
       "name": "旧学院风",
@@ -795,7 +925,9 @@
       "gif": "previews/K35.gif",
       "poster": "posters/K35.png",
       "style_basis": "旧学院风：泛黄米色纸底（程序化纤维、霉斑、四角压暗）、双层细线边框与角饰；左侧椭圆铜版肖像用单向排线画暗部，戴金丝圆眼镜、高领、领巾；右侧衬线标题「旧学院」+ 字距拉丁小字 MEMENTO，正文遮罩写出；右侧蜡烛用暖光晕染纸面，顶部一枚红蜡印章。",
-      "limitations": "排线是程序化直线，不是手刻铜版的疏密变化；肖像的五官简化，光影只分亮暗两面；纸面没有真实扫描纹理。"
+      "limitations": "排线是程序化直线，不是手刻铜版的疏密变化；肖像的五官简化，光影只分亮暗两面；纸面没有真实扫描纹理。",
+      "delivered_html_sha256": "b1e463b8b871599a4b745d0655bc8b2927ca733ee810519d3735fa51f1265696",
+      "codex_modifications": "Cancel pending animation frames on pause to prevent duplicate loops after rapid toggles; scene/renderAt output unchanged."
     },
     "K36": {
       "name": "丝网印刷",
@@ -807,7 +939,9 @@
       "gif": "previews/K36.gif",
       "poster": "posters/K36.png",
       "style_basis": "丝网印刷：米色纸底（程序化纤维与不匀斑）、三套专色（番茄红 / 钴蓝 / 芥末黄）+ 黑版、multiply 叠印出深色；放射状底纹、红圆上的蓝色网点（点径随半径变化）；人物是平涂蓝色剪影加挖版奶白脸、红腮点；标题「印出来」用红蓝黑三版错位套印；四角十字规矩线、底部色标与「3 色 / 300g」。",
-      "limitations": "网点是程序化圆点，不是真实丝网目数；错位用整体位移模拟，没有做局部拉伸；没有纸张吸墨的毛边与压痕。"
+      "limitations": "网点是程序化圆点，不是真实丝网目数；错位用整体位移模拟，没有做局部拉伸；没有纸张吸墨的毛边与压痕。",
+      "delivered_html_sha256": "4c748b868e797aff265ce4647539e73602b6efe2391293b36e73a326705c1423",
+      "codex_modifications": "Cancel pending animation frames on pause to prevent duplicate loops after rapid toggles; scene/renderAt output unchanged."
     },
     "K37": {
       "name": "哥特",
@@ -819,7 +953,9 @@
       "gif": "previews/K37.gif",
       "poster": "posters/K37.png",
       "style_basis": "哥特：黑紫底 + 砖墙质感（程序化砌块）、尖拱彩窗（竖条红紫玻璃 + 玫瑰窗 + 窗棂）、窗口投出的暗红辉光；人物细长（身高近 260px）、尖下巴、长黑发、高领尖角、暗红眼与细长手指，提一盏金色提灯；左右有荆棘藤、底部灰雾、蝙蝠剪影与两支摇晃的蜡烛；标题竖排「哥特」配细红竖线与 GOTHIC 字距。",
-      "limitations": "人物是剪影化处理，衣褶只用几根淡线；彩窗的玻璃分格是矩形色条，不是真正彩色玻璃；蝙蝠与荆棘是装饰性剪影。"
+      "limitations": "人物是剪影化处理，衣褶只用几根淡线；彩窗的玻璃分格是矩形色条，不是真正彩色玻璃；蝙蝠与荆棘是装饰性剪影。",
+      "delivered_html_sha256": "3fd41bf9900c92caad12d71f094bbd99a72222fb08a833cd4f7f4ae35f328c4b",
+      "codex_modifications": "Cancel pending animation frames on pause to prevent duplicate loops after rapid toggles; scene/renderAt output unchanged."
     },
     "K38": {
       "name": "情景喜剧",
@@ -831,7 +967,9 @@
       "gif": "previews/K38.gif",
       "poster": "posters/K38.png",
       "style_basis": "情景喜剧（辛普森式平涂）：薰衣草墙纸 + 墙裙 + 木地板 + 青绿地毯的客厅布景，橙色三人沙发、电视柜与落地灯；人物黄皮肤、白眼球黑瞳、突出 muzzle、粗黑描边（2.2–3px）、四指手；三位角色分别是两根呆毛的爸爸、蓝发发髻的妈妈、刺头小孩，小孩站起来比手势；底部黑底字幕「我有个主意！」与「（观众笑声）」、右上角集数标。",
-      "limitations": "人物比例与五官是自写简化版，不是原作画法；动作幅度按要求很小，主要靠电视光闪烁、眨眼与镜头呼吸制造变化；没有做笑声或罐头音轨。"
+      "limitations": "人物比例与五官是自写简化版，不是原作画法；动作幅度按要求很小，主要靠电视光闪烁、眨眼与镜头呼吸制造变化；没有做笑声或罐头音轨。",
+      "delivered_html_sha256": "8eb48f9a6ac1ce9cb22b6cedfba8abd0428fbcb171e3ccaeec367d297265e150",
+      "codex_modifications": "Cancel pending animation frames on pause to prevent duplicate loops after rapid toggles; scene/renderAt output unchanged."
     },
     "Z1": {
       "name": "水墨",
@@ -843,7 +981,9 @@
       "gif": "previews/Z1.gif",
       "poster": "posters/Z1.png",
       "style_basis": "宣纸纤维底、远山三层淡墨加雾、竹竿分节生长、竹叶随风展开、墨点滴落晕开、飞鸟两三笔、右侧竖排『留白』与朱印；大面积负空间，符合『水墨晕染，留白，竹林』。",
-      "limitations": "墨晕用 canvas blur 离屏预渲染模拟，不是真实流体扩散；竹叶生长与竹竿生长是近似同步，不是严格逐节绑定。"
+      "limitations": "墨晕用 canvas blur 离屏预渲染模拟，不是真实流体扩散；竹叶生长与竹竿生长是近似同步，不是严格逐节绑定。",
+      "delivered_html_sha256": "23bbd478115014f890544c44296c80749891a6f4598dee8d95336b18578b3ccd",
+      "codex_modifications": "Cancel pending animation frames on pause to prevent duplicate loops after rapid toggles; scene/renderAt output unchanged."
     },
     "Z2": {
       "name": "工笔",
@@ -855,7 +995,9 @@
       "gif": "previews/Z2.gif",
       "poster": "posters/Z2.png",
       "style_basis": "绢本设色工笔牡丹：经纬绢丝底 + 淡茶渍，白描起稿；花瓣按护瓣/外瓣/中瓣/内瓣五层逐瓣勾细线（0.8px），胭脂自瓣根分染、瓣尖提白粉，瓣内画丝理；三出复叶带叶脉，枝干分节；右侧竖题「工笔」「牡丹」并落朱印。对应原文「细腻笔触，色彩鲜艳，牡丹 / gongbi, fine brushwork」。",
-      "limitations": "花瓣是参数化贝塞尔轮廓，不是真实白描笔顺；分染用径向渐变近似一次罩染，未做多遍积染；蝴蝶是程序化简笔造型，翅脉未刻画。"
+      "limitations": "花瓣是参数化贝塞尔轮廓，不是真实白描笔顺；分染用径向渐变近似一次罩染，未做多遍积染；蝴蝶是程序化简笔造型，翅脉未刻画。",
+      "delivered_html_sha256": "769673fd2f716a1330abc95e868b9dd112152b6ec1962cca22cf347ad0ccfa72",
+      "codex_modifications": "Cancel pending animation frames on pause to prevent duplicate loops after rapid toggles; scene/renderAt output unchanged."
     },
     "Z3": {
       "name": "写意",
@@ -867,7 +1009,9 @@
       "gif": "previews/Z3.gif",
       "poster": "posters/Z3.png",
       "style_basis": "大写意荷花：宣纸纤维底、左下泼墨点；荷叶以一团湿墨圆叶加断续湿边、内积墨块、纸色飞白斜扫，再以九根放射叶脉收住；四周散笔「扫」出去；花瓣只用五至七笔洋红，瓣根浓、瓣尖淡，瓣缘只勾半边且中途断笔，落实「意到笔不到」；荷茎焦墨带飞白与小刺；右侧题「写意」并落朱印。",
-      "limitations": "水墨扩散用径向渐变 + 断续描边模拟，不是真实流体渗化；荷叶不是逐笔叠压的真实写意笔序；飞白为分股随机断线，非笔毫真实分叉。"
+      "limitations": "水墨扩散用径向渐变 + 断续描边模拟，不是真实流体渗化；荷叶不是逐笔叠压的真实写意笔序；飞白为分股随机断线，非笔毫真实分叉。",
+      "delivered_html_sha256": "b8e70ed6d086f59b627ae84520fadebd772734d375bb7bdf5f9b9b17977ee545",
+      "codex_modifications": "Cancel pending animation frames on pause to prevent duplicate loops after rapid toggles; scene/renderAt output unchanged."
     },
     "Z4": {
       "name": "山水",
@@ -879,7 +1023,9 @@
       "gif": "previews/Z4.gif",
       "poster": "posters/Z4.png",
       "style_basis": "浅绛青绿山水：远近四层山脊各自成稿，脊线压浓墨、苔点、贴脊短皴（斧劈意）与几道石骨深缝；远山石青、中山石绿、近山赭石，山脚以云气化开；飞瀑自山口落入水潭、溅起白雾；崖头置起翘歇山古亭、两株扁层松；江心一叶白帆，天际三只飞鸟；右上题「山水」、小字「千岩万壑」并落朱印。",
-      "limitations": "皴法是用短线批量生成的近似笔触，不是真实毛笔的提按与飞白；云气与山体层次靠渐变和裁切渐隐模拟，个别时刻仍能看出分层的直边；瀑布为几何水口加下落流线，不是真实水纹；古亭与松是按小尺寸简化的符号化造型。"
+      "limitations": "皴法是用短线批量生成的近似笔触，不是真实毛笔的提按与飞白；云气与山体层次靠渐变和裁切渐隐模拟，个别时刻仍能看出分层的直边；瀑布为几何水口加下落流线，不是真实水纹；古亭与松是按小尺寸简化的符号化造型。",
+      "delivered_html_sha256": "7c86b41b1c02c171829bb4087a127ac0e192031c39647a3a171867a257c26460",
+      "codex_modifications": "Cancel pending animation frames on pause to prevent duplicate loops after rapid toggles; scene/renderAt output unchanged."
     },
     "Z6": {
       "name": "年画",
@@ -891,7 +1037,9 @@
       "gif": "previews/Z6.gif",
       "poster": "posters/Z6.png",
       "style_basis": "木版年画门笺：深红门墙与门框配金线、门钉；上方「五福临门」横批（26px 金字），左右春联「岁岁平安」「年年有余」自上下卷；宫灯带福字、金顶盖与流苏并左右摆动；门芯贴米黄年画纸，画童子抱鲤（双髻、红肚兜、腮红、金鳞鲤鱼摆尾）、莲花与铜钱；先套色后压墨线，模拟年画分版套印；金屑飘落、朱印「吉」。",
-      "limitations": "套色与墨线是同一张画布上分两遍绘制，不是真实分版对位，只有轻微错位提示；人物为程序化几何造型，缺少木版年画里的细密刻线；灯笼只是简化的宫灯，未做真实灯架结构。"
+      "limitations": "套色与墨线是同一张画布上分两遍绘制，不是真实分版对位，只有轻微错位提示；人物为程序化几何造型，缺少木版年画里的细密刻线；灯笼只是简化的宫灯，未做真实灯架结构。",
+      "delivered_html_sha256": "21bf380138f88477ec637091fc8d70a2f0538ad8fa82e2e4586ab182d2833e1e",
+      "codex_modifications": "Cancel pending animation frames on pause to prevent duplicate loops after rapid toggles; scene/renderAt output unchanged."
     },
     "Z7": {
       "name": "皮影",
@@ -903,7 +1051,9 @@
       "gif": "previews/Z7.gif",
       "poster": "posters/Z7.png",
       "style_basis": "皮影戏台：深色台面、木质台框与回纹、匾额「皮影」；羊皮屏幕自内向外透出暖黄灯光与暗角，灯尘在光里浮动；皮影武生为分层绘制的镂空皮革件——靠甲菱形花孔、云肩、石绿腰带与靴、关节铆钉、两根根粗梢细的雉尾翎子；头/肩/肘/胯/膝均有转轴，进场后抬手、跨步、甩翎、亮相；另加一层错位淡影与两根竹签操纵杆，背后打光。",
-      "limitations": "皮影用 Canvas 分层零件拼成，各关节是旋转插值，不是真实签子操纵的联动；镂空花孔为规则菱形，缺少传统皮影的细密刻纸纹样；影子是整体错位重绘，不是真实投影。"
+      "limitations": "皮影用 Canvas 分层零件拼成，各关节是旋转插值，不是真实签子操纵的联动；镂空花孔为规则菱形，缺少传统皮影的细密刻纸纹样；影子是整体错位重绘，不是真实投影。",
+      "delivered_html_sha256": "97cadc14c47f69f7fc046b46976647499ec5d92ac1d6819fc0521c68bb88c8a1",
+      "codex_modifications": "Cancel pending animation frames on pause to prevent duplicate loops after rapid toggles; scene/renderAt output unchanged."
     },
     "Z8": {
       "name": "敦煌",
@@ -915,7 +1065,9 @@
       "gif": "previews/Z8.gif",
       "poster": "posters/Z8.png",
       "style_basis": "敦煌壁画质感：土红壁面先铺满矿物颜料颗粒（石青/石绿/土黄/赭红的细点），再散布白灰地仗剥落与裂纹、烟熏暗角；上下两条联珠卷草忍冬边饰自左向右展开；中心散花飞天：头光为石青厚圈加联珠与金色细圈，天衣石青、裙石绿、肌肤土黄、飘带赭红，五条披帛带宽度渐变与波浪；四周如意云纹，花瓣飘落；右侧竖题「敦煌」「飞天」「矿物颜料」。",
-      "limitations": "飞天是简化几何造型，肢体比例与敦煌壁画原作差距较大，脸与手部细节少；飘带为参数化带子，波动规律统一，缺少壁画里长绸的转折与缠卷；剥落与裂纹是用随机多边形模拟，不是真实的壁画病害形态。"
+      "limitations": "飞天是简化几何造型，肢体比例与敦煌壁画原作差距较大，脸与手部细节少；飘带为参数化带子，波动规律统一，缺少壁画里长绸的转折与缠卷；剥落与裂纹是用随机多边形模拟，不是真实的壁画病害形态。",
+      "delivered_html_sha256": "0a9577b88328e4aaa3edd4d87dd66ec33fde57551f71756fd16b7b9c09e97048",
+      "codex_modifications": "Cancel pending animation frames on pause to prevent duplicate loops after rapid toggles; scene/renderAt output unchanged."
     },
     "Z9": {
       "name": "青花",
@@ -927,7 +1079,9 @@
       "gif": "previews/Z9.gif",
       "poster": "posters/Z9.png",
       "style_basis": "青花瓷：白瓷地（冰裂纹、釉光、器底投影），梅瓶器形以小口、丰肩、收腹、圈足勾出；钴蓝双弦纹在颈与足，肩部如意云头、腹部缠枝莲（波浪主枝、卷须、尖叶、五瓣莲）、足墙莲瓣；纹样分「晕散层（模糊浅蓝）」与「清晰层（深钴蓝）」两遍，另加铁锈斑细点；绘制自上而下分水揭开，最后釉下晕散洇开；右侧竖题「青花」「缠枝莲」「白地青花」，底面书「青」字款。",
-      "limitations": "缠枝莲是程序生成的规则纹样，卷草转折的笔意不如手绘；晕散与铁锈斑用模糊渐变和随机点近似，不是真实钴料在釉下的扩散；瓶身立体感主要靠一条高光带，没有真实瓷器反光。"
+      "limitations": "缠枝莲是程序生成的规则纹样，卷草转折的笔意不如手绘；晕散与铁锈斑用模糊渐变和随机点近似，不是真实钴料在釉下的扩散；瓶身立体感主要靠一条高光带，没有真实瓷器反光。",
+      "delivered_html_sha256": "03e2e1fc82f78e73ba6024ef1d0cdfb40accfe4da5aed0803a0d2397b6ded3e0",
+      "codex_modifications": "Cancel pending animation frames on pause to prevent duplicate loops after rapid toggles; scene/renderAt output unchanged."
     },
     "Z10": {
       "name": "木版画",
@@ -939,7 +1093,9 @@
       "gif": "previews/Z10.gif",
       "poster": "posters/Z10.png",
       "style_basis": "木版套色：米黄纸面、版边与四角对位十字；黑线版先落（山脊、屋、树、田埂、飞鸟、天空刻线），赭红版压太阳与屋瓦（太阳里留横向白刀痕），石绿版两重山、土黄版田垄，每版带轻微落版位移与木纹；最后白色刀痕逐条刻出，右侧朱印「木」；题「木版画」与「一刀一刻」。",
-      "limitations": "木纹与刀痕是程序生成的短线，不是真实木版纤维与刻刀痕；套色只有 2–5px 的落版错位，没有真实多版叠印的压痕与油墨厚薄；树冠用黑块堆叠，形体偏符号化。"
+      "limitations": "木纹与刀痕是程序生成的短线，不是真实木版纤维与刻刀痕；套色只有 2–5px 的落版错位，没有真实多版叠印的压痕与油墨厚薄；树冠用黑块堆叠，形体偏符号化。",
+      "delivered_html_sha256": "2a92f2c2456d2577f9a61f75124bffb2a1389b5774ebf31ee75c5c65432f126d",
+      "codex_modifications": "Cancel pending animation frames on pause to prevent duplicate loops after rapid toggles; scene/renderAt output unchanged."
     },
     "Z11": {
       "name": "京剧脸谱",
@@ -951,7 +1107,9 @@
       "gif": "previews/Z11.gif",
       "poster": "posters/Z11.png",
       "style_basis": "京剧净角脸谱：墨黑底加金线框，红脸膛；左右镜像对称——先半脸勾线，另半脸镜像补全；黑火焰眉与蝶形眼窝压住上半脸，白色眼白/瞳孔、额中白印、下颏白块；金线勾眉、眼窝、鼻梁、颊上云纹；盔头额子带回纹与两颗红绒球，黑满髯垂至胸前；右侧金字「脸谱」与「红忠黑直」，朱印「净」。",
-      "limitations": "脸谱纹样是几何化的简化设计，不对应某一出戏的具体谱式；镜像绘制保证对称，但左右两半没有笔触差异；绒球与髯口为程序化造型，髯丝用随机细线模拟。"
+      "limitations": "脸谱纹样是几何化的简化设计，不对应某一出戏的具体谱式；镜像绘制保证对称，但左右两半没有笔触差异；绒球与髯口为程序化造型，髯丝用随机细线模拟。",
+      "delivered_html_sha256": "77ba25b887ab9da036afdf1797bfc5607675357f18cbb510cf214358832dd3df",
+      "codex_modifications": "Cancel pending animation frames on pause to prevent duplicate loops after rapid toggles; scene/renderAt output unchanged."
     },
     "Z12": {
       "name": "书法",
@@ -963,7 +1121,9 @@
       "gif": "previews/Z12.gif",
       "poster": "posters/Z12.png",
       "style_basis": "书法：米字格宣纸（淡朱格线），毛笔随笔画在格内写出「大」字——先横、再撇、后捺，笔杆与笔锋全程可见；笔画按宽度剖面绘制，起笔顿、收笔提，撇与捺收笔处刷出纸色飞白，起笔处留墨点；写完后笔悬在纸上轻晃；右侧竖题「书法」「一笔一画」「楷书 · 三笔」并落朱印。",
-      "limitations": "「大」字是三条贝塞尔骨架 + 宽度函数，不是真实毛笔的压力与笔毫分叉，字形只做到可辨，未追求某家碑帖的结体；飞白是规则细缝，不是笔毫擦出的丝缕；笔是简化的杆+肚+锋造型。"
+      "limitations": "「大」字是三条贝塞尔骨架 + 宽度函数，不是真实毛笔的压力与笔毫分叉，字形只做到可辨，未追求某家碑帖的结体；飞白是规则细缝，不是笔毫擦出的丝缕；笔是简化的杆+肚+锋造型。",
+      "delivered_html_sha256": "2dc0b1fe7f5bdf6553df075b9b828e36488cd1f40e64afc26a2a28ec1c6f518b",
+      "codex_modifications": "Cancel pending animation frames on pause to prevent duplicate loops after rapid toggles; scene/renderAt output unchanged."
     },
     "Z13": {
       "name": "水墨漫画",
@@ -975,7 +1135,9 @@
       "gif": "previews/Z13.gif",
       "poster": "posters/Z13.png",
       "style_basis": "水墨漫画：宣纸底 + 墨晕底（几团淡墨与飞点），毛笔线画漫画框四边；一只闭眼小猫，耳朵、胡须、腮红用毛笔线，身体淡墨填充；圆角对话气泡带指向猫的尖角，台词分两行「慢慢来，／也挺好。」；猫头旁的「喵」与头顶三根快乐线；尾巴持续左右摆动、耳朵轻颤、气泡浮动、墨点飘游。",
-      "limitations": "猫是程序化几何造型，不是分镜漫画家手绘的毛笔线；对话气泡是标准圆角矩形，缺少手绘气泡的粗细起伏；墨晕底为一次预渲染的静态图，只有飘点与主体在动。"
+      "limitations": "猫是程序化几何造型，不是分镜漫画家手绘的毛笔线；对话气泡是标准圆角矩形，缺少手绘气泡的粗细起伏；墨晕底为一次预渲染的静态图，只有飘点与主体在动。",
+      "delivered_html_sha256": "9813d8a1a207c3f2c8fe43b8e6c98e2e2d385c6dc9e1e65ddcbdec770802bfed",
+      "codex_modifications": "Cancel pending animation frames on pause to prevent duplicate loops after rapid toggles; scene/renderAt output unchanged."
     },
     "Z14": {
       "name": "彩铅手绘",
@@ -987,7 +1149,9 @@
       "gif": "previews/Z14.gif",
       "poster": "posters/Z14.png",
       "style_basis": "彩铅手绘：纸面有纸齿与纤维，上色后压一层纸纹颗粒让排线露白；先淡铅笔起稿（瓶、枝、五朵花的圆与花瓣），再用短促斜排线一层层上色——青瓷瓶（墨绿+青绿两组交叉排线，裁切在瓶形内）、折枝（赭褐）、梅花（洋红+深红）、最后补花蕊、花瓣分隔与白色提亮；铅笔随最后画到的一笔移动，画面右下角始终有笔在动；右侧题「彩铅」（带错位淡影）、「一枝春」「排线 · 纸纹」。",
-      "limitations": "排线是按形状内随机分布生成的短线，不是人手从明暗关系出发的排线逻辑；纸纹与纸齿是程序噪点，不是真实纸张；青瓷瓶的釉色只靠交叉排线表现，缺少彩铅的叠色过渡与纸面反光。"
+      "limitations": "排线是按形状内随机分布生成的短线，不是人手从明暗关系出发的排线逻辑；纸纹与纸齿是程序噪点，不是真实纸张；青瓷瓶的釉色只靠交叉排线表现，缺少彩铅的叠色过渡与纸面反光。",
+      "delivered_html_sha256": "2fcd798fe9d9616335a3fd9d9849b6d88ce79727809a0928120c53afef592ca5",
+      "codex_modifications": "Cancel pending animation frames on pause to prevent duplicate loops after rapid toggles; scene/renderAt output unchanged."
     },
     "Z15": {
       "name": "温暖水彩科普卡",
@@ -999,7 +1163,9 @@
       "gif": "previews/Z15.gif",
       "poster": "posters/Z15.png",
       "style_basis": "温暖水彩科普卡：米色纸面上放一张圆角卡片（软投影、四角淡彩晕开），标题「一片叶子的旅程」+ 副题「茶的三次转身」；三格横向排布，每格一团不规则水彩（石绿/土黄/旧玫瑰）+ 手绘小图标：嫩芽与山影（采摘）、炒锅与茶叶、茶杯与碟；每格下方 16px 标签与 13px 小注，格间虚线箭头；页脚一行科普说明；茶杯与炒锅持续冒热气、小叶片飘落。",
-      "limitations": "水彩晕是「不规则多边形 + 径向渐变 + 外圈淡晕」，不是真实水彩的纸面扩散与颜料沉积；三个图标是简化造型，炒锅偏符号化；卡片四角的彩晕是固定位置，不随内容变化。"
+      "limitations": "水彩晕是「不规则多边形 + 径向渐变 + 外圈淡晕」，不是真实水彩的纸面扩散与颜料沉积；三个图标是简化造型，炒锅偏符号化；卡片四角的彩晕是固定位置，不随内容变化。",
+      "delivered_html_sha256": "4b44594a40776e01533cfbb9bc7bd45d8647b5d8da1267f4d9d368f70ee5c619",
+      "codex_modifications": "Cancel pending animation frames on pause to prevent duplicate loops after rapid toggles; scene/renderAt output unchanged."
     },
     "H2": {
       "name": "BlockFrame",
@@ -1011,7 +1177,9 @@
       "gif": "previews/H2.gif",
       "poster": "posters/H2.png",
       "style_basis": "新粗野主义：奶油底、6px 黑框、硬偏移黑投影、糖果粉/黄/青/柠檬绿；超粗黑体 IDEA 与『想法成形』、编号 01/02/03、跑马灯、星形 NEW 徽章、红色『已成形』印章；块面用阶梯式硬位移入场，没有柔和缓动。",
-      "limitations": "版式偏海报而非信息图，正文只有一句；跑马灯文字循环速度固定。"
+      "limitations": "版式偏海报而非信息图，正文只有一句；跑马灯文字循环速度固定。",
+      "delivered_html_sha256": "36b52f6b02512296ea2ca5b3159381ca910c53560af643eed869d218a9f5d7e0",
+      "codex_modifications": "Cancel pending animation frames on pause to prevent duplicate loops after rapid toggles; scene/renderAt output unchanged."
     },
     "H3": {
       "name": "Blue Professional",
@@ -1023,7 +1191,9 @@
       "gif": "previews/H3.gif",
       "poster": "posters/H3.png",
       "style_basis": "羊皮纸奶油底（#f4ecda）+ 钴蓝（#1b3bc4）主色 + 深墨蓝正文；版式是档案式网格：左侧大写字距标签、页眉细钴蓝线、右侧钴蓝 SPEC 规格板、下方三栏编号清单，四角裁切标记与竖排页码。标题用超粗无衬线分两行左对齐，第二行整行钴蓝；动画上规格板自上而下拉开、标题左到右裁切揭示、三栏细线与正文依次落位、右下 READY 小章描边出现，整体是克制的专业排版节奏。",
-      "limitations": "Space Grotesk 不可外链，用系统苹方/黑体加宽字距模拟几何无衬线，字形不完全一致；规格板是纯色块，没有照片或图表；正文只保留一句副题与三栏短句。"
+      "limitations": "Space Grotesk 不可外链，用系统苹方/黑体加宽字距模拟几何无衬线，字形不完全一致；规格板是纯色块，没有照片或图表；正文只保留一句副题与三栏短句。",
+      "delivered_html_sha256": "3c5a1916e1a13c32fb7fb3ba1634806f95e325ff1face2a9efa0f25fae3f0237",
+      "codex_modifications": "Cancel pending animation frames on pause to prevent duplicate loops after rapid toggles; scene/renderAt output unchanged."
     },
     "H4": {
       "name": "Bold Poster",
@@ -1035,7 +1205,9 @@
       "gif": "previews/H4.gif",
       "poster": "posters/H4.png",
       "style_basis": "奶油纸底（#f7eed7）+ 正红（#cf2323）+ 墨黑，杂志封面结构：顶部刊号与红色「封面故事」标签、右侧整块红色圆盘压住版面、倾斜的粗斜体衬线大字两行（墨色「再靠近一点」、红色「想法就成形」）、红色手写弧线、左下封面导读细线、右下 NEW 圆章与竖排小字。动画用斜向滑入、圆盘回弹撑开、弧线生长、NEW 章盖章，3.2s 后圆盘内虚线圈缓慢旋转，保持后半段呼吸。",
-      "limitations": "中文斜体由浏览器合成倾斜，不是真正的花体字库；红圆盘与 04 数字为几何绘制，没有真实印刷网点或纸张扫描质感；封面文案为原创短句，不是真实刊物。"
+      "limitations": "中文斜体由浏览器合成倾斜，不是真正的花体字库；红圆盘与 04 数字为几何绘制，没有真实印刷网点或纸张扫描质感；封面文案为原创短句，不是真实刊物。",
+      "delivered_html_sha256": "fb0da446ed9f347e1c8a6804127d31d0722e41a65b09ebb01ef6e3775897f487",
+      "codex_modifications": "Cancel pending animation frames on pause to prevent duplicate loops after rapid toggles; scene/renderAt output unchanged."
     },
     "H5": {
       "name": "Broadside",
@@ -1047,7 +1219,9 @@
       "gif": "previews/H5.gif",
       "poster": "posters/H5.png",
       "style_basis": "工业报纸头版：奶油纸（#efe2c4）、墨黑（#1c1712）、火橙（#e0571c）；双线报头「成形日报」+ 拼音小字、三栏竖分隔线、左右栏小报头、反白「草图」橙块、右栏 EXTRA 横幅、黑框引语、网点圆、条形码、裁切标记与「已付印」印章。动画模拟上机印刷：报头双线与标题先出，头条与三栏正文逐行落下，橙块、EXTRA、引语框依次压印，最后盖「已付印」，5s 保持成品。",
-      "limitations": "正文是自写的短句，不是真实新闻；报头与栏目标题均为原创命名，避免真实媒体；条形码是随机竖条装饰，不可扫描；没有使用纸纹扫描图，纸感由随机颗粒和暗角模拟。"
+      "limitations": "正文是自写的短句，不是真实新闻；报头与栏目标题均为原创命名，避免真实媒体；条形码是随机竖条装饰，不可扫描；没有使用纸纹扫描图，纸感由随机颗粒和暗角模拟。",
+      "delivered_html_sha256": "61a00e412454f87ec0c92bb4bd579df57c34a01d6aaa5ba5b4c28ee0e505be5e",
+      "codex_modifications": "Cancel pending animation frames on pause to prevent duplicate loops after rapid toggles; scene/renderAt output unchanged."
     },
     "H6": {
       "name": "Capsule",
@@ -1059,7 +1233,9 @@
       "gif": "previews/H6.gif",
       "poster": "posters/H6.png",
       "style_basis": "奶油纸（#fbf1e0）+ 糖果粉/薄荷/柠檬/薰衣草，整版由胶囊形承载：大胶囊里放 Bodoni 系斜体衬线标题「一颗想法」与英文小字，粉色胶囊叠在右下写「慢慢成形」，右侧三颗小胶囊分别标「收集 / 发酵 / 取出」，散点糖果与背景浅圆做甜味，胶囊内小气泡缓慢上浮表达「慢发酵」。动画是胶囊从中心柔缓撑开、标题淡入、粉胶囊与三颗小胶囊依次鼓起、底部说明与「开盖」小章收尾。",
-      "limitations": "Bodoni 对中文不生效，中文标题回退到宋体并合成斜体，笔画不是真正的高对比 Bodoni；气泡只是线框小圆，没有液体质感；文案为原创短句。"
+      "limitations": "Bodoni 对中文不生效，中文标题回退到宋体并合成斜体，笔画不是真正的高对比 Bodoni；气泡只是线框小圆，没有液体质感；文案为原创短句。",
+      "delivered_html_sha256": "c2062a3af7b0e4927b34bdfdd361f8943906688248f61e13a4856dad3c229b00",
+      "codex_modifications": "Cancel pending animation frames on pause to prevent duplicate loops after rapid toggles; scene/renderAt output unchanged."
     },
     "H7": {
       "name": "Cartesian",
@@ -1071,7 +1247,9 @@
       "gif": "previews/H7.gif",
       "poster": "posters/H7.png",
       "style_basis": "暖羊皮纸（#f2ead9）+ 墨色（#2a251f）+ 灰褐（#a1907a）；1px 细坐标轴、等距刻度、原点 0 与 x/y 标注、大量留白；标题「从原点出发」用轻字重无衬线加宽字距，右侧 A/B 两个坐标点、十字准线、虚线曲线与「留白，是构图的一部分」边注，页脚 07 与 640×360。动画是轴线从原点生长、刻度逐格浮现、A 点扩散环、虚线连向 B，随后一个小点沿曲线往返滑动，纸色极缓呼吸。",
-      "limitations": "坐标与 A/B 点只是构图隐喻，没有真实数据；留白比例按 16:9 固定，不是版面系统；曲线为手动正弦近似。"
+      "limitations": "坐标与 A/B 点只是构图隐喻，没有真实数据；留白比例按 16:9 固定，不是版面系统；曲线为手动正弦近似。",
+      "delivered_html_sha256": "4e95b59a0e3bdf624c65b69fc361c0bb7a2a4d9e2e42404e068990fa7b85ff2b",
+      "codex_modifications": "Cancel pending animation frames on pause to prevent duplicate loops after rapid toggles; scene/renderAt output unchanged."
     },
     "H8": {
       "name": "Cobalt Grid",
@@ -1083,7 +1261,9 @@
       "gif": "previews/H8.gif",
       "poster": "posters/H8.png",
       "style_basis": "羊皮纸（#f3ead9）上铺 32px 钴蓝方格（#1f3fae，每 128px 加重），左侧羊皮纸标题板压住网格放衬线标题「网格上的 / 一次成形」，右侧钴蓝色块版面上放大号衬线 08 与两行反白短句，底部纸色小条写「先画格，再落笔。」；页眉字距标签、页脚 08 / 640×360。动画是网格从左向右铺开、标题板自上展开、钴蓝版从顶部向下揭开，后半段一枚小方块沿底部网格逐格往返。",
-      "limitations": "Newsreader 不可外链，标题回退到宋体类衬线；钴蓝版内的 2×2 白线只是装饰网格，不是真实图片版位；逐格方块是节拍装饰，不承载信息。"
+      "limitations": "Newsreader 不可外链，标题回退到宋体类衬线；钴蓝版内的 2×2 白线只是装饰网格，不是真实图片版位；逐格方块是节拍装饰，不承载信息。",
+      "delivered_html_sha256": "5ff7e29a53c1955fbac1c8bb81f2beaa5d195917e946a420d4342f1aec333068",
+      "codex_modifications": "Cancel pending animation frames on pause to prevent duplicate loops after rapid toggles; scene/renderAt output unchanged."
     },
     "H9": {
       "name": "Coral",
@@ -1095,7 +1275,9 @@
       "gif": "previews/H9.gif",
       "poster": "posters/H9.png",
       "style_basis": "奶油底（#fbf0e2）+ 珊瑚色（#ff6b57）+ 墨黑；左侧三行横向压缩的全大写标题 MAKE / IT / REAL（最后一行珊瑚色），右侧珊瑚拱门里放奶油色「做」与 01 起念 / 02 动手 / 03 成形 三步，底部通栏滚动字幕「做了才算 / MAKE IT REAL / 先动手」，页眉字距标签与珊瑚分隔线。动画是拱门自下而上展开、三行标题逐行从基线升起、珊瑚短横线生长、箭头指向拱门，字幕全程滚动，拱门内虚线环缓慢旋转。",
-      "limitations": "Bebas Neue 与中文不可外链，用 Arial Black 横向压缩模拟 Bebas 的全大写窄体，中文标题只做辅助；拱门与全部图形为几何绘制；字幕文案为原创短句。"
+      "limitations": "Bebas Neue 与中文不可外链，用 Arial Black 横向压缩模拟 Bebas 的全大写窄体，中文标题只做辅助；拱门与全部图形为几何绘制；字幕文案为原创短句。",
+      "delivered_html_sha256": "4c51ff0297d8bd0e7bbb4ba1e879c0e5f6adec334244cdf5665bc7e6cdc638f8",
+      "codex_modifications": "Cancel pending animation frames on pause to prevent duplicate loops after rapid toggles; scene/renderAt output unchanged."
     },
     "H10": {
       "name": "Creative Mode",
@@ -1107,7 +1289,9 @@
       "gif": "previews/H10.gif",
       "poster": "posters/H10.png",
       "style_basis": "奶油底（#fff3dd）+ 饱和糖果色：品红标题块、黄色大圆、蓝色曲线、绿色三角、奶油贴纸；黑体大字「想法」压在品红块上，「玩起来」用 92px 超粗黑体逐字跳落，黄块当马克笔高亮，贴纸「先乱想 / 再收拢」、粉色星与手绘圈、底部说明与粉色箭头。动画用弹性回弹让圆、星、三角、贴纸依次弹入，文字逐字跳落，2.95s 起手绘圈压在高亮条上、标题字之下，后半段星与大圆持续缓慢转动/浮沉。",
-      "limitations": "Archivo Black 不可外链，用系统超粗黑体与 Arial Black 近似；中文粗体由苹方合成，字面比 Archivo Black 窄；手绘圈是程序化椭圆，不是真实笔触。"
+      "limitations": "Archivo Black 不可外链，用系统超粗黑体与 Arial Black 近似；中文粗体由苹方合成，字面比 Archivo Black 窄；手绘圈是程序化椭圆，不是真实笔触。",
+      "delivered_html_sha256": "976e9a44f2904db5efa19212289dd0ea83f732820ec8794f22fd221a73966182",
+      "codex_modifications": "Cancel pending animation frames on pause to prevent duplicate loops after rapid toggles; scene/renderAt output unchanged."
     },
     "H11": {
       "name": "Daisy Days",
@@ -1119,7 +1303,9 @@
       "gif": "previews/H11.gif",
       "poster": "posters/H11.png",
       "style_basis": "阳光花园粉彩：淡蓝天空渐变、奶油色圆角卡片、3px 炭灰描边与纯色硬投影、白瓣黄心雏菊、旋转光芒的太阳、小云；卡内粉彩胶囊徽章 DAISY DAYS · 11、圆体字标题「今天，也开一朵」、虚线分隔、两行正文、太阳图标 + 今日份的小进展 + 手绘勾选框，卡片右上角探出一朵雏菊，左下角 SUNNY · 11 椭圆标签。动画是卡片带小回弹落下、标题逐字、正文与勾选依次出现，之后整卡轻浮、太阳慢转、雏菊摇摆、花粉颗粒持续漂移。",
-      "limitations": "圆体字依赖系统 Yuanti SC / 苹方，无网络字体；硬投影是纯色偏移矩形，没有真实纸张图层；花粉颗粒为程序化圆点。"
+      "limitations": "圆体字依赖系统 Yuanti SC / 苹方，无网络字体；硬投影是纯色偏移矩形，没有真实纸张图层；花粉颗粒为程序化圆点。",
+      "delivered_html_sha256": "0f549c1695bcc9f791ecf9c59ac7abf5176f87e4e3703b6b79dad9a7c2be1a9a",
+      "codex_modifications": "Cancel pending animation frames on pause to prevent duplicate loops after rapid toggles; scene/renderAt output unchanged."
     },
     "H12": {
       "name": "Editorial Forest",
@@ -1131,7 +1317,9 @@
       "gif": "previews/H12.gif",
       "poster": "posters/H12.png",
       "style_basis": "绿、粉、奶油的杂志跨页：左侧奶油底（#f7f0e3）衬线大标题「在深处 / 长出来」，双栏 13px 正文、首字粉色强调、细竖线分栏与页脚刊号；右侧整幅粉版（#f3b7c6）压细竖条，FIELD NOTES / 12 页眉，一株细线植物自下而上生长、七片半透明鼠尾草绿叶交替排布，底部衬线题字「像植物一样，慢慢成形。」；动画是粉版落下、细线生长、标题裁切、双栏正文逐行、叶片依次展开，之后叶片轻微摇摆、孢子点漂移。",
-      "limitations": "衬线标题回退到宋体类字体，不是定制 Newsreader；植物是程序化贝塞尔近似，叶片数量固定；正文为原创短句，没有真实报道内容。"
+      "limitations": "衬线标题回退到宋体类字体，不是定制 Newsreader；植物是程序化贝塞尔近似，叶片数量固定；正文为原创短句，没有真实报道内容。",
+      "delivered_html_sha256": "27f0fcc26740be12596d538bce5fc58af13b55a5427dfc53ea7855000e712341",
+      "codex_modifications": "Cancel pending animation frames on pause to prevent duplicate loops after rapid toggles; scene/renderAt output unchanged."
     },
     "V1": {
       "name": "逐帧手绘 / 抖动线条",
@@ -1143,7 +1331,9 @@
       "gif": "previews/V1.gif",
       "poster": "posters/V1.png",
       "style_basis": "纸纹底、手绘外框与胶带角；线条每 2 帧换一次抖动变体（line boil）；火柴划擦→拖影帧→火苗精灵跳舞→烟团与星火爆发→手写标题『想法成形』；红/黄套色错位、一拍二节奏、结尾纸张轻闪接循环。",
-      "limitations": "line boil 用 4 组正弦抖动变体近似，不是真正逐帧重画 3–4 张线稿；没有音效与音乐（任务要求静音）。"
+      "limitations": "line boil 用 4 组正弦抖动变体近似，不是真正逐帧重画 3–4 张线稿；没有音效与音乐（任务要求静音）。",
+      "delivered_html_sha256": "216e9ed524665b1f61890811efff240ac497cc9dccfe033bf0bf8b52c78e29a6",
+      "codex_modifications": "Cancel pending animation frames on pause to prevent duplicate loops after rapid toggles; scene/renderAt output unchanged."
     },
     "V2": {
       "name": "等距 2.5D",
@@ -1165,7 +1355,9 @@
         "用 Canvas 2D 手算等距面，没有真实光照/AO，接触阴影是手绘椭圆而非计算阴影。",
         "楼房只有 7 栋、树木 3 棵，密度低于风格参考里的微型城市；没有火车、数据流脉冲和真正的镜头推拉（只做整组平移）。",
         "等距平面上的文字只用于小号拉丁标签，中文标题改成平放以保证 640×360 下可读。"
-      ]
+      ],
+      "delivered_html_sha256": "4a44bd41fcc3a4d63acb1bc59cf0edc17f355912cb9b0afa299e5ac0aeba92f6",
+      "codex_modifications": "Cancel pending animation frames on pause to prevent duplicate loops after rapid toggles; scene/renderAt output unchanged."
     },
     "V3": {
       "name": "扁平矢量",
@@ -1187,7 +1379,9 @@
         "只有 7 栋楼与 1 个小人，没有真正做「推镜进窗户看到室内角色」的连续空间，转场用的是色块擦除。",
         "运动曲线是自写的 back-out/三次方，不是 AE 里 70~85% influence 的贝塞尔手柄，弹性精度有限。",
         "没有运动模糊（风格要求快速位移带 mb），只用拉伸/挤压近似。"
-      ]
+      ],
+      "delivered_html_sha256": "efe17bfbcb559719c851b952537d6c4499a045b017fcdb8e45965fce40ed7fac",
+      "codex_modifications": "Cancel pending animation frames on pause to prevent duplicate loops after rapid toggles; scene/renderAt output unchanged."
     },
     "V4": {
       "name": "线条画",
@@ -1209,7 +1403,9 @@
         "路径是手写坐标，不是 Illustrator 里真正单笔画连好的路；窗格是路径上伸出的「齿」，不是独立窗形。",
         "镜头是每段 focus 插值 + 固定 scale，没有真正的连续跟拍与推轨，也没有运动模糊。",
         "字标收尾只用拉远 + 压暗，没有做真实的景深或纸张质感。"
-      ]
+      ],
+      "delivered_html_sha256": "8083945654c90fe57e0c08e3af04c625f27da9247705ab780fe7a205dfd2fd1b",
+      "codex_modifications": "Cancel pending animation frames on pause to prevent duplicate loops after rapid toggles; scene/renderAt output unchanged."
     },
     "V5": {
       "name": "3D 渲染",
@@ -1231,7 +1427,9 @@
         "全部是 Canvas 2D 伪造光照，没有真实 HDRI、反射、AO 与景深，色彩溢出和软胶透光靠叠渐变近似。",
         "克隆器阵列是平面屏幕布局 + 手写透视缩放，不是真 3D 空间里的克隆器；没有运动模糊。",
         "主角是球而不是带 bevel 的 3D 字标/产品模型，也没有真实的物理碰撞解算，挤压和冲击波都是解析式近似。"
-      ]
+      ],
+      "delivered_html_sha256": "86c4af2a335008540f6bdd070c42df4932ddfbb2b0cd744802ffdb8453a0fe5d",
+      "codex_modifications": "Cancel pending animation frames on pause to prevent duplicate loops after rapid toggles; scene/renderAt output unchanged."
     },
     "V6": {
       "name": "形变",
@@ -1253,7 +1451,9 @@
         "没有真实的顶点最优匹配（flubber 那种算法），只有「重采样 + 起点对齐 + 圆做中介」的近似；复杂形状之间仍会出现局部尖角拉扯。",
         "所有形状都是单一闭合轮廓，咖啡杯的把手是轮廓上的凸起而不是独立环，所以把手内孔是实心的。",
         "图形之间没有真正的位移/旋转编排（只有挤压和摆动），也没有 AE MorphSVG 那种可调的 shapeIndex 控制。"
-      ]
+      ],
+      "delivered_html_sha256": "50ee6451cae72f8baa6fe46f7c7f7f71c41d9bf704426992ddaea98c1980399b",
+      "codex_modifications": "Cancel pending animation frames on pause to prevent duplicate loops after rapid toggles; scene/renderAt output unchanged."
     },
     "V7": {
       "name": "贴纸讲解",
@@ -1275,7 +1475,9 @@
         "没有真实照片素材（任务禁止外部图片），贴纸是代码画的扁平插画，少了实拍抠图的质感差。",
         "镜头是 7 个关键帧的中心点/缩放插值，没有手持抖动、没有推近时的运动模糊。",
         "数据只有地表 71% 与 29% 一组真实比例，没有更多图表类型；视频里的「逐句驱动入场」简化为三个信息点。"
-      ]
+      ],
+      "delivered_html_sha256": "d94d664718eebee3f1fca01d33c3e078c2ecba450f95ab2ac79e74c6c82d847c",
+      "codex_modifications": "Cancel pending animation frames on pause to prevent duplicate loops after rapid toggles; scene/renderAt output unchanged."
     },
     "V8": {
       "name": "赛博朋克界面",
@@ -1298,7 +1500,9 @@
         "没有真实 3D 线框模型与后期辉光渲染，发光靠 canvas shadowBlur 叠加，没有色散、景深与镜头光晕。",
         "色差是把整块画面用 lighter 叠红/蓝两层近似的，不是真正的通道偏移；扫描线是预计算的贴图平铺。",
         "雷达目标点与数据值是确定性伪随机，不是真实遥测；画面里没有真实的科幻资产（飞船/城市）。"
-      ]
+      ],
+      "delivered_html_sha256": "6a47c2c902daf9922a32821dd37fc7f5897144ad0b8ac04d9be237d3f3c6f95d",
+      "codex_modifications": "Cancel pending animation frames on pause to prevent duplicate loops after rapid toggles; scene/renderAt output unchanged."
     },
     "V9": {
       "name": "拼贴 / 剪贴",
@@ -1320,7 +1524,9 @@
         "没有真实老照片素材（禁止外部图片），人物是代码画的多边形剪影，缺少实拍照片的颗粒与质感差。",
         "降帧是把时间量化到 12fps，画布本身仍按 30fps 渲染，所以没有真正的运动模糊拖影；抖动是每帧伪随机而不是手摆的连续轨迹。",
         "转场只用胶带/纸条的拍入，没有做「整页翻纸」或元素被手拿起来的转场。"
-      ]
+      ],
+      "delivered_html_sha256": "03e5d7a56622020b276b2092c52d71b6dc5f5dd51d54b97b3a73ca219b53a50f",
+      "codex_modifications": "Cancel pending animation frames on pause to prevent duplicate loops after rapid toggles; scene/renderAt output unchanged."
     },
     "V10": {
       "name": "极光与毛玻璃",
@@ -1342,7 +1548,9 @@
         "模糊是「低分辨率画布放大 + 双线性」近似，没有真正 80~150px 的高斯核，也做不到玻璃的折射与色散。",
         "没有 WebGL 与 backdrop-filter，卡片背面的「糊」是把极光层再降采样一次贴进去的近似。",
         "极光只有 5 团固定颜色，不能像 mesh gradient 那样自由混合；文字只有一组标题与一句小注。"
-      ]
+      ],
+      "delivered_html_sha256": "c9817b667a4a50722663aacd58f14697fd4237da53ff586192af3ec47c7c9ae2",
+      "codex_modifications": "Cancel pending animation frames on pause to prevent duplicate loops after rapid toggles; scene/renderAt output unchanged."
     },
     "V11": {
       "name": "包豪斯几何",
@@ -1365,7 +1573,9 @@
         "元素数量与版式只有一套（不是 Processing 那种批量相位阵列），运动是逐元素的脚本而不是生成式。",
         "没有真实的字体排版细节（字距/字重对比只做了大小与颜色），也没有印刷质感（网点、套印偏移）。",
         "翻转用硬切换角度而不是 AE 里的 3D 翻转，缺少透视与阴影。"
-      ]
+      ],
+      "delivered_html_sha256": "bc4d98dde60e0259c0c547be83e1710dc67284ecf46763be32516996dddd8a28",
+      "codex_modifications": "Cancel pending animation frames on pause to prevent duplicate loops after rapid toggles; scene/renderAt output unchanged."
     },
     "V12": {
       "name": "80 年代合成波 / VHS",
@@ -1387,7 +1597,9 @@
         "网格是 2D 手算透视，不是 WebGL 的三维地面；山脉是三角剪影，没有远近层次与雾。",
         "色差不是真正的 RGB 通道分离，是整片红/蓝以 lighter 低透明度叠两次；撕裂条用 drawImage 自拷贝，抖动是伪随机的。",
         "没有 Y2K 的镀铬拟物窗口，只做了 synthwave + VHS 这一支；也没有音轨与节拍卡点。"
-      ]
+      ],
+      "delivered_html_sha256": "1bd9449fce4859614662118b0302577c184368e64a225295f414142fb3b569d1",
+      "codex_modifications": "Cancel pending animation frames on pause to prevent duplicate loops after rapid toggles; scene/renderAt output unchanged."
     },
     "V13": {
       "name": "像素",
@@ -1410,7 +1622,9 @@
         "不是 Aseprite 精灵表，角色与场景是代码逐像素画的矩形；走路只有 4 帧（原文建议 6~8 帧）。",
         "像素字是把矢量字渲染在低分辨率画布上再放大，边缘仍有一点抗锯齿残留，不是真正的点阵字体。",
         "没有桶形畸变、没有 8-bit 音效；视差只有三层且不能循环无缝（山峰是循环重排的）。"
-      ]
+      ],
+      "delivered_html_sha256": "7c939f8a8b07fa47fb3c0b6d334ed827f271a2eb63ccaaa387f899bac48c363a",
+      "codex_modifications": "Cancel pending animation frames on pause to prevent duplicate loops after rapid toggles; scene/renderAt output unchanged."
     },
     "V14": {
       "name": "液态流动",
@@ -1432,7 +1646,9 @@
         "没有真正的 SDF smooth-min 与屏幕空间折射，融合是 metaball 场阈值近似，液体内部没有体积感与透光。",
         "液滴是圆形 metaball，做不出真正的尖锐水滴尖端与「细颈断裂」的瞬间；拉丝只靠尾珠近似。",
         "每帧 60,800 像素 × 最多 9 颗球的双重循环在 JS 里算，属于本任务里最重的一个，但 72 帧渲染仍稳定。"
-      ]
+      ],
+      "delivered_html_sha256": "3e75d47ee2fb192f2645871fd02b20d930e340ee3ce9dc714fdfd9ac8370b4f3",
+      "codex_modifications": "Cancel pending animation frames on pause to prevent duplicate loops after rapid toggles; scene/renderAt output unchanged."
     },
     "V15": {
       "name": "综艺花字",
@@ -1454,122 +1670,124 @@
         "没有真正的圆体/胖体字库可用，用系统黑体加粗 + 粗描边模拟「圆胖」的花字质感，笔画端头仍是方的。",
         "没有音效与语音对齐（原文强调「比语音晚 2~3 帧出现」），这里用固定节拍代替；也没有做 9:16 竖屏版本。",
         "装饰符号是代码画的（爆炸框/汗滴/星芒/箭头），没有用剪映式花字素材包，也没有 3D 挤出与贴图描边。"
-      ]
+      ],
+      "delivered_html_sha256": "0051a86d4075b2ea18863054c10dc479dfcad6b81eeac969d33362777b521da3",
+      "codex_modifications": "Cancel pending animation frames on pause to prevent duplicate loops after rapid toggles; scene/renderAt output unchanged."
     }
   },
   "sha256": {
     "LICENSE-NONCOMMERCIAL.txt": "0dcbde7762a94f57968bd41b9b9ca331609ae517748536bb68e278433439a07a",
     "LICENSE-V-MIT.txt": "7f03fee9299a401615e13e2c636ead0394f47395da4f816ae60b35ed2d91a932",
-    "SOURCES.md": "ea695b9506c392bdb970c88b32e19164fbe1f431edc636a354b503eecfdc508a",
-    "html/H10.html": "976e9a44f2904db5efa19212289dd0ea83f732820ec8794f22fd221a73966182",
-    "html/H11.html": "0f549c1695bcc9f791ecf9c59ac7abf5176f87e4e3703b6b79dad9a7c2be1a9a",
-    "html/H12.html": "27f0fcc26740be12596d538bce5fc58af13b55a5427dfc53ea7855000e712341",
-    "html/H2.html": "36b52f6b02512296ea2ca5b3159381ca910c53560af643eed869d218a9f5d7e0",
-    "html/H3.html": "3c5a1916e1a13c32fb7fb3ba1634806f95e325ff1face2a9efa0f25fae3f0237",
-    "html/H4.html": "fb0da446ed9f347e1c8a6804127d31d0722e41a65b09ebb01ef6e3775897f487",
-    "html/H5.html": "61a00e412454f87ec0c92bb4bd579df57c34a01d6aaa5ba5b4c28ee0e505be5e",
-    "html/H6.html": "c2062a3af7b0e4927b34bdfdd361f8943906688248f61e13a4856dad3c229b00",
-    "html/H7.html": "4e95b59a0e3bdf624c65b69fc361c0bb7a2a4d9e2e42404e068990fa7b85ff2b",
-    "html/H8.html": "5ff7e29a53c1955fbac1c8bb81f2beaa5d195917e946a420d4342f1aec333068",
-    "html/H9.html": "4c51ff0297d8bd0e7bbb4ba1e879c0e5f6adec334244cdf5665bc7e6cdc638f8",
-    "html/K1.html": "55059cc45d88b8942639b51134c466c36ce7aa3704e11c6f17a8931b2da20da2",
-    "html/K10.html": "c290a922f7c78e789b6439525482aa55470de7a220de81c78821ff913acc118b",
-    "html/K11.html": "1ca8389064569633ef07a0349066c5c5c92e7e14d57b12c075ecb923c21d5a34",
-    "html/K12.html": "70c14bf6b4d2d83e7f7c1617cc01b9430aa6a6064f24ed5b77ebaa6a5b764dec",
-    "html/K13.html": "9d8eed3a8478f6b4889a8c995332b7935e9f29626c1c4305fe3911a4663ba1a9",
-    "html/K14.html": "c88da3083ae0d0415806b5dfc85d3fef6a89432b688078ad4c877c300ab342c6",
-    "html/K15.html": "47fb5a0bdd27b19999425005c58e7a4ba0214cae2626d8136a3ca44b93124ce3",
-    "html/K16.html": "8f30927dc3fb9eedab8d6256d2badbd586af3872c7507ded173d4a272562a80b",
-    "html/K17.html": "e2c84b43596d2d5ca5948943fb427d2dbf3e936df648abe8e10d78fb6ab0de9c",
-    "html/K18.html": "abfa9ba00c5e07015f5e1db56ab6d941a7521f2f98e4b1a9ef85b74fa740f026",
-    "html/K19.html": "42fda0fd0c7b343684832605b02374fdc313ae2343152d7224ef983579512b2b",
-    "html/K2.html": "6a8eaf9b0635d58d518191ea9c629e2cfcc00ed1a7d0ebb9dd20ce669728a36b",
-    "html/K20.html": "6ded6aaa561ba0ae003ce420867494b09c8c1c6fb5d2c9b39a159e42e16a1d8c",
-    "html/K21.html": "1a56a1273e39a4143c41d22f0706edc39d3eaddd5a2f9f038b1e60aa0335cbfb",
-    "html/K22.html": "614c6adf505d40089202abdc3754d881ac52c6a5dfc6b38eb4ef03d4bcc91dbf",
-    "html/K23.html": "c1e06164179b708101aa13849f4209f2bf4ba76b7673bc2f2c790933ed5b3596",
-    "html/K24.html": "d024cc6eca847a6ed2366181ebb81aea4d9a0fb9aaa9102cd7113ac5cce2e151",
-    "html/K25.html": "6e7e4793e508261ef38776ccca03f857cf9b2040d8c32a07d7cbfbe65185d929",
-    "html/K26.html": "2aadd9e7fc0e27dfbc362b9f89ccc4adae1961df2973005ece5d2fdc7a87e7c0",
-    "html/K27.html": "04fd9e475e63d7f37cd925796bde14d017d163aff5f4b14d75d2c22de593bada",
-    "html/K28.html": "11b62614c358b28dbdd50ce2a2868e4b20cce0641fe14fb2074b38960b910baf",
-    "html/K29.html": "98444b5b0bf63e0a10323fe99ecd1d9bacb9e30eb2d53805d39cf51108b1ebf8",
-    "html/K3.html": "c0ee4e8264490ce63016c422a4c22f27372ab567e85fed00514e17225dff2114",
-    "html/K30.html": "930a1ce357f4f4d6527dc7bd32317889045b121c6643d02da2c83a0048f9f9f9",
-    "html/K31.html": "cc6beac379fec24b872e981d7ffe3392fb95752633729df7b9492779eb0e3a33",
-    "html/K32.html": "15b520613ea96db995d6aadd674b8c8ef259c985bbe2202002bbb142956a7508",
-    "html/K33.html": "622bf44ee76583e92b50e5ad953f93a1019bbef3161120741736e28f3af1e440",
-    "html/K34.html": "ec523f409b784a320c46fcc92784e614edea538a4d06f2a987294d5492f89c56",
-    "html/K35.html": "b1e463b8b871599a4b745d0655bc8b2927ca733ee810519d3735fa51f1265696",
-    "html/K36.html": "4c748b868e797aff265ce4647539e73602b6efe2391293b36e73a326705c1423",
-    "html/K37.html": "3fd41bf9900c92caad12d71f094bbd99a72222fb08a833cd4f7f4ae35f328c4b",
-    "html/K38.html": "8eb48f9a6ac1ce9cb22b6cedfba8abd0428fbcb171e3ccaeec367d297265e150",
-    "html/K4.html": "69f9314d3406ecf817dabfbb214fe7169c424a289004d58fae81880085db29b6",
-    "html/K5.html": "0a97b75e8e5079335dbfb42c895bee88e6b36c454fe728e19ef5e18bcc61b467",
-    "html/K6.html": "dcad7d8c67a427ad48bbf0cfaa3a779313d32f1d7503b58160b0d266d8ec6212",
-    "html/K7.html": "e22f45501015cda8c6ee1f6b337d23cdcbc391fef6143e0e000a0029272bdaae",
-    "html/K8.html": "78e81952e086e6b4d1d08adf0a577c7c841b9b8d26672c4fac582fcbc159d19e",
-    "html/K9.html": "6bf3edab2dbfe3b9542784acbcb4915506525639e94d350b7ac515aac484cad7",
-    "html/M10.html": "c49bad123963f933dba43e7c5ee2fc51166b517526b567f9af514a69605ad716",
-    "html/M11.html": "c0889e23f44c467492b81c8516116f51890f8e0f88742b84f4cabc4970fdc8cb",
-    "html/M12.html": "a0083832cf0a07fae0cb28cd457c6d69ce95f2c8ac53851c9e08304e11b5a3a6",
-    "html/M13.html": "e5c9cac3280799bdce3dd715fb6355c795597dde4f2a8b874613ccc4bbca665d",
-    "html/M18.html": "4276a50878a785bbdc8eadc6f3061fe3c1d57c66471d732570538ad0280b5053",
-    "html/M19.html": "4e4fa3f426dea349c833cbda9147176daf61fb8c5bd69c682f8e5cc085903603",
-    "html/M2.html": "f8fb460fbe15e3de0f3b2a7d6d182eee1face7a70cdd13252104da289ea0a909",
-    "html/M20.html": "b5871963e56628df110e02c22d86a4622ce2369ce094bab9809fdf49c9aef1c8",
-    "html/M21.html": "0392c6e667dd8aaaf15397ba69d0421743ed6a9671e50b7e6bbc2076621341da",
-    "html/M22.html": "08d27f6c60be24b161b16bafd1b123070a3ace6ba175d9f1bba0715446d04fff",
-    "html/M23.html": "01e569e2cf85b320d852788bc391877c9bcd4c9cfe022422a0475e71413213cd",
-    "html/M24.html": "c528acb5dc6de685aecd4281b713e4008fbfc8dfc1ba19de75f1e9ee1a934770",
-    "html/M25.html": "891d13175d2c18e832c10c4b8c9728efbab7ff9652d158d659669e19a5af32fc",
-    "html/M27.html": "b297b031082b49ad175061285262c7180baea7c1ab08667d908c6d97f1a00ca4",
-    "html/M28.html": "931c4b3e922c30ad71f250a487823b8ed4865ac9567496eb920b94b74abbbb2c",
-    "html/M29.html": "ed7aae550febec9029d8a93e71272165a1e5d2c087cb9a4edb6da689d7bbfbbc",
-    "html/M3.html": "c0440fdf1a693af4715e979afc60cf3c362c12925f99ae6fb36262da9b98f194",
-    "html/M30.html": "965388c684fa46e3e2926820bdcf9054a2227d0d1ce51108aabcc57c27186226",
-    "html/M31.html": "81f7e75d2e12aa36f4bb704cccda3f59d2b369f0a121a27e9b553dc524b67f29",
-    "html/M32.html": "a20ffca46eb2b0ddb0ceaa01f837fac9a8b8bb57ddf3a744fcd7aa19f491cfbf",
-    "html/M33.html": "a062b49facc5fbbc11744cd2728de96423ab2a31c5bcee82b300a6991a1f207b",
-    "html/M34.html": "3c0b3bb895c8a839813a4afb2f7fb0e19ee6d820ec2d1f36e4782ed9b2a6fbed",
-    "html/M36.html": "9c078b34e18641bd6be3b1ef8a8c8a28fb70271645653d3bad4e8223e9a7ecba",
-    "html/M37.html": "5c20af428b07c1dc5f66f65d5c534ee739531d7c68b41f48915cd2dfb9cfd906",
-    "html/M38.html": "e4a9e0e32231bb6b650e0cfb9f2b1bf77a15c244f19212a45da16775c3ac56c7",
-    "html/M4.html": "45b2d8f16903dd57d1de667129f43d310f06b2f7097069591d906392edaa7071",
-    "html/M5.html": "5e8aa28fc80c72f09ef190e1c689987bece7dbe622a265da1c7d6e6ef1f99f56",
-    "html/M6.html": "5ef6e003c89f4990f4cb011169d6c055de4fcc3391ccf8e5b7ba13d526f11759",
-    "html/M7.html": "b978fd441a52478d3fb41025c8cd0e3e9dcb3f8ab87952187f14167b6eac56e3",
-    "html/M8.html": "3c4e69916e611b15bd954ed5a60e52d28042fa9de46e4288e7245d3f1efd331c",
-    "html/M9.html": "37be0fd3e1cfde0d837aaa249a97f2c61f6a9e3f82fecdf05a764d0893a44863",
-    "html/V1.html": "216e9ed524665b1f61890811efff240ac497cc9dccfe033bf0bf8b52c78e29a6",
-    "html/V10.html": "c9817b667a4a50722663aacd58f14697fd4237da53ff586192af3ec47c7c9ae2",
-    "html/V11.html": "bc4d98dde60e0259c0c547be83e1710dc67284ecf46763be32516996dddd8a28",
-    "html/V12.html": "1bd9449fce4859614662118b0302577c184368e64a225295f414142fb3b569d1",
-    "html/V13.html": "7c939f8a8b07fa47fb3c0b6d334ed827f271a2eb63ccaaa387f899bac48c363a",
-    "html/V14.html": "3e75d47ee2fb192f2645871fd02b20d930e340ee3ce9dc714fdfd9ac8370b4f3",
-    "html/V15.html": "0051a86d4075b2ea18863054c10dc479dfcad6b81eeac969d33362777b521da3",
-    "html/V2.html": "4a44bd41fcc3a4d63acb1bc59cf0edc17f355912cb9b0afa299e5ac0aeba92f6",
-    "html/V3.html": "efe17bfbcb559719c851b952537d6c4499a045b017fcdb8e45965fce40ed7fac",
-    "html/V4.html": "8083945654c90fe57e0c08e3af04c625f27da9247705ab780fe7a205dfd2fd1b",
-    "html/V5.html": "86c4af2a335008540f6bdd070c42df4932ddfbb2b0cd744802ffdb8453a0fe5d",
-    "html/V6.html": "50ee6451cae72f8baa6fe46f7c7f7f71c41d9bf704426992ddaea98c1980399b",
-    "html/V7.html": "d94d664718eebee3f1fca01d33c3e078c2ecba450f95ab2ac79e74c6c82d847c",
-    "html/V8.html": "6a47c2c902daf9922a32821dd37fc7f5897144ad0b8ac04d9be237d3f3c6f95d",
-    "html/V9.html": "03e5d7a56622020b276b2092c52d71b6dc5f5dd51d54b97b3a73ca219b53a50f",
-    "html/Z1.html": "23bbd478115014f890544c44296c80749891a6f4598dee8d95336b18578b3ccd",
-    "html/Z10.html": "2a92f2c2456d2577f9a61f75124bffb2a1389b5774ebf31ee75c5c65432f126d",
-    "html/Z11.html": "77ba25b887ab9da036afdf1797bfc5607675357f18cbb510cf214358832dd3df",
-    "html/Z12.html": "2dc0b1fe7f5bdf6553df075b9b828e36488cd1f40e64afc26a2a28ec1c6f518b",
-    "html/Z13.html": "9813d8a1a207c3f2c8fe43b8e6c98e2e2d385c6dc9e1e65ddcbdec770802bfed",
-    "html/Z14.html": "2fcd798fe9d9616335a3fd9d9849b6d88ce79727809a0928120c53afef592ca5",
-    "html/Z15.html": "4b44594a40776e01533cfbb9bc7bd45d8647b5d8da1267f4d9d368f70ee5c619",
-    "html/Z2.html": "769673fd2f716a1330abc95e868b9dd112152b6ec1962cca22cf347ad0ccfa72",
-    "html/Z3.html": "b8e70ed6d086f59b627ae84520fadebd772734d375bb7bdf5f9b9b17977ee545",
-    "html/Z4.html": "7c86b41b1c02c171829bb4087a127ac0e192031c39647a3a171867a257c26460",
-    "html/Z6.html": "21bf380138f88477ec637091fc8d70a2f0538ad8fa82e2e4586ab182d2833e1e",
-    "html/Z7.html": "97cadc14c47f69f7fc046b46976647499ec5d92ac1d6819fc0521c68bb88c8a1",
-    "html/Z8.html": "0a9577b88328e4aaa3edd4d87dd66ec33fde57551f71756fd16b7b9c09e97048",
-    "html/Z9.html": "03e2e1fc82f78e73ba6024ef1d0cdfb40accfe4da5aed0803a0d2397b6ded3e0",
+    "SOURCES.md": "69f91302f7c05346f0146d97fd9c0b00a1db652c70dd72f14bd0a0d70f42291b",
+    "html/H10.html": "9523a0fc1ad035531eb0d603325c55bd6351d98bf599d5fc03b041d2f38f265b",
+    "html/H11.html": "06f8808798bc8b6e7254ac783615d1a0bdf3572f45a8d32609e29e728c1dca7a",
+    "html/H12.html": "61b30f31695a841adbcbb8706eae86b29f078d74502381e606d063c47bd767ad",
+    "html/H2.html": "263b7d65d87b878946b8648bd04d86ed4cbcc35cb580130efe71a38cff22a7f4",
+    "html/H3.html": "4066bd950342f24ff6738e2b07068dfb1573ed39dfc84e007e3f3fd7f8eb28e9",
+    "html/H4.html": "3acfac955e2c0d597ae8c9a96f4f42ab2bd15ba85652b7b9e4b1d79c8696e65a",
+    "html/H5.html": "cf681c8cc81a2464c26175837b973d4df0a2eb5aa058b40fcc819d5377d02f58",
+    "html/H6.html": "cf6dd2efcafb86fd16a2cc3fd14302c96954c366738ee019d9cfee372a42f879",
+    "html/H7.html": "4afe0c35bf47a8bd9368b6d4e1ca1af355db7ecb0723622a843781ae17ad8560",
+    "html/H8.html": "b6563f75ff70a89bb815872bfe86fb50753b10ea3bfb38f6b441390dac768b90",
+    "html/H9.html": "b1287678e7076fb3f1b15c3df3f26b1acd0129dea20e4ff7d1797dea5b68c30f",
+    "html/K1.html": "b2b51908a69b14e3f71667f50503bddb547790d472539515fcbb83ab1cf69e23",
+    "html/K10.html": "c789d676bcb155b772d8ef302bb3b4090a732272f19830dd1b86e33fbc2a23ab",
+    "html/K11.html": "71e147892af7488e0181b43dcbd5b90fd3b3d970d7ea1616faaae7cd0d55e85e",
+    "html/K12.html": "6d83d25e887550ae2cb0dc075e7c7be0a2bdbfc78c55f51db0aac475eda28869",
+    "html/K13.html": "c4861d932ba85ec859aa53c5305c59c7fa9cae74b6cb8c9348ebe29f64551a9e",
+    "html/K14.html": "a7163ee7d6ab43888e7ec7127b49b43440ce369a91c088dee8f7e3d269e7bf88",
+    "html/K15.html": "30b3c54c22e5976937fb24498f781348e591d866d9e710db319c106064ddc1b1",
+    "html/K16.html": "adb06c579ba2bd08faf4100f01c8a1a13fca00065f4065c674338eb1fe11fbde",
+    "html/K17.html": "ae4de6481bb65668ccc36632a174d38ffb88b8c2793695c08041f07946b963a1",
+    "html/K18.html": "c4632d8e8a43353674791ae52d1b2869217470499b006a382f2681a3fb76223f",
+    "html/K19.html": "83e81ed32812b13f9914f59972926812ae59900fd7b2311f14691a14609d0609",
+    "html/K2.html": "0f8bbe127ec7926effebc49b96f6cf2c940b99dad668d1f7f19d83d28819c54a",
+    "html/K20.html": "2b667a6ed760a27303e9c0e5425af77b18cbe94b70ccb34b9e61c18d9e9a6918",
+    "html/K21.html": "68334fe3be6de828985e0102a0bd418ef86e1e9e76fd821a10919eeb9de6da7e",
+    "html/K22.html": "1bda20aac05c2083296ff41c27ee184a58e950bb3583ec982aca29dd99b73c39",
+    "html/K23.html": "301d1e59bc814504501c036da20b23780f2b4aca1020cb8318a8946067bd1c59",
+    "html/K24.html": "52dbc99792c31872c52b7efe5a2190b894bb65f78d4f00820edfd2014a8981a0",
+    "html/K25.html": "1d20c4fa5c03942f28e8fbee509f2f4599fa80531c905deec229dc3a78e2159b",
+    "html/K26.html": "f3a931a37a8b13ebe071900ea241096557619d8a516b5382a54b517b0e8ebca1",
+    "html/K27.html": "01176ec3941c2f6daadd87c1dbe27729b2d30330ebdd80f692548d415d16d837",
+    "html/K28.html": "7bab5ca2d5e4cc2838e99dfe2e600f449e12b68041a215cd4e7c70e29415d302",
+    "html/K29.html": "4c27e8ccac944d81f4d7c21926d9714bc13f11fac3ecbe370c858c1ec181cd8f",
+    "html/K3.html": "f94fb24dcf5b5cd4e427bddd6e15b44c7c3f6c05f2a5c52e929cfc1ce6eaa037",
+    "html/K30.html": "6746ff7d1bc62c7fbcd49e35602934f68f5a369839cab136a6c21a6ed402565a",
+    "html/K31.html": "175a227d30105e6fe1a79401e4fe5f8bdbef002fc82a8f201b022a1d59dd2c65",
+    "html/K32.html": "266d039d238cbc24a23a89c8167548ff4ed0fc3d5d61269954d53006932c8e57",
+    "html/K33.html": "54618da119e75ffe13b5f63bcf9f1e5a87349948a35fda31f80eddbe9d9eb48f",
+    "html/K34.html": "ad152b4e00ddcb0757c68040e90b7119b647455d5001522ee92e092a3c068353",
+    "html/K35.html": "871b5fa0afdaceb35ba9cf42ab8d9931319ac4c6bef1e6396137c48d11ea90de",
+    "html/K36.html": "748f34ac7f4b63560bb5e2471df58b4a79b1b5168af589c1c3f79ee54205832c",
+    "html/K37.html": "9203d92133c4474aeac010383bd9359d7b3dcb9a089296cc3f549fa2bdabde61",
+    "html/K38.html": "36da973e48f4c63fda2e6d00b8aa063f2851772273d5398e475ff2e969990429",
+    "html/K4.html": "ba54392024067cd086779321febd78d45dc9c4c6d890ef70e2e740d4e678263a",
+    "html/K5.html": "86daa8dc96e21819f5a72f816ef4ef9bcd863797212f735d2ac58f436e4f5f05",
+    "html/K6.html": "09c99e7816265b8e79d2049c508fdd38504dd7d4fafc74e4339df75b8ac9012c",
+    "html/K7.html": "b652ab14d513705913a2e55a5aeb4de3a5b513c9f0a5a291260534fd1d3be6dc",
+    "html/K8.html": "1252bcd96b7ccf9ade5fea803c7d734a9198f6e78c99bab13053fa8f53d91ba2",
+    "html/K9.html": "ec0371e983fa19cc98e6789f94861c86a8d18177cfc9596c6e9749607cb16a5a",
+    "html/M10.html": "3181cec9f1d9b0a68e6b03214d40fdf9c75dac8414d30f7ba524883d284499dc",
+    "html/M11.html": "4e1cbf9e1784e2fec22db6c855b639fd8c1fa2d28ee8bb8e2ef9fb119a7a2ac2",
+    "html/M12.html": "41a46d2924a7232d449e3653e865015426eac25a006c1b34c7751be422be311d",
+    "html/M13.html": "2545bffd1e4afb7c816c0f7e14fae60046cf3a2325951a15055bdb904014bd41",
+    "html/M18.html": "6732f33544543811968e487f82d4759367d7575a3c0aed137f1166dd83ab4a37",
+    "html/M19.html": "586787cca3c7d7336b155bbb714a5673ef1629caaf572c15e3fce91985de6641",
+    "html/M2.html": "cf70b68ac15136fc84f3087e354fd34c45e54d1cfc1aa2c866663a53deed7a73",
+    "html/M20.html": "baccc51e0990b0560ec4c5c92ef02bceb762db81443c72b7f9e76aa55c72cba9",
+    "html/M21.html": "e9f5d7f289efb8b7d6726dd674e8c625bb0b5516f23200e641d17fdb410e5809",
+    "html/M22.html": "299ce3ca8cdccffe7cb76c7b7f4cf6e93f4facb7e19c0b79a195b9a6d99ab76c",
+    "html/M23.html": "2b3d5400534f759a82335d91146cc9a3ec4a29a66b1e4717769ed8aa0f11cd34",
+    "html/M24.html": "1f1e9d47b7e6a7b803699cefbef46ccb1e3fed29267a4aba7c9dc136b8c8a5ce",
+    "html/M25.html": "ac4d3fe0b202f258c1d96a42fc6adc155c10aa58144b3663dc9323393de165da",
+    "html/M27.html": "c4f8bcaf3455a35ba147ced43da22e2d7287f9d45f048509c6ae4ac6fb2b647a",
+    "html/M28.html": "36e4559861426f3230e6b948592c0554f3b383ad4bffdd010e5f550d2d899b98",
+    "html/M29.html": "caa6f200ee6e25e85c95e184707c1e3bed36b6fbe49e02491105ed6533d47c24",
+    "html/M3.html": "483f1f7701cdd7659031f23696c76c3bfda2e9ef846d93fc21382fa18566ba8c",
+    "html/M30.html": "6a36bec33ca2a6f461e592b4b03e8648ee68a16fad715b2e33b64e542c8309da",
+    "html/M31.html": "2fe8e2850c2e19d11622d301fe17a13035449d4745b4711f8b41b7a8ca88ce49",
+    "html/M32.html": "e23e36be5dd22571584db7d4af514372b9b5789695f86100a0e5de4c56a65157",
+    "html/M33.html": "3995be189a5af091c0b2a61a5d518a1dea2514ba85bc50519fb6b8574ac6325b",
+    "html/M34.html": "6ea8d360ee3a168a710a6ac205300f7688dbff48cf356c13edbc540e6a026e28",
+    "html/M36.html": "0dd128121f7339f2a41ae56a8bc8d90bdff33c33d882680ff2058512bb19df78",
+    "html/M37.html": "b838330bc590f40fb34962311e1800763b802bfafccfd8005325d7c376d3d887",
+    "html/M38.html": "a38e39ab8eac6b917ea4521f83d13110a12d72699f52b600f6fccfb52a49a962",
+    "html/M4.html": "7bb72f33b9c8edc08d5f4e387e30fd08368a535c571b6e73866809c9534f174a",
+    "html/M5.html": "b5ca0394ff46c3dbfd561a73314416656397e636227abb81f9a7409ef0bb4617",
+    "html/M6.html": "83dcc5f643b27f6f403c67e60bb767db4988dadbc78e33cead607e9a59c14972",
+    "html/M7.html": "901bed8fb2d7f1ef68d7c54b2430f719dd8a51d76026f16a49198a361b1d335d",
+    "html/M8.html": "2d3d02ed76110f114cc67a218b2e85e3769178c89adf9419dfe2fbdf0dc88598",
+    "html/M9.html": "bb293d225a37dfe9078bd23886f39749841dac1c9a8b74a00fdf3ef0a24b0a5c",
+    "html/V1.html": "88028912e90ba67a356029600690d00850e5b5b5f88a1a97641aef9e140a6840",
+    "html/V10.html": "c55f303a10d956242d6277d40af6e066b929ee2a0c6f2398e59965c92c57e4e7",
+    "html/V11.html": "984c62e2f127c23fbbc2e075c0142c7dd484a12ae2e5ac38ff663ff6b9e88069",
+    "html/V12.html": "26183c6d94035b2706fadd4bccc18c0ba2a1f7dba7be74492322a4026a7dd3a9",
+    "html/V13.html": "5e7968c47439eb888c7b524b534bcb13a1ace0dda14b5eb1d5edb98889bc443c",
+    "html/V14.html": "e06cdf7cfaf218df7333a0bfff95f643edeccbaf90e3ea025142850b78c6980a",
+    "html/V15.html": "6fb8022fa2ca615bf5715853f11ac8a21cb489ed060a1da8ff8889d2acfcfec3",
+    "html/V2.html": "b4be96c944de0341cb308d13df4833245f68fdde4cb9d955ffe58a70b9493ade",
+    "html/V3.html": "9cef25d11f6408d90c20a919e67f738df4458787f5887f6310a0e2e0c54fc585",
+    "html/V4.html": "938fddedb7635fa6c73fbb3907f766ba64d15381b0f18aad874f13164cb3a535",
+    "html/V5.html": "099a1ea44a352dfbc42cafbdbab0d4b74f142743f500c1bc229d6d157549ef4c",
+    "html/V6.html": "c100abdaf8d5a18fe16b2f3bebed7ee22e7c966d60216bb97393d2d401d39bdb",
+    "html/V7.html": "b2ecec36c156eda368f68fcee76470bfd5e1119041c6991c3d068bb3445bf689",
+    "html/V8.html": "6907c0efa00c15a194d3b456fd59a82861c249db1bebbf3963f786e335543a0a",
+    "html/V9.html": "139a0cbb7353781a01f8b234e66af7091105323f2f3cc4c977855bc9f8bc1e6b",
+    "html/Z1.html": "12855fe422a9404c4f2b82416db7899666af3f1e78cacdd726e26fe293c14225",
+    "html/Z10.html": "72b48ddad1bfe461583db708fda7b02aef40cb99350ee229b6729701bbc6d466",
+    "html/Z11.html": "63bfe6fe3429ea1ad56f0315140e36159188234695095e7a85a3ee31e517f11c",
+    "html/Z12.html": "ec4e3c314490fbe2d2dc912d4c1a41d9e6f82e2a7998e7115c7cf714e7823b88",
+    "html/Z13.html": "200cf452109a8ac4184a8073a74703bf9d68cc7b84cf7f18c3be4346c8c81c4a",
+    "html/Z14.html": "4facf9a6f343f97bbbfa77c767e7f88a1081facd6e7dbb418bd7f99d8afde053",
+    "html/Z15.html": "ed0901030f78b07f470e892506676e2d58d829e06d031c7eb2aa00eddbe90706",
+    "html/Z2.html": "d1d0f8cbf4bad6aaa64ba870c2642bb31851dcaaa45210e1a14491501f8214cf",
+    "html/Z3.html": "d8641a1ebec78512b0cafefcbed4376826d4597c467640a7d95af8c3975d4d71",
+    "html/Z4.html": "ad7c7f515b56f4693d55ded588c2f00bbd6ae5d156ef956aa07b2fd7cc93e082",
+    "html/Z6.html": "47a753adb0ef374e1562bcd13114b01b22c4777039c0146862aff4484bc92076",
+    "html/Z7.html": "1e3923f2692503d021b46edc5c9a26143cbd7e1aa0b80059e53e1c5e58516365",
+    "html/Z8.html": "5fd8f18e1a24201d003abcab75ebe046567765e82bb47953949e0b1cc3337efe",
+    "html/Z9.html": "6f582b5c6c73adea726d1d4b886496178c9e37d962be72484d36f1201c5781d9",
     "posters/H10.png": "e7d4e3cfcb81089617379f62e49696e4497a61961f4f01ff825809dee06769e2",
     "posters/H11.png": "4e515b74858657dd7628b07a95f3215400b5686b139ce4ec4493c536aadf2b4b",
     "posters/H12.png": "bdd69667b8faa08e095f8d02ec0877f6921b8cb94f2841508de8e29769d2aa1e",

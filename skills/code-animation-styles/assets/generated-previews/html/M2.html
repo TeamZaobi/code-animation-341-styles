@@ -311,6 +311,7 @@ function m2Dark(t) {
   const timeline = document.getElementById('timeline');
   const clock = document.getElementById('clock');
   let playing = false, base = 0, start = 0, current = 0;
+  let animationFrame = 0;
   const reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   function syncUI(t) {
@@ -320,11 +321,12 @@ function m2Dark(t) {
     if (clock) clock.textContent = t.toFixed(2) + ' / ' + DURATION.toFixed(2) + 's';
   }
   function frame(now) {
+    animationFrame = 0;
     if (!playing) return;
     const t = ((now - start) / 1000 + base) % DURATION;
     paint(t);
     syncUI(t);
-    requestAnimationFrame(frame);
+    animationFrame = requestAnimationFrame(frame);
   }
   function play() {
     if (playing) return;
@@ -332,10 +334,12 @@ function m2Dark(t) {
     start = performance.now();
     base = current;
     if (playBtn) playBtn.textContent = '暂停';
-    requestAnimationFrame(frame);
+    animationFrame = requestAnimationFrame(frame);
   }
   function pause() {
     playing = false;
+    cancelAnimationFrame(animationFrame);
+    animationFrame = 0;
     if (playBtn) playBtn.textContent = '播放';
   }
   if (playBtn) playBtn.addEventListener('click', () => { playing ? pause() : play(); });

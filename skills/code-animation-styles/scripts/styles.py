@@ -175,12 +175,12 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             content = (ROOT / 'assets/word-rain.html').read_bytes()
         elif path.startswith('/previews/'):
             try:
-                return self.send_asset(preview_file(unquote(path[len('/previews/'):])) )
+                return self.send_asset(preview_file(unquote(path[len('/previews/'):])))
             except ValueError:
                 return self.send_error(403)
         elif path.startswith('/generated-previews/'):
             try:
-                return self.send_asset(generated_file(unquote(path[len('/generated-previews/'):])) )
+                return self.send_asset(generated_file(unquote(path[len('/generated-previews/'):])))
             except ValueError:
                 return self.send_error(403)
         else:
