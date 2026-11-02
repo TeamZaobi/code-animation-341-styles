@@ -1,0 +1,4 @@
+interface:
+  display_name: "代码动画风格"
+  short_description: "检索 341 种风格，在可视挑选器选型并生成可离线打开的 HTML 动画"
+  default_prompt: "使用 $code-animation-styles 打开风格挑选器，根据我选的风格制作一个可离线打开的 HTML 动画。"

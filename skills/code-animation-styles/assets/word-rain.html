@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>字雨 · 把噪声留在雨里</title>
+<!--
+Style A1 adaptation. Source: https://github.com/wqb578/code-animation-341-styles
+Pinned commit: 01576924a2b316d1f11ae33f75d3c005e8781451
+来源：来自俯仰观照博主的动画画风整理。
+已修改：重新实现为确定性时间驱动场景，增加自定义文案、暂停、重播、拖动和响应式布局。
+Upstream custom non-commercial license:
+https://github.com/wqb578/code-animation-341-styles/blob/01576924a2b316d1f11ae33f75d3c005e8781451/LICENSE
+-->
+<style>
+:root{color-scheme:dark;--bg:#101110;--ink:#e7e4d9;--muted:#a4a69d;--accent:#dfb883}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:"PingFang SC","Microsoft YaHei",sans-serif}
+main{max-width:1300px;margin:auto;padding:44px 5vw 26px}header{display:flex;justify-content:space-between;align-items:center;gap:20px;border-bottom:1px solid #373930;padding-bottom:20px;font:12px ui-monospace,monospace;letter-spacing:.12em;color:var(--muted)}header b{color:var(--accent);font-weight:400}h1{font-family:"Songti SC","STSong",serif;font-size:clamp(28px,4.5vw,58px);font-weight:400;letter-spacing:.06em;margin:30px 0 12px}.lead{font-size:14px;color:var(--muted);line-height:1.8;margin:0 0 28px}
+.stage{position:relative;aspect-ratio:16/9;background:#0b0e10;overflow:hidden}canvas{display:block;width:100%;height:100%}.corner{position:absolute;top:20px;left:24px;font:11px ui-monospace,monospace;letter-spacing:.16em;color:#858b89;pointer-events:none}
+.controls{display:flex;gap:18px;align-items:center;flex-wrap:wrap;padding:22px 0;border-bottom:1px solid #373930}button{min-height:44px;border:1px solid #555b50;color:var(--ink);background:transparent;font:inherit;font-size:13px;padding:8px 18px;cursor:pointer}button:hover{background:#282c25}button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:4px}#play{color:#11170f;background:var(--accent);border-color:var(--accent);min-width:100px}.scrub{display:flex;align-items:center;gap:14px;flex:1;min-width:200px;font:12px ui-monospace,monospace;font-variant-numeric:tabular-nums}input{min-width:60px;width:100%;accent-color:var(--accent);min-height:44px}.scrub>span{white-space:nowrap}time{white-space:nowrap;min-width:93px}footer{display:flex;justify-content:space-between;gap:18px;flex-wrap:wrap;font-size:11px;line-height:1.8;color:var(--muted);padding-top:18px}a{color:inherit;text-underline-offset:3px}
+@media(max-width:520px){main{padding:24px 18px}.lead{font-size:12px}.corner{top:10px;left:12px;font-size:9px}.controls{gap:12px}.scrub{flex-basis:100%;order:3}header{font-size:10px;letter-spacing:.06em}}
+</style>
+</head>
+<body>
+<main>
+<header><span>CODE ANIMATION STUDY / <b>A1</b></span><span>18 SEC · CANVAS 2D</span></header>
+<h1>把噪声，留在雨里。</h1>
+<p class="lead">有些话像雨一样落下。等它们落定，听见自己的声音。</p>
+<div class="stage"><canvas id="scene" role="img" aria-label="字雨动画：催促的话语落下、堆积，最后逐渐沉静，出现字幕「慢一点，也没关系」。">催促的话语落下、堆积，最后渐渐沉静。</canvas><span class="corner">A1 / WORD RAIN</span></div>
+<div class="controls">
+<button id="play" type="button" aria-pressed="false">暂停</button><button id="replay" type="button">从头播放</button>
+<label class="scrub" for="timeline"><span>进度</span><input id="timeline" type="range" min="0" max="18" step="0.01" value="0" aria-label="动画时间（秒）"><time id="clock">00.0 / 18.0</time></label>
+</div>
+<footer><span>来源：来自俯仰观照博主的动画画风整理 · A1 字雨 · 已修改</span><span>静音 / 可离线打开 · <a href="https://github.com/wqb578/code-animation-341-styles/blob/01576924a2b316d1f11ae33f75d3c005e8781451/LICENSE" target="_blank" rel="noopener noreferrer">原作品许可</a></span></footer>
+</main>
+<script>
+(() => {
+  'use strict';
+  const CONFIG = {
+    duration: 18, width: 1600, height: 900, seed: 341,
+    phrases: ['快一点', '你应该', '再努力一点', '别停下来', '别人都可以', '来不及了', '要更好', '别落后'],
+    ending: '慢一点，也没关系。',
+    colors: {top:'#10191d',bottom:'#090d10',rain:'#bac8c7',accent:'#dfb883'}
+  };
+  const canvas = document.getElementById('scene');
+  const ctx = canvas.getContext('2d');
+  const timeline = document.getElementById('timeline');
+  const clock = document.getElementById('clock');
+  const play = document.getElementById('play');
+  const reduced = matchMedia('(prefers-reduced-motion: reduce)');
+  let running = !reduced.matches, time = 0, last = null, raf = 0;
+  const clamp = (v,a,b) => Math.min(b,Math.max(a,v));
+  const smooth = (a,b,x) => {const u=clamp((x-a)/(b-a),0,1);return u*u*(3-2*u);};
+  let seed = CONFIG.seed;
+  const random = () => { seed = (Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296; };
+  const drops = Array.from({length:120}, (_,i) => ({
+    text:CONFIG.phrases[i%CONFIG.phrases.length],x:random()*1540-30,
+    start:random()*9.8,flight:2.7+random()*3.0,size:17+random()*19,
+    ground:825-random()*65,opacity:.14+random()*.42,drift:(random()-.5)*55
+  }));
+  function render(t) {
+    const w=CONFIG.width,h=CONFIG.height;
+    const viewWidth=Math.max(1,canvas.getBoundingClientRect().width);
+    ctx.setTransform(canvas.width/w,0,0,canvas.height/h,0,0);
+    ctx.globalAlpha=1;
+    const bg=ctx.createLinearGradient(0,0,0,h);bg.addColorStop(0,CONFIG.colors.top);bg.addColorStop(1,CONFIG.colors.bottom);
+    ctx.fillStyle=bg;ctx.fillRect(0,0,w,h);
+    ctx.strokeStyle='#34434a';ctx.lineWidth=.7;
+    for(let i=0;i<30;i++) {
+      const x=(i*67+19)%w;const y=((i*71+t*(14+i%5))%h);
+      ctx.globalAlpha=.16;ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x-9,y+60);ctx.stroke();
+    }
+    const calm=smooth(12,16,t), opening=smooth(0,.8,t);
+    for(const d of drops) {
+      const age=t-d.start;if(age<0)continue;
+      const u=clamp(age/d.flight,0,1),landed=u===1;
+      const x=d.x+d.drift*u,y=landed?d.ground:-70+(d.ground+70)*u*u;
+      ctx.save();ctx.translate(x,y);ctx.rotate(landed?.035*Math.sin(d.x):.025*Math.sin(t+d.x));
+      ctx.globalAlpha=d.opacity*opening*(1-calm*.88)*(landed?.5:1);
+      ctx.font=`${Math.max(d.size,9*CONFIG.width/viewWidth)}px "Songti SC","STSong",serif`;ctx.fillStyle=CONFIG.colors.rain;ctx.fillText(d.text,0,0);ctx.restore();
+    }
+    ctx.globalAlpha=.28;ctx.strokeStyle=CONFIG.colors.accent;ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(100,836);ctx.lineTo(1500,836);ctx.stroke();
+    const pulse=.6+.2*Math.sin(t*1.3);
+    const glow=ctx.createRadialGradient(800,830,0,800,830,280);glow.addColorStop(0,`rgba(223,184,131,${(.08+calm*.1)*pulse})`);glow.addColorStop(1,'rgba(223,184,131,0)');
+    ctx.globalAlpha=1;ctx.fillStyle=glow;ctx.fillRect(500,540,600,360);
+    ctx.textAlign='center';ctx.fillStyle=CONFIG.colors.accent;
+    ctx.globalAlpha=(.65+.35*smooth(.5,2,t))*(1-smooth(7,10,t));
+    ctx.font=`${Math.max(25,14*CONFIG.width/viewWidth)}px "Songti SC","STSong",serif`;ctx.fillText('那些催促你的声音',800,450);
+    ctx.globalAlpha=smooth(11.8,14.8,t);ctx.font=`${Math.max(46,14*CONFIG.width/viewWidth)}px "Songti SC","STSong",serif`;ctx.fillText(CONFIG.ending,800,442);
+    ctx.globalAlpha=smooth(13.5,15.5,t)*.6;ctx.font='13px ui-monospace,monospace';ctx.fillText('LET THE NOISE SETTLE.',800,492);
+    ctx.globalAlpha=1;ctx.textAlign='start';
+    timeline.value=String(t);clock.textContent=`${t.toFixed(1).padStart(4,'0')} / ${CONFIG.duration.toFixed(1)}`;
+  }
+  function resize() {
+    const rect=canvas.getBoundingClientRect(),dpr=Math.min(devicePixelRatio||1,2);
+    canvas.width=Math.max(1,Math.round(rect.width*dpr));canvas.height=Math.max(1,Math.round(rect.height*dpr));render(time);
+  }
+  function tick(now) {
+    raf=0;
+    if(!running)return;
+    if(last!==null)time=(time+Math.max(0,now-last)/1000)%CONFIG.duration;
+    last=now;render(time);raf=requestAnimationFrame(tick);
+  }
+  function setRunning(value) {
+    running=value;last=null;cancelAnimationFrame(raf);raf=0;
+    play.textContent=running?'暂停':'播放';play.setAttribute('aria-pressed',String(!running));
+    if(running)raf=requestAnimationFrame(tick);
+  }
+  play.addEventListener('click',()=>setRunning(!running));
+  document.getElementById('replay').addEventListener('click',()=>{time=0;render(time);setRunning(true);});
+  timeline.addEventListener('input',()=>{time=Number(timeline.value);setRunning(false);render(time);});
+  reduced.addEventListener('change',e=>{if(e.matches)setRunning(false);});
+  document.addEventListener('visibilitychange',()=>{last=null;});
+  new ResizeObserver(resize).observe(canvas);
+  resize();setRunning(running);
+})();
+</script>
+</body>
+</html>

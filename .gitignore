@@ -13,3 +13,10 @@ $RECYCLE.BIN/
 .idea/
 *.swp
 *~
+
+# Local generation jobs and dependency caches
+.work/
+node_modules/
+__pycache__/
+*.pyc
+.venv/

@@ -2,6 +2,52 @@
 
 > **来源：来自俯仰观照博主的动画画风整理**
 
+
+## 本 fork：全局 HTML 动画 skill
+
+本 fork 在原始资料基础上增加了可安装的 [code-animation-styles skill](skills/code-animation-styles/SKILL.md)，提供风格检索、带 JSON 交接的可视挑选器和独立 HTML 动画生成流程。X1–X31 的 31 个 GIF 来自 code-video 原项目，未使用生成模型重制。
+
+### 安装与使用
+
+需要 Python 3.9+；动画在现代浏览器中运行。以下命令在仓库根目录执行：
+
+```bash
+python3 scripts/install_skill.py
+```
+
+默认安装到 `~/.agents/skills/code-animation-styles`；已有同名目录时拒绝覆盖，可用 `--target /path/to/new/code-animation-styles` 另选位置。支持 Agent Skills 的宿主按自己的技能发现规则加载；可显式调用 `$code-animation-styles`。安装成功不等于所有宿主已自动发现。
+
+无需安装也可直接使用：
+
+```bash
+python3 skills/code-animation-styles/scripts/styles.py search 压力
+python3 skills/code-animation-styles/scripts/styles.py show A1
+python3 skills/code-animation-styles/scripts/styles.py serve --port 8765
+```
+
+浏览器打开终端打印的本机地址，挑选后点击「交给 agent · JSON」，把选择交给助手制作 HTML。选择不会自动发送聊天消息；支持浏览器读取的宿主可在你说“选好了”后读取清单，其他宿主可手动复制。服务关闭后需重新启动。
+
+### 已验证范围
+
+- 341 个目录条目，其中 333 个有效提示词；8 个上游空条目在适配挑选器中禁用。
+- 193 张原始静帧与 31 个原项目动图，共 224 个条目有预览。
+- skill 附带 A1 字雨 HTML 样片；它不是 333 种风格均已制作或视觉验收的声明。
+- 原始资料固定在 skill 的 `vendor/`，来源与 SHA-256 清单单独保存，安装后不依赖本仓库其他目录或外接磁盘。
+- 109 个缺失预览的生成任务与候选资源尚未完成验收，本次发布不包含它们。
+
+验证：
+
+```bash
+python3 scripts/check_x_previews.py
+python3 skills/code-animation-styles/scripts/styles.py check
+python3 skills/code-animation-styles/scripts/test_styles.py
+node --check skills/code-animation-styles/assets/picker-adapter.js
+```
+
+许可保持分区：原始资料与本地适配遵循仓库自定义非商业条款，L/V/X 对应第三方内容按其原 MIT 许可；没有将整个合集重新声明为 MIT。修改内容为 skill 封装、检索/本机服务、JSON 交接、空条目保护、A1 示例与 X 系列原项目预览接入。保留原作者与第三方署名，不表示获得作者背书。
+
+---
+
 [![License](https://img.shields.io/badge/license-%E8%87%AA%E5%AE%9A%E4%B9%89%E9%9D%9E%E5%95%86%E4%B8%9A%20%C2%B7%20Custom%20Non--Commercial-orange)](LICENSE)
 [![Styles](https://img.shields.io/badge/styles-341-blue)](#341-种怎么分)
 [![Stills](https://img.shields.io/badge/stills-193-green)](#里面有什么)
