@@ -1,0 +1,535 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>V9 拼贴 / 剪贴 · DeepSeek Harness 生成示例</title>
+<!--
+  Provenance
+  ----------
+  风格来源：code-animation-styles 目录（《来自俯仰观照博主的动画画风整理》整理稿）
+  catalog commit: 01576924a2b316d1f11ae33f75d3c005e8781451
+  style id: V9「拼贴 / 剪贴」
+  license: MIT（mg-styles-15，Copyright (c) 2026 Vincentwei1021）
+  本文件：DeepSeek Harness（deepseek-flash）根据该风格提示词新写的候选示例，
+  不是原作者样片，也不是原项目演示；仅用于风格挑选预览。共享的只有时间轴、
+  尺寸、导出接口与页脚署名，画面与动作按本风格重新设计。
+  原文“只输出代码”等语句属于素材的一部分，不覆盖本任务的交付合同。
+-->
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; min-height: 100%; background: #0c0c10; color: #e9e9ee;
+    font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif; }
+  #app { min-height: 100vh; display: flex; flex-direction: column; align-items: center;
+    justify-content: center; gap: 12px; padding: 20px; }
+  #stage { width: min(94vw, 1000px); aspect-ratio: 16 / 9; background: #000;
+    box-shadow: 0 18px 60px rgba(0,0,0,.55); position: relative; overflow: hidden; }
+  canvas { display: block; width: 100%; height: 100%; }
+  #head, #ui { width: min(94vw, 1000px); }
+  #head h1 { margin: 0 0 4px; font-size: 15px; font-weight: 600; letter-spacing: .02em; }
+  #head p { margin: 0; font-size: 12px; line-height: 1.5; color: #9a9aa8; }
+  #ui { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  #ui button { background: #1d1d26; color: #f2f2f6; border: 1px solid #343444;
+    border-radius: 7px; padding: 6px 12px; font-size: 12px; cursor: pointer; }
+  #ui button:hover { background: #272734; }
+  #ui input[type=range] { flex: 1 1 220px; min-width: 150px; accent-color: #7c8cff; }
+  #clock { font-variant-numeric: tabular-nums; font-size: 12px; color: #a9a9ba; min-width: 78px; }
+  #credit { width: min(94vw, 1000px); font-size: 11px; line-height: 1.6; color: #6f6f80; }
+  #credit b { color: #9c9cae; font-weight: 500; }
+  body.export, body.export #app { display: block; width: 640px; height: 360px; min-height: 0;
+    padding: 0; margin: 0; overflow: hidden; background: #000; }
+  body.export #stage { width: 640px; height: 360px; box-shadow: none; }
+  body.export #head, body.export #ui, body.export #credit { display: none; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="head">
+    <h1>V9 · 拼贴 / 剪贴</h1>
+    <p>拼贴剪贴：旧报纸底上，粗白边的侧脸剪影一张一合地说话，手撕纸片与剪下来的「脑洞」字样被胶带拍上去，全程 12fps 抽帧。</p>
+  </div>
+  <div id="stage"><canvas id="c" width="640" height="360" aria-label="拼贴 / 剪贴 风格动画示例"></canvas></div>
+  <div id="ui">
+    <button id="play" type="button">暂停</button>
+    <button id="replay" type="button">重播</button>
+    <input id="timeline" type="range" min="0" max="6" step="0.01" value="0" aria-label="时间轴">
+    <span id="clock">0.00 / 6.00s</span>
+  </div>
+  <div id="credit">
+    <b>DeepSeek Harness 生成示例</b>（非原项目样片）· 来源：来自俯仰观照博主的动画画风整理 ·
+    许可：MIT（mg-styles-15，Copyright (c) 2026 Vincentwei1021） · 画面与文字均由代码绘制，静音。
+  </div>
+</div>
+<script>
+(() => {
+  'use strict';
+  // ===== 共享脚手架（可改，但导出合同不要破坏）=================================
+  const W = 640, H = 360, DURATION = 6;
+  const EXPORT = new URLSearchParams(location.search).get('export') === '1';
+  const canvas = document.getElementById('c');
+  const ctx = canvas.getContext('2d');
+  const FONT = '"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",sans-serif';
+
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  const lerp = (a, b, t) => a + (b - a) * t;
+  const smooth = t => t * t * (3 - 2 * t);
+  const easeOut = t => 1 - Math.pow(1 - t, 3);
+  const easeIn = t => t * t * t;
+  function rng(seed) { let s = seed >>> 0; return () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; }; }
+
+  // ===== 场景（每个 ID 独立设计；下面的注释区由构建器替换）===================
+  // DESC: 拼贴剪贴：旧报纸底上，粗白边的侧脸剪影一张一合地说话，手撕纸片与剪下来的「脑洞」字样被胶带拍上去，全程 12fps 抽帧。
+// V9 拼贴 · 剪贴 · DeepSeek Harness 生成示例
+const V9_PAPER = '#E8DCC4', V9_PAPER2 = '#F3EAD6', V9_INK = '#2A2620';
+const V9_RED = '#C4442E', V9_BLUE = '#356C8E', V9_YELLOW = '#E9B93B', V9_TEAL = '#4C8B7A';
+
+function v9seg(t, a, b) { return clamp((t - a) / (b - a), 0, 1); }
+function v9out(p) { return 1 - Math.pow(1 - p, 3); }
+// 12fps 抽帧：所有位移都走阶梯时间轴
+function v9q(t) { return Math.floor(t * 12) / 12; }
+function v9jit(seed) { const r = rng(seed); return (r() - 0.5) * 3.4; }
+
+// 半调网点
+const V9_HALFTONE = (() => {
+  const c = document.createElement('canvas'); c.width = 8; c.height = 8;
+  const g = c.getContext('2d');
+  g.fillStyle = 'rgba(42,38,32,.55)';
+  g.beginPath(); g.arc(2, 2, 1.5, 0, Math.PI * 2); g.fill();
+  g.beginPath(); g.arc(6, 6, 1.5, 0, Math.PI * 2); g.fill();
+  return c;
+})();
+let V9_PAT = null;
+
+// 预计算：纸面纤维 + 报纸油墨行
+const V9_FIBER = (() => {
+  const r = rng(9911);
+  return Array.from({ length: 420 }, () => ({ x: r() * W, y: r() * H, w: 2 + r() * 16, h: 0.6 + r() * 0.8, a: 0.03 + r() * 0.07 }));
+})();
+const V9_PRINT = (() => {
+  const r = rng(4422);
+  const rows = [];
+  for (let col = 0; col < 5; col++) {
+    for (let i = 0; i < 12; i++) {
+      rows.push({ x: 14 + col * 126, y: 22 + i * 9, w: 60 + r() * 50, a: 0.05 + r() * 0.05 });
+    }
+  }
+  return rows;
+})();
+
+function v9Paper() {
+  ctx.fillStyle = V9_PAPER;
+  ctx.fillRect(0, 0, W, H);
+  ctx.save();
+  for (const f of V9_FIBER) {
+    ctx.fillStyle = `rgba(120,104,78,${f.a})`;
+    ctx.fillRect(f.x, f.y, f.w, f.h);
+  }
+  // 报纸印刷线
+  for (const p of V9_PRINT) {
+    ctx.fillStyle = `rgba(42,38,32,${p.a})`;
+    ctx.fillRect(p.x, p.y, p.w, 1.6);
+  }
+  // 折痕
+  ctx.strokeStyle = 'rgba(120,104,78,.16)'; ctx.lineWidth = 1.2;
+  ctx.beginPath(); ctx.moveTo(0, 118); ctx.lineTo(W, 112); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(416, 0); ctx.lineTo(410, H); ctx.stroke();
+  ctx.restore();
+}
+
+// 手撕纸片：边缘带随机锯齿
+function v9Torn(x, y, w, h, fill, seed, rot) {
+  const r = rng(seed);
+  ctx.save();
+  ctx.translate(x, y);
+  if (rot) ctx.rotate(rot);
+  ctx.beginPath();
+  const step = 9;
+  const jitter = () => (r() - 0.5) * 5;
+  ctx.moveTo(-w / 2 + jitter(), -h / 2 + jitter());
+  for (let px = -w / 2; px < w / 2; px += step) ctx.lineTo(px, -h / 2 + jitter());
+  for (let py = -h / 2; py < h / 2; py += step) ctx.lineTo(w / 2 + jitter(), py);
+  for (let px = w / 2; px > -w / 2; px -= step) ctx.lineTo(px, h / 2 + jitter());
+  for (let py = h / 2; py > -h / 2; py -= step) ctx.lineTo(-w / 2 + jitter(), py);
+  ctx.closePath();
+  ctx.shadowColor = 'rgba(60,48,32,.32)';
+  ctx.shadowBlur = 7; ctx.shadowOffsetY = 3;
+  ctx.fillStyle = fill; ctx.fill();
+  ctx.shadowColor = 'transparent';
+  ctx.restore();
+}
+
+// 胶带
+function v9Tape(x, y, w, rot, color) {
+  ctx.save();
+  ctx.translate(x, y); ctx.rotate(rot);
+  ctx.globalAlpha = 0.72;
+  ctx.fillStyle = color || 'rgba(233,185,59,.85)';
+  ctx.fillRect(-w / 2, -9, w, 18);
+  ctx.globalAlpha = 0.25;
+  ctx.fillStyle = '#FFFFFF';
+  ctx.fillRect(-w / 2, -9, w, 5);
+  ctx.restore();
+}
+
+// 侧脸剪影：多边形切出来的纸片（朝向右侧）
+const V9_FACE = [
+  [-52, 108], [-58, 46], [-64, 6], [-52, -34], [-24, -62], [12, -68],
+  [44, -50], [56, -22], [50, -2], [58, 16], [44, 22], [56, 34],
+  [44, 44], [50, 62], [30, 78], [16, 100], [26, 118],
+];
+
+function v9Head(t, jitterSeed) {
+  const q = v9q(t);
+  const tilt = Math.sin(q * 1.5) * 0.028;
+  const bob = Math.sin(q * 1.1) * 2.4;
+  ctx.save();
+  ctx.translate(238 + v9jit(jitterSeed) * 0.6, 196 + bob);
+  ctx.rotate(tilt);
+  // 白描边（剪下来的感觉）
+  ctx.save();
+  ctx.shadowColor = 'rgba(50,40,28,.42)';
+  ctx.shadowBlur = 9; ctx.shadowOffsetY = 5;
+  ctx.beginPath();
+  V9_FACE.forEach(([x, y], i) => (i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)));
+  ctx.closePath();
+  ctx.lineJoin = 'round';
+  ctx.strokeStyle = '#FFFDF6'; ctx.lineWidth = 15; ctx.stroke();
+  ctx.restore();
+  // 脸：肉色纸 + 网点阴影
+  ctx.save();
+  ctx.beginPath();
+  V9_FACE.forEach(([x, y], i) => (i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)));
+  ctx.closePath();
+  ctx.fillStyle = '#E2B49A'; ctx.fill();
+  ctx.save();
+  ctx.clip();
+  ctx.globalAlpha = 0.55;
+  ctx.fillStyle = V9_PAT;
+  ctx.fillRect(-70, 20, 140, 120);
+  ctx.globalAlpha = 0.32;
+  ctx.fillStyle = V9_RED;
+  ctx.fillRect(-70, -70, 60, 200);
+  ctx.restore();
+  ctx.strokeStyle = V9_INK; ctx.lineWidth = 1.4; ctx.stroke();
+  ctx.restore();
+  // 眼睛：白纸片 + 黑眼珠，眨眼用抽帧
+  const blink = (v9q(t) % 3.1) > 2.95 ? 0.25 : 1;
+  ctx.save();
+  ctx.fillStyle = V9_PAPER2;
+  ctx.beginPath(); ctx.ellipse(16, -12, 13, 9 * blink, -0.1, 0, Math.PI * 2); ctx.fill();
+  ctx.strokeStyle = V9_INK; ctx.lineWidth = 1.2; ctx.stroke();
+  ctx.fillStyle = V9_INK;
+  ctx.beginPath(); ctx.arc(19, -12, 4.4 * blink, 0, Math.PI * 2); ctx.fill();
+  ctx.restore();
+  // 眉毛
+  ctx.save();
+  ctx.strokeStyle = V9_INK; ctx.lineWidth = 3; ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.moveTo(0, -28); ctx.quadraticCurveTo(14, -34, 28, -26); ctx.stroke();
+  ctx.restore();
+  // 嘴：独立纸片，三帧开合（puppet 式）
+  const talk = v9q(t);
+  const open = (Math.floor(talk * 12) % 6 < 3) ? 1 : 0.05;
+  const talking = t > 1.5 && t < 4.6;
+  const jaw = talking ? open : 0.1;
+  ctx.save();
+  ctx.translate(30, 34);
+  ctx.rotate(0.12 + jaw * 0.26);
+  ctx.beginPath();
+  ctx.ellipse(11, 0, 13, 2.5 + jaw * 9, 0, 0, Math.PI * 2);
+  ctx.fillStyle = '#6B2A24'; ctx.fill();
+  ctx.strokeStyle = V9_INK; ctx.lineWidth = 1.6; ctx.stroke();
+  ctx.fillStyle = V9_PAPER2;
+  ctx.beginPath(); ctx.ellipse(9, -2, 9, 1.6 + jaw * 2.4, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.restore();
+  ctx.restore();
+}
+
+// 剪报大字：每个字单独一片纸，错位贴上去
+function v9CutWord(chars, cx, cy, t, t0, size, colors) {
+  chars.forEach((ch, i) => {
+    const p = v9seg(t, t0 + i * 0.16, t0 + i * 0.16 + 0.12);
+    if (p <= 0) return;
+    const e = v9out(p);
+    const rot = [-0.09, 0.06, -0.03, 0.08][i % 4];
+    const dx = (i - (chars.length - 1) / 2) * size * 1.02;
+    const slide = (1 - e) * 40;
+    ctx.save();
+    ctx.translate(cx + dx + slide, cy + (i % 2 ? -6 : 4) + v9jit(100 + i) * 0.5);
+    ctx.rotate(rot);
+    const s = 0.86 + 0.14 * e;
+    ctx.scale(s, s);
+    // 纸片底
+    ctx.save();
+    ctx.shadowColor = 'rgba(50,40,28,.4)';
+    ctx.shadowBlur = 8; ctx.shadowOffsetY = 4;
+    ctx.fillStyle = colors[i % colors.length];
+    const w = size * 1.16, h = size * 1.24;
+    ctx.beginPath();
+    const r = rng(700 + i);
+    ctx.moveTo(-w / 2 + r() * 5, -h / 2 + r() * 5);
+    ctx.lineTo(w / 2 - r() * 5, -h / 2 + r() * 6);
+    ctx.lineTo(w / 2 - r() * 4, h / 2 - r() * 6);
+    ctx.lineTo(-w / 2 + r() * 6, h / 2 - r() * 5);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+    // 字
+    ctx.fillStyle = i % 2 ? V9_INK : V9_PAPER2;
+    ctx.font = `900 ${size}px ${FONT}`;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(ch, 0, 2);
+    ctx.restore();
+  });
+}
+
+function v9Scribble(pts, p, color, w, seed) {
+  if (p <= 0) return;
+  const r = rng(seed);
+  ctx.save();
+  ctx.strokeStyle = color; ctx.lineWidth = w; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+  ctx.globalAlpha = 0.92;
+  const n = Math.max(2, Math.floor(pts.length * v9out(p)));
+  ctx.beginPath();
+  for (let i = 0; i < n; i++) {
+    const x = pts[i][0] + (r() - 0.5) * 3, y = pts[i][1] + (r() - 0.5) * 3;
+    i ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
+  }
+  ctx.stroke();
+  ctx.restore();
+}
+
+function drawScene(t) {
+  if (!V9_PAT) V9_PAT = ctx.createPattern(V9_HALFTONE, 'repeat');
+  v9Paper();
+
+  // 底部一张大撕纸，作为主要版面
+  v9Torn(330, 196, 560, 250, '#EDE1C8', 31, -0.012);
+
+  // 右上：半调网点圆（像放大镜/太阳）
+  const sunP = v9seg(t, 0.1, 0.5);
+  if (sunP > 0) {
+    ctx.save();
+    ctx.globalAlpha = v9out(sunP);
+    ctx.translate(556, 84);
+    ctx.beginPath(); ctx.arc(0, 0, 46, 0, Math.PI * 2);
+    ctx.fillStyle = '#D8C8A8'; ctx.fill();
+    ctx.save(); ctx.clip();
+    ctx.fillStyle = V9_PAT; ctx.fillRect(-50, -50, 100, 100);
+    ctx.fillStyle = 'rgba(196,68,46,.55)';
+    ctx.beginPath(); ctx.arc(14, 8, 30, 0, Math.PI * 2); ctx.fill();
+    ctx.restore();
+    ctx.strokeStyle = V9_INK; ctx.lineWidth = 1.6;
+    ctx.beginPath(); ctx.arc(0, 0, 46, 0, Math.PI * 2); ctx.stroke();
+    ctx.restore();
+  }
+
+  // 左上：一张报纸剪片（模拟剪报）
+  const clipP = v9seg(t, 0.05, 0.4);
+  if (clipP > 0) {
+    ctx.save();
+    ctx.globalAlpha = v9out(clipP);
+    ctx.translate(112, 78);
+    ctx.rotate(-0.06);
+    ctx.save();
+    ctx.shadowColor = 'rgba(50,40,28,.35)'; ctx.shadowBlur = 7; ctx.shadowOffsetY = 4;
+    ctx.fillStyle = '#F7F0DE';
+    ctx.fillRect(-78, -44, 156, 88);
+    ctx.restore();
+    ctx.strokeStyle = 'rgba(42,38,32,.18)'; ctx.lineWidth = 1;
+    ctx.strokeRect(-78, -44, 156, 88);
+    ctx.fillStyle = V9_INK;
+    ctx.font = `800 15px ${FONT}`;
+    ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+    ctx.fillText('思维晚报', -66, -20);
+    ctx.fillStyle = 'rgba(42,38,32,.55)';
+    ctx.font = `500 8px ${FONT}`;
+    for (let i = 0; i < 5; i++) ctx.fillRect(-66, -12 + i * 11, 118 - (i % 3) * 22, 4);
+    ctx.fillStyle = V9_RED;
+    ctx.font = `800 9px ${FONT}`;
+    ctx.fillText('NO.109', 22, -20);
+    ctx.restore();
+  }
+
+  // 主体：侧脸剪影
+  v9Head(t, 12);
+
+  // 剪报大字「脑洞」
+  v9CutWord(['脑', '洞'], 300, 92, t, 0.9, 56, [V9_YELLOW, V9_RED]);
+
+  // 小字「拼贴」竖排贴在右侧
+  const smallP = v9seg(t, 1.7, 2.0);
+  if (smallP > 0) {
+    ctx.save();
+    ctx.globalAlpha = v9out(smallP);
+    ctx.translate(452, 62);
+    ctx.rotate(0.08);
+    ctx.fillStyle = V9_BLUE;
+    ctx.font = `800 26px ${FONT}`;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('拼', 0, -14);
+    ctx.fillText('贴', 0, 16);
+    ctx.font = `600 10px ${FONT}`;
+    ctx.fillStyle = 'rgba(42,38,32,.6)';
+    ctx.fillText('COLLAGE', 0, 40);
+    ctx.restore();
+  }
+
+  // 手撕纸条 + 胶带
+  const stripP = v9seg(t, 2.1, 2.5);
+  if (stripP > 0) {
+    ctx.save();
+    ctx.globalAlpha = v9out(stripP);
+    v9Torn(436, 268, 186, 46, '#CFDCD2', 77, 0.05);
+    ctx.fillStyle = V9_INK;
+    ctx.font = `700 17px ${FONT}`;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('把不相干的事', 436, 264);
+    ctx.fillStyle = 'rgba(42,38,32,.72)';
+    ctx.fillText('贴在一起', 436, 284);
+    ctx.restore();
+  }
+  v9Tape(352, 128, 62, -0.18);
+  v9Tape(176, 268, 54, 0.14, 'rgba(196,68,46,.7)');
+  v9Tape(508, 214, 46, -0.5, 'rgba(76,139,122,.65)');
+
+  // 手绘箭头与圈注
+  v9Scribble([[350, 150], [356, 168], [352, 186], [336, 196]], v9seg(t, 2.35, 2.75), V9_RED, 3.4, 5);
+  v9Scribble([[150, 120], [128, 108], [104, 112], [94, 126]], v9seg(t, 2.5, 2.9), V9_INK, 2.6, 8);
+  // 圈住「脑洞」
+  const circleP = v9seg(t, 2.9, 3.4);
+  if (circleP > 0) {
+    ctx.save();
+    ctx.strokeStyle = V9_TEAL; ctx.lineWidth = 3; ctx.lineCap = 'round';
+    ctx.globalAlpha = 0.95;
+    ctx.beginPath();
+    ctx.ellipse(300, 92, 92 * v9out(circleP), 52 * v9out(circleP), 0.06, Math.PI * 0.15, Math.PI * 2.05, false);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  // 底部大字：抽帧抖动的手写体
+  const capP = v9seg(t, 3.5, 3.95);
+  if (capP > 0) {
+    ctx.save();
+    ctx.globalAlpha = v9out(capP);
+    const q = v9q(t);
+    ctx.translate(324 + v9jit(31) * 0.4, 330 + Math.sin(q * 2) * 1.2);
+    ctx.rotate(-0.02);
+    ctx.fillStyle = V9_INK;
+    ctx.font = `900 24px ${FONT}`;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('一 张 拼 贴 的 脑 洞', 0, 0);
+    ctx.restore();
+  }
+
+  // 全屏最上层：纸面颗粒 + 降低饱和的暗角
+  ctx.save();
+  ctx.globalAlpha = 0.55;
+  const vg = ctx.createRadialGradient(320, 180, 150, 320, 180, 400);
+  vg.addColorStop(0, 'rgba(255,255,255,0)');
+  vg.addColorStop(1, 'rgba(96,78,52,.22)');
+  ctx.fillStyle = vg; ctx.fillRect(0, 0, W, H);
+  ctx.restore();
+
+  // 抽帧闪白，模拟翻页的顿感
+  const flick = (Math.floor(t * 12) % 24 === 0) ? 0.05 : 0;
+  if (flick > 0) { ctx.fillStyle = `rgba(255,250,238,${flick})`; ctx.fillRect(0, 0, W, H); }
+}
+
+  // ===== 共享渲染与署名 =======================================================
+  function watermark() {
+    const text = 'DeepSeek Harness 生成示例';
+    ctx.save();
+    ctx.font = '11px ' + FONT;
+    const w = ctx.measureText(text).width + 14;
+    const x = W - w - 8, y = H - 24;
+    ctx.fillStyle = 'rgba(0,0,0,.46)';
+    ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(x, y, w, 18, 4); else ctx.rect(x, y, w, 18);
+    ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,.82)';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(text, x + 7, y + 9.5);
+    ctx.restore();
+  }
+
+  function paint(t) {
+    ctx.save();
+    ctx.clearRect(0, 0, W, H);
+    try { drawScene(t); } catch (err) { console.error(err); }
+    ctx.restore();
+    watermark();
+  }
+
+  function renderAt(seconds) {
+    const t = ((Number(seconds) % DURATION) + DURATION) % DURATION;
+    paint(t);
+    syncUI(t);
+    return t;
+  }
+  window.renderAt = renderAt;
+
+  // ===== 播放、控制、减少动态 =================================================
+  const playBtn = document.getElementById('play');
+  const timeline = document.getElementById('timeline');
+  const clock = document.getElementById('clock');
+  let playing = false, base = 0, start = 0, current = 0;
+  let animationFrame = 0;
+  const reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function syncUI(t) {
+    if (EXPORT) return;
+    current = t;
+    if (timeline) timeline.value = String(t.toFixed(2));
+    if (clock) clock.textContent = t.toFixed(2) + ' / ' + DURATION.toFixed(2) + 's';
+  }
+  function frame(now) {
+    animationFrame = 0;
+    if (!playing) return;
+    const t = ((now - start) / 1000 + base) % DURATION;
+    paint(t);
+    syncUI(t);
+    animationFrame = requestAnimationFrame(frame);
+  }
+  function play() {
+    if (playing) return;
+    playing = true;
+    start = performance.now();
+    base = current;
+    if (playBtn) playBtn.textContent = '暂停';
+    animationFrame = requestAnimationFrame(frame);
+  }
+  function pause() {
+    playing = false;
+    cancelAnimationFrame(animationFrame);
+    animationFrame = 0;
+    if (playBtn) playBtn.textContent = '播放';
+  }
+  if (playBtn) playBtn.addEventListener('click', () => { playing ? pause() : play(); });
+  document.getElementById('replay')?.addEventListener('click', () => {
+    base = 0; start = performance.now(); paint(0); syncUI(0); play();
+  });
+  timeline?.addEventListener('input', () => {
+    pause(); paint(Number(timeline.value)); syncUI(Number(timeline.value));
+  });
+  window.addEventListener('keydown', e => {
+    if (e.code === 'Space') { e.preventDefault(); playing ? pause() : play(); }
+    if (e.key === 'r' || e.key === 'R') { base = 0; start = performance.now(); paint(0); syncUI(0); play(); }
+  });
+
+  if (EXPORT) {
+    document.body.classList.add('export');
+    renderAt(0);
+  } else if (reduced) {
+    renderAt(2.4);
+    pause();
+  } else {
+    renderAt(0);
+    play();
+  }
+})();
+</script>
+</body>
+</html>

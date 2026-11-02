@@ -1,0 +1,525 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Z10 木版画 · DeepSeek Harness 生成示例</title>
+<!--
+  Provenance
+  ----------
+  风格来源：code-animation-styles 目录（《来自俯仰观照博主的动画画风整理》整理稿）
+  catalog commit: 01576924a2b316d1f11ae33f75d3c005e8781451
+  style id: Z10「木版画」
+  license: upstream-custom-noncommercial（俯仰观照整理稿，非商业）
+  本文件：DeepSeek Harness（deepseek-flash）根据该风格提示词新写的候选示例，
+  不是原作者样片，也不是原项目演示；仅用于风格挑选预览。共享的只有时间轴、
+  尺寸、导出接口与页脚署名，画面与动作按本风格重新设计。
+  原文“只输出代码”等语句属于素材的一部分，不覆盖本任务的交付合同。
+-->
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; min-height: 100%; background: #0c0c10; color: #e9e9ee;
+    font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif; }
+  #app { min-height: 100vh; display: flex; flex-direction: column; align-items: center;
+    justify-content: center; gap: 12px; padding: 20px; }
+  #stage { width: min(94vw, 1000px); aspect-ratio: 16 / 9; background: #000;
+    box-shadow: 0 18px 60px rgba(0,0,0,.55); position: relative; overflow: hidden; }
+  canvas { display: block; width: 100%; height: 100%; }
+  #head, #ui { width: min(94vw, 1000px); }
+  #head h1 { margin: 0 0 4px; font-size: 15px; font-weight: 600; letter-spacing: .02em; }
+  #head p { margin: 0; font-size: 12px; line-height: 1.5; color: #9a9aa8; }
+  #ui { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  #ui button { background: #1d1d26; color: #f2f2f6; border: 1px solid #343444;
+    border-radius: 7px; padding: 6px 12px; font-size: 12px; cursor: pointer; }
+  #ui button:hover { background: #272734; }
+  #ui input[type=range] { flex: 1 1 220px; min-width: 150px; accent-color: #7c8cff; }
+  #clock { font-variant-numeric: tabular-nums; font-size: 12px; color: #a9a9ba; min-width: 78px; }
+  #credit { width: min(94vw, 1000px); font-size: 11px; line-height: 1.6; color: #6f6f80; }
+  #credit b { color: #9c9cae; font-weight: 500; }
+  body.export, body.export #app { display: block; width: 640px; height: 360px; min-height: 0;
+    padding: 0; margin: 0; overflow: hidden; background: #000; }
+  body.export #stage { width: 640px; height: 360px; box-shadow: none; }
+  body.export #head, body.export #ui, body.export #credit { display: none; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="head">
+    <h1>Z10 · 木版画</h1>
+    <p>木刻套色：黑线版先落，赭红、石绿、土黄逐版压上，白色刀痕显出木味，边缘留版痕。</p>
+  </div>
+  <div id="stage"><canvas id="c" width="640" height="360" aria-label="木版画 风格动画示例"></canvas></div>
+  <div id="ui">
+    <button id="play" type="button">暂停</button>
+    <button id="replay" type="button">重播</button>
+    <input id="timeline" type="range" min="0" max="6" step="0.01" value="0" aria-label="时间轴">
+    <span id="clock">0.00 / 6.00s</span>
+  </div>
+  <div id="credit">
+    <b>DeepSeek Harness 生成示例</b>（非原项目样片）· 来源：来自俯仰观照博主的动画画风整理 ·
+    许可：upstream-custom-noncommercial（俯仰观照整理稿，非商业） · 画面与文字均由代码绘制，静音。
+  </div>
+</div>
+<script>
+(() => {
+  'use strict';
+  // ===== 共享脚手架（可改，但导出合同不要破坏）=================================
+  const W = 640, H = 360, DURATION = 6;
+  const EXPORT = new URLSearchParams(location.search).get('export') === '1';
+  const canvas = document.getElementById('c');
+  const ctx = canvas.getContext('2d');
+  const FONT = '"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",sans-serif';
+
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  const lerp = (a, b, t) => a + (b - a) * t;
+  const smooth = t => t * t * (3 - 2 * t);
+  const easeOut = t => 1 - Math.pow(1 - t, 3);
+  const easeIn = t => t * t * t;
+  function rng(seed) { let s = seed >>> 0; return () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; }; }
+
+  // ===== 场景（每个 ID 独立设计；下面的注释区由构建器替换）===================
+  // DESC: 木刻套色：黑线版先落，赭红、石绿、土黄逐版压上，白色刀痕显出木味，边缘留版痕。
+// Z10 木版画 · DeepSeek Harness 生成示例
+
+const Z10_PAPER_C = '#f2ead7';
+const Z10_INK = '#1f1a16';
+const Z10_RED = '#bf3a2b';
+const Z10_GREEN_A = '#5b855c';
+const Z10_GREEN_B = '#2f5a3c';
+const Z10_OCHRE = '#c99a52';
+
+const Z10_PAPER = (() => {
+  const c = document.createElement('canvas'); c.width = W; c.height = H;
+  const g = c.getContext('2d');
+  g.fillStyle = Z10_PAPER_C; g.fillRect(0, 0, W, H);
+  const r = rng(10101);
+  for (let i = 0; i < 420; i++) {
+    const x = r() * W, y = r() * H, len = 4 + r() * 24, a = r() * Math.PI;
+    g.strokeStyle = `rgba(150,126,88,${0.02 + r() * 0.05})`;
+    g.lineWidth = 0.6;
+    g.beginPath(); g.moveTo(x, y); g.lineTo(x + Math.cos(a) * len, y + Math.sin(a) * len); g.stroke();
+  }
+  const vg = g.createRadialGradient(W * 0.5, H * 0.45, 140, W * 0.5, H * 0.45, 420);
+  vg.addColorStop(0, 'rgba(255,255,255,0)');
+  vg.addColorStop(1, 'rgba(150,120,80,0.16)');
+  g.fillStyle = vg; g.fillRect(0, 0, W, H);
+  return c;
+})();
+
+const Z10_GRAIN = (() => {
+  const c = document.createElement('canvas'); c.width = W; c.height = H;
+  const g = c.getContext('2d');
+  const r = rng(20202);
+  g.strokeStyle = 'rgba(40,28,18,0.16)';
+  for (let i = 0; i < 46; i++) {
+    const y = r() * H;
+    g.lineWidth = 0.5 + r() * 1.6;
+    g.beginPath();
+    g.moveTo(-10, y);
+    for (let x = 0; x <= W + 10; x += 40) {
+      g.lineTo(x, y + Math.sin(x * 0.02 + i) * (2 + r() * 5));
+    }
+    g.stroke();
+  }
+  return c;
+})();
+
+function z10seg(t, a, b) { return clamp((t - a) / (b - a), 0, 1); }
+
+// 抖动多边形（刀刻边缘）
+function z10blob(pts, seed, amp) {
+  const r = rng(seed);
+  const out = [];
+  for (let i = 0; i < pts.length; i++) {
+    const [x, y] = pts[i];
+    out.push([x + (r() - 0.5) * amp, y + (r() - 0.5) * amp]);
+  }
+  return out;
+}
+
+function z10poly(pts) {
+  ctx.beginPath();
+  pts.forEach(([x, y], i) => { if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y); });
+  ctx.closePath();
+}
+
+const Z10_HILL_FAR = z10blob([[0, 232], [70, 196], [140, 212], [206, 178], [272, 202], [344, 182], [412, 204], [486, 186], [556, 208], [620, 194], [640, 200], [640, 330], [0, 330]], 551, 7);
+const Z10_HILL_NEAR = z10blob([[0, 296], [80, 258], [160, 276], [246, 246], [330, 270], [420, 250], [508, 274], [588, 256], [640, 268], [640, 348], [0, 348]], 552, 7);
+const Z10_FIELD = z10blob([[0, 300], [120, 292], [260, 300], [400, 294], [540, 302], [640, 296], [640, 360], [0, 360]], 553, 4);
+
+const Z10_KNIFE = (() => {
+  const r = rng(30303);
+  const out = [];
+  for (let i = 0; i < 90; i++) {
+    const x = r() * W, y = 40 + r() * 300;
+    const a = (r() < 0.6 ? -0.6 : 0.8) + (r() - 0.5) * 0.5;
+    const len = 5 + r() * 18;
+    out.push({ x, y, a, len, w: 0.8 + r() * 1.6 });
+  }
+  return out;
+})();
+
+const Z10_FURROWS = (() => {
+  const out = [];
+  for (let i = 0; i < 6; i++) out.push({ y: 312 + i * 8, sw: 10 + i * 3, ph: i * 0.8 });
+  return out;
+})();
+
+// 套色落版：轻微的落版位移与压印
+function z10stamp(p, drawFn) {
+  if (p <= 0) return;
+  const e = 1 - Math.pow(1 - p, 2);
+  const off = (1 - e) * 5;
+  ctx.save();
+  ctx.globalAlpha = Math.min(1, e * 1.3);
+  ctx.translate(-off, -off * 0.6);
+  drawFn(e);
+  ctx.restore();
+}
+
+function z10house(e) {
+  ctx.save();
+  // 墙
+  ctx.fillStyle = Z10_PAPER_C;
+  ctx.fillRect(148, 206, 84, 56);
+  ctx.strokeStyle = Z10_INK;
+  ctx.lineWidth = 2.4;
+  ctx.strokeRect(148, 206, 84, 56);
+  // 屋顶
+  ctx.fillStyle = Z10_RED;
+  ctx.beginPath();
+  ctx.moveTo(136, 208);
+  ctx.lineTo(190, 178);
+  ctx.lineTo(244, 208);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+  // 门与窗（白刀刻出）
+  ctx.fillStyle = Z10_INK;
+  ctx.fillRect(172, 230, 18, 32);
+  ctx.fillRect(198, 224, 18, 16);
+  ctx.strokeStyle = Z10_PAPER_C;
+  ctx.lineWidth = 2;
+  ctx.strokeRect(172, 230, 18, 32);
+  ctx.beginPath();
+  ctx.moveTo(207, 224); ctx.lineTo(207, 240);
+  ctx.moveTo(198, 232); ctx.lineTo(216, 232);
+  ctx.stroke();
+  // 炊烟
+  ctx.strokeStyle = Z10_INK;
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(214, 176);
+  ctx.bezierCurveTo(220, 160, 208, 150, 216, 136);
+  ctx.stroke();
+  ctx.restore();
+}
+
+function z10tree(e) {
+  ctx.save();
+  // 干与枝：木刻式排线
+  ctx.strokeStyle = Z10_INK;
+  ctx.lineCap = 'round';
+  ctx.lineWidth = 5;
+  ctx.beginPath();
+  ctx.moveTo(470, 300);
+  ctx.quadraticCurveTo(464, 250, 474, 210);
+  ctx.stroke();
+  ctx.lineWidth = 3;
+  for (const [a, b, c, d] of [[474, 240, 444, 218], [474, 228, 502, 206], [472, 214, 450, 196], [472, 208, 492, 186]]) {
+    ctx.beginPath(); ctx.moveTo(a, b); ctx.lineTo(c, d); ctx.stroke();
+  }
+  // 叶团：粗刀点的黑块
+  ctx.fillStyle = Z10_INK;
+  const rr = rng(909);
+  for (let k = 0; k < 26; k++) {
+    const ang = rr() * Math.PI * 2;
+    const rad = rr() * 30;
+    const x = 474 + Math.cos(ang) * rad - 4;
+    const y = 200 + Math.sin(ang) * rad * 0.72 - 8;
+    ctx.beginPath();
+    ctx.ellipse(x, y, 4 + rr() * 6, 3 + rr() * 4, ang, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.restore();
+}
+
+function drawScene(t) {
+  ctx.drawImage(Z10_PAPER, 0, 0);
+
+  // 版边与对位十字
+  const bp = z10seg(t, 0.05, 0.5);
+  if (bp > 0) {
+    ctx.save();
+    ctx.globalAlpha = easeOut(bp) * 0.5;
+    ctx.strokeStyle = 'rgba(80,60,40,0.5)';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(24.5, 22.5, 591, 315);
+    ctx.restore();
+  }
+  const reg = z10seg(t, 0.2, 0.6);
+  if (reg > 0) {
+    ctx.save();
+    ctx.globalAlpha = easeOut(reg) * 0.7;
+    ctx.strokeStyle = 'rgba(70,50,34,0.7)';
+    ctx.lineWidth = 1;
+    for (const [x, y] of [[24, 22], [616, 22], [24, 338], [616, 338]]) {
+      ctx.beginPath(); ctx.moveTo(x - 5, y); ctx.lineTo(x + 5, y); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(x, y - 5); ctx.lineTo(x, y + 5); ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  // 黑线版：山脊、田埂、屋树轮廓（先落）
+  z10stamp(z10seg(t, -0.25, 0.95), e => {
+    ctx.strokeStyle = Z10_INK;
+    ctx.lineWidth = 3.2;
+    ctx.beginPath();
+    Z10_HILL_FAR.forEach(([x, y], i) => { if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y - 2); });
+    ctx.stroke();
+    ctx.lineWidth = 2.6;
+    ctx.beginPath();
+    Z10_HILL_NEAR.forEach(([x, y], i) => { if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y); });
+    ctx.stroke();
+  });
+
+  // 赭红版：太阳、屋顶
+  z10stamp(z10seg(t, 1.1, 1.9), () => {
+    ctx.fillStyle = Z10_RED;
+    ctx.beginPath();
+    ctx.arc(500, 92, 42, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(500, 92, 42, 0, Math.PI * 2);
+    ctx.clip();
+    // 太阳里的横向刀痕
+    ctx.strokeStyle = Z10_PAPER_C;
+    ctx.lineWidth = 3;
+    for (let i = -2; i <= 2; i++) {
+      ctx.beginPath();
+      ctx.moveTo(456, 92 + i * 15);
+      ctx.lineTo(544, 92 + i * 15);
+      ctx.stroke();
+    }
+    ctx.restore();
+  });
+
+  // 石绿版：两重山
+  z10stamp(z10seg(t, 1.75, 2.55), () => {
+    ctx.fillStyle = Z10_GREEN_A;
+    z10poly(Z10_HILL_FAR);
+    ctx.fill();
+    ctx.save();
+    z10poly(Z10_HILL_FAR);
+    ctx.clip();
+    ctx.globalAlpha = 0.22;
+    ctx.drawImage(Z10_GRAIN, 0, 0);
+    ctx.restore();
+    ctx.fillStyle = Z10_GREEN_B;
+    z10poly(Z10_HILL_NEAR);
+    ctx.fill();
+    ctx.save();
+    z10poly(Z10_HILL_NEAR);
+    ctx.clip();
+    ctx.globalAlpha = 0.2;
+    ctx.drawImage(Z10_GRAIN, 0, 0);
+    ctx.restore();
+  });
+
+  // 土黄版：田
+  z10stamp(z10seg(t, 2.4, 3.15), () => {
+    ctx.fillStyle = Z10_OCHRE;
+    z10poly(Z10_FIELD);
+    ctx.fill();
+    ctx.save();
+    z10poly(Z10_FIELD);
+    ctx.clip();
+    ctx.globalAlpha = 0.22;
+    ctx.drawImage(Z10_GRAIN, 0, 0);
+    ctx.restore();
+  });
+
+  // 黑线细节：屋、树、田垄、飞鸟
+  z10stamp(z10seg(t, 3.0, 3.9), () => {
+    z10house(1);
+    z10tree(1);
+    // 田垄
+    ctx.strokeStyle = Z10_INK;
+    ctx.lineWidth = 2.2;
+    Z10_FURROWS.forEach(f => {
+      ctx.beginPath();
+      for (let x = 0; x <= W; x += 20) {
+        ctx.lineTo(x, f.y + Math.sin((x + f.ph * 30) * 0.012) * f.sw * 0.3);
+      }
+      ctx.stroke();
+    });
+    // 飞鸟
+    ctx.lineWidth = 2.4;
+    for (const [bx, by, s] of [[300, 82, 1], [340, 70, 0.8], [380, 88, 0.7]]) {
+      ctx.beginPath();
+      ctx.moveTo(bx - 9 * s, by);
+      ctx.quadraticCurveTo(bx - 3 * s, by - 5 * s, bx, by - 1);
+      ctx.quadraticCurveTo(bx + 3 * s, by - 5 * s, bx + 9 * s, by);
+      ctx.stroke();
+    }
+    // 天空横向刻线
+    ctx.strokeStyle = `rgba(31,26,22,0.38)`;
+    ctx.lineWidth = 1.3;
+    for (let i = 0; i < 4; i++) {
+      const y = 120 + i * 16;
+      ctx.beginPath();
+      for (let x = 0; x <= W; x += 24) {
+        ctx.lineTo(x, y + Math.sin(x * 0.03 + i) * 2.4);
+      }
+      ctx.stroke();
+    }
+  });
+
+  // 白色刀痕：刻掉的地方
+  const kp = z10seg(t, 3.5, 4.5);
+  if (kp > 0) {
+    ctx.save();
+    ctx.strokeStyle = 'rgba(246,238,220,0.9)';
+    ctx.lineCap = 'round';
+    const n = Math.floor(kp * Z10_KNIFE.length);
+    for (let i = 0; i < n; i++) {
+      const k = Z10_KNIFE[i];
+      ctx.lineWidth = k.w;
+      ctx.beginPath();
+      ctx.moveTo(k.x, k.y);
+      ctx.lineTo(k.x + Math.cos(k.a) * k.len, k.y + Math.sin(k.a) * k.len);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  // 题字
+  const tp = z10seg(t, 4.3, 5.0);
+  if (tp > 0) {
+    ctx.save();
+    ctx.globalAlpha = easeOut(tp);
+    ctx.fillStyle = Z10_INK;
+    ctx.font = `700 26px ${FONT}`;
+    ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+    ctx.fillText('木版画', 42, 58);
+    ctx.fillStyle = Z10_RED;
+    ctx.fillRect(42, 76, 78, 3);
+    ctx.font = `400 13px ${FONT}`;
+    ctx.fillStyle = 'rgba(31,26,22,0.8)';
+    ctx.fillText('一刀一刻', 42, 94);
+    ctx.restore();
+  }
+  const sp = z10seg(t, 4.9, 5.3);
+  if (sp > 0) {
+    ctx.save();
+    ctx.globalAlpha = easeOut(sp);
+    ctx.translate(560, 306);
+    ctx.rotate(-0.04);
+    ctx.fillStyle = Z10_RED;
+    ctx.fillRect(-13, -13, 26, 26);
+    ctx.fillStyle = 'rgba(242,234,215,0.95)';
+    ctx.font = `700 14px ${FONT}`;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('木', 0, 1);
+    ctx.restore();
+  }
+}
+
+  // ===== 共享渲染与署名 =======================================================
+  function watermark() {
+    const text = 'DeepSeek Harness 生成示例';
+    ctx.save();
+    ctx.font = '11px ' + FONT;
+    const w = ctx.measureText(text).width + 14;
+    const x = W - w - 8, y = H - 24;
+    ctx.fillStyle = 'rgba(0,0,0,.46)';
+    ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(x, y, w, 18, 4); else ctx.rect(x, y, w, 18);
+    ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,.82)';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(text, x + 7, y + 9.5);
+    ctx.restore();
+  }
+
+  function paint(t) {
+    ctx.save();
+    ctx.clearRect(0, 0, W, H);
+    try { drawScene(t); } catch (err) { console.error(err); }
+    ctx.restore();
+    watermark();
+  }
+
+  function renderAt(seconds) {
+    const t = ((Number(seconds) % DURATION) + DURATION) % DURATION;
+    paint(t);
+    syncUI(t);
+    return t;
+  }
+  window.renderAt = renderAt;
+
+  // ===== 播放、控制、减少动态 =================================================
+  const playBtn = document.getElementById('play');
+  const timeline = document.getElementById('timeline');
+  const clock = document.getElementById('clock');
+  let playing = false, base = 0, start = 0, current = 0;
+  let animationFrame = 0;
+  const reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function syncUI(t) {
+    if (EXPORT) return;
+    current = t;
+    if (timeline) timeline.value = String(t.toFixed(2));
+    if (clock) clock.textContent = t.toFixed(2) + ' / ' + DURATION.toFixed(2) + 's';
+  }
+  function frame(now) {
+    animationFrame = 0;
+    if (!playing) return;
+    const t = ((now - start) / 1000 + base) % DURATION;
+    paint(t);
+    syncUI(t);
+    animationFrame = requestAnimationFrame(frame);
+  }
+  function play() {
+    if (playing) return;
+    playing = true;
+    start = performance.now();
+    base = current;
+    if (playBtn) playBtn.textContent = '暂停';
+    animationFrame = requestAnimationFrame(frame);
+  }
+  function pause() {
+    playing = false;
+    cancelAnimationFrame(animationFrame);
+    animationFrame = 0;
+    if (playBtn) playBtn.textContent = '播放';
+  }
+  if (playBtn) playBtn.addEventListener('click', () => { playing ? pause() : play(); });
+  document.getElementById('replay')?.addEventListener('click', () => {
+    base = 0; start = performance.now(); paint(0); syncUI(0); play();
+  });
+  timeline?.addEventListener('input', () => {
+    pause(); paint(Number(timeline.value)); syncUI(Number(timeline.value));
+  });
+  window.addEventListener('keydown', e => {
+    if (e.code === 'Space') { e.preventDefault(); playing ? pause() : play(); }
+    if (e.key === 'r' || e.key === 'R') { base = 0; start = performance.now(); paint(0); syncUI(0); play(); }
+  });
+
+  if (EXPORT) {
+    document.body.classList.add('export');
+    renderAt(0);
+  } else if (reduced) {
+    renderAt(2.4);
+    pause();
+  } else {
+    renderAt(0);
+    play();
+  }
+})();
+</script>
+</body>
+</html>

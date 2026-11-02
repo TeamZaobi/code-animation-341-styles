@@ -1,0 +1,355 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>V14 液态流动 · DeepSeek Harness 生成示例</title>
+<!--
+  Provenance
+  ----------
+  风格来源：code-animation-styles 目录（《来自俯仰观照博主的动画画风整理》整理稿）
+  catalog commit: 01576924a2b316d1f11ae33f75d3c005e8781451
+  style id: V14「液态流动」
+  license: MIT（mg-styles-15，Copyright (c) 2026 Vincentwei1021）
+  本文件：DeepSeek Harness（deepseek-flash）根据该风格提示词新写的候选示例，
+  不是原作者样片，也不是原项目演示；仅用于风格挑选预览。共享的只有时间轴、
+  尺寸、导出接口与页脚署名，画面与动作按本风格重新设计。
+  原文“只输出代码”等语句属于素材的一部分，不覆盖本任务的交付合同。
+-->
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; min-height: 100%; background: #0c0c10; color: #e9e9ee;
+    font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif; }
+  #app { min-height: 100vh; display: flex; flex-direction: column; align-items: center;
+    justify-content: center; gap: 12px; padding: 20px; }
+  #stage { width: min(94vw, 1000px); aspect-ratio: 16 / 9; background: #000;
+    box-shadow: 0 18px 60px rgba(0,0,0,.55); position: relative; overflow: hidden; }
+  canvas { display: block; width: 100%; height: 100%; }
+  #head, #ui { width: min(94vw, 1000px); }
+  #head h1 { margin: 0 0 4px; font-size: 15px; font-weight: 600; letter-spacing: .02em; }
+  #head p { margin: 0; font-size: 12px; line-height: 1.5; color: #9a9aa8; }
+  #ui { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  #ui button { background: #1d1d26; color: #f2f2f6; border: 1px solid #343444;
+    border-radius: 7px; padding: 6px 12px; font-size: 12px; cursor: pointer; }
+  #ui button:hover { background: #272734; }
+  #ui input[type=range] { flex: 1 1 220px; min-width: 150px; accent-color: #7c8cff; }
+  #clock { font-variant-numeric: tabular-nums; font-size: 12px; color: #a9a9ba; min-width: 78px; }
+  #credit { width: min(94vw, 1000px); font-size: 11px; line-height: 1.6; color: #6f6f80; }
+  #credit b { color: #9c9cae; font-weight: 500; }
+  body.export, body.export #app { display: block; width: 640px; height: 360px; min-height: 0;
+    padding: 0; margin: 0; overflow: hidden; background: #000; }
+  body.export #stage { width: 640px; height: 360px; box-shadow: none; }
+  body.export #head, body.export #ui, body.export #credit { display: none; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="head">
+    <h1>V14 · 液态流动</h1>
+    <p>液态流动：几颗会互相融合的液态球在高光棚底上拉丝、断裂、回弹，涟漪荡开后汇成一滴，最后浮出「万物始于一滴」。</p>
+  </div>
+  <div id="stage"><canvas id="c" width="640" height="360" aria-label="液态流动 风格动画示例"></canvas></div>
+  <div id="ui">
+    <button id="play" type="button">暂停</button>
+    <button id="replay" type="button">重播</button>
+    <input id="timeline" type="range" min="0" max="6" step="0.01" value="0" aria-label="时间轴">
+    <span id="clock">0.00 / 6.00s</span>
+  </div>
+  <div id="credit">
+    <b>DeepSeek Harness 生成示例</b>（非原项目样片）· 来源：来自俯仰观照博主的动画画风整理 ·
+    许可：MIT（mg-styles-15，Copyright (c) 2026 Vincentwei1021） · 画面与文字均由代码绘制，静音。
+  </div>
+</div>
+<script>
+(() => {
+  'use strict';
+  // ===== 共享脚手架（可改，但导出合同不要破坏）=================================
+  const W = 640, H = 360, DURATION = 6;
+  const EXPORT = new URLSearchParams(location.search).get('export') === '1';
+  const canvas = document.getElementById('c');
+  const ctx = canvas.getContext('2d');
+  const FONT = '"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",sans-serif';
+
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  const lerp = (a, b, t) => a + (b - a) * t;
+  const smooth = t => t * t * (3 - 2 * t);
+  const easeOut = t => 1 - Math.pow(1 - t, 3);
+  const easeIn = t => t * t * t;
+  function rng(seed) { let s = seed >>> 0; return () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; }; }
+
+  // ===== 场景（每个 ID 独立设计；下面的注释区由构建器替换）===================
+  // DESC: 液态流动：几颗会互相融合的液态球在高光棚底上拉丝、断裂、回弹，涟漪荡开后汇成一滴，最后浮出「万物始于一滴」。
+// V14 液态流动 · DeepSeek Harness 生成示例
+const V14_W = 320, V14_H = 190;      // 低分辨率场，放大 2 倍并保留柔边
+const V14_BG = '#070912';
+const V14_DEEP = [26, 34, 92];
+const V14_MID = [58, 118, 226];
+const V14_LIT = [126, 226, 255];
+const V14_HOT = [236, 252, 255];
+
+const V14_LOW = document.createElement('canvas');
+V14_LOW.width = V14_W; V14_LOW.height = V14_H;
+const v14 = V14_LOW.getContext('2d');
+const V14_IMG = v14.createImageData(V14_W, V14_H);
+let V14_SCAN_PAT = null;
+
+function v14seg(t, a, b) { return clamp((t - a) / (b - a), 0, 1); }
+function v14out(p) { return 1 - Math.pow(1 - p, 3); }
+function v14in(p) { return p * p * p; }
+function v14smooth(e0, e1, x) { const p = clamp((x - e0) / (e1 - e0), 0, 1); return p * p * (3 - 2 * p); }
+
+// metaball 场：f = Σ r²/d²，>1 即液体内部
+const V14_BALLS = [];
+
+function v14Balls(t) {
+  const b = V14_BALLS;
+  b.length = 0;
+  // 主体：一滴从上方落下（带细颈），落地后摊开成池
+  const fall = v14seg(t, -1.4, -0.2);
+  const land = t > -0.2;
+  if (!land) {
+    // 下坠 + 拉丝：主体 + 一颗更小的尾珠
+    const y = lerp(-10, 96, Math.pow(fall, 1.5));
+    b.push({ x: 160, y, r: 21 + fall * 5 });
+    b.push({ x: 160, y: y - 26 - fall * 10, r: 7 + fall * 5 });
+  } else {
+    const spread = v14out(v14seg(t, -0.2, 1.4));
+    const breathe = 1 + Math.sin(t * 1.1) * 0.03;
+    b.push({ x: 160, y: lerp(96, 92, spread) + Math.sin(t * 1.5) * 3, r: lerp(30, 40, spread) * breathe });
+  }
+  // 卫星液滴：延迟 2~3 帧跟随，落地压扁
+  const sat = [
+    { x: 96, y: 84, r: 13, ph: 0.4 },
+    { x: 226, y: 90, r: 16, ph: 1.7 },
+    { x: 130, y: 128, r: 10, ph: 2.9 },
+    { x: 205, y: 128, r: 11, ph: 4.1 },
+  ];
+  sat.forEach((s, i) => {
+    const p = v14out(v14seg(t, 0.55 + i * 0.12, 1.55 + i * 0.12));
+    if (p <= 0) return;
+    const bob = Math.sin(t * 1.8 + s.ph) * 4;
+    const sq = 1 + Math.sin(t * 3.4 + s.ph) * 0.14;
+    b.push({ x: s.x + Math.sin(t * 0.9 + s.ph) * 6, y: s.y + bob, r: s.r * p * Math.min(sq, 1.2) });
+  });
+  // 结尾：所有液滴向中心汇成一滴
+  const merge = v14out(v14seg(t, 4.0, 5.1));
+  if (merge > 0) {
+    for (const q of b) {
+      q.x = lerp(q.x, 160, merge * 0.92);
+      q.y = lerp(q.y, 92, merge * 0.92);
+      q.r = lerp(q.r, 34, merge * 0.6);
+    }
+  }
+}
+
+function v14Field(t) {
+  v14Balls(t);
+  const balls = V14_BALLS;
+  const data = V14_IMG.data;
+  const NB = balls.length;
+  // 预取球参数
+  const bx = new Float32Array(NB), by = new Float32Array(NB), br = new Float32Array(NB);
+  for (let i = 0; i < NB; i++) { bx[i] = balls[i].x; by[i] = balls[i].y; br[i] = balls[i].r * balls[i].r; }
+  for (let y = 0; y < V14_H; y++) {
+    for (let x = 0; x < V14_W; x++) {
+      let f = 0;
+      for (let i = 0; i < NB; i++) {
+        const dx = x - bx[i], dy = y - by[i];
+        f += br[i] / (dx * dx + dy * dy + 1.2);
+      }
+      const idx = (y * V14_W + x) * 4;
+      if (f <= 0.92) { data[idx + 3] = 0; continue; }
+      // 场梯度 → 伪法线 → 光照
+      let gx = 0, gy = 0;
+      for (let i = 0; i < NB; i++) {
+        const dx = x - bx[i], dy = y - by[i];
+        const d2 = dx * dx + dy * dy + 1.2;
+        const inv = br[i] / (d2 * d2);
+        gx -= dx * inv * 2;
+        gy -= dy * inv * 2;
+      }
+      const gl = Math.hypot(gx, gy) || 1;
+      const nx = -gx / gl, ny = -gy / gl;       // 外法线
+      const dot = nx * -0.52 + ny * -0.78;       // 左上方主光
+      const diff = clamp(dot * 0.5 + 0.5, 0, 1);
+      const kBase = Math.pow(diff, 1.7);
+      const edge = 1 - v14smooth(0.92, 1.20, f);  // 靠近边缘 → 1
+      let cr = lerp(V14_DEEP[0], V14_MID[0], 0.18 + 0.82 * kBase);
+      let cg = lerp(V14_DEEP[1], V14_MID[1], 0.18 + 0.82 * kBase);
+      let cb = lerp(V14_DEEP[2], V14_MID[2], 0.18 + 0.82 * kBase);
+      // 边缘轮辉光（液体张力）
+      cr = lerp(cr, V14_LIT[0], edge * 0.85);
+      cg = lerp(cg, V14_LIT[1], edge * 0.85);
+      cb = lerp(cb, V14_LIT[2], edge * 0.85);
+      // 小面积高光
+      const spec = Math.pow(clamp(dot, 0, 1), 16);
+      cr = lerp(cr, V14_HOT[0], spec * 0.85);
+      cg = lerp(cg, V14_HOT[1], spec * 0.85);
+      cb = lerp(cb, V14_HOT[2], spec * 0.85);
+      data[idx] = cr; data[idx + 1] = cg; data[idx + 2] = cb;
+      data[idx + 3] = 255 * v14smooth(0.90, 1.16, f);
+    }
+  }
+  v14.putImageData(V14_IMG, 0, 0);
+}
+
+function drawScene(t) {
+  // 底：深色棚底 + 一点冷光
+  const bg = ctx.createLinearGradient(0, 0, 0, H);
+  bg.addColorStop(0, '#080C18');
+  bg.addColorStop(0.62, V14_BG);
+  bg.addColorStop(1, '#03050B');
+  ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+  const gl = ctx.createRadialGradient(320, 150, 20, 320, 150, 300);
+  gl.addColorStop(0, 'rgba(38,86,190,.30)');
+  gl.addColorStop(1, 'rgba(38,86,190,0)');
+  ctx.fillStyle = gl; ctx.fillRect(0, 0, W, H);
+
+  // 液态场（低分辨率 → 放大，天然柔边）
+  v14Field(t);
+  ctx.save();
+  ctx.globalCompositeOperation = 'lighter';
+  ctx.globalAlpha = 0.95;
+  ctx.drawImage(V14_LOW, 0, 0, V14_W, V14_H, 0, 0, W, H * (360 / 380));
+  ctx.restore();
+  // 再叠一层模糊的高光，让液体更"湿"
+  ctx.save();
+  ctx.globalCompositeOperation = 'lighter';
+  ctx.globalAlpha = 0.35;
+  ctx.drawImage(V14_LOW, 8, 10, W, H * (360 / 380));
+  ctx.restore();
+
+  // 标题：字距拉开的细体，慢速浮出
+  const tp = v14seg(t, 4.35, 5.2);
+  if (tp > 0) {
+    const e = v14out(tp);
+    ctx.save();
+    ctx.globalAlpha = e;
+    ctx.translate(0, (1 - e) * 10);
+    ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
+    ctx.fillStyle = 'rgba(236,252,255,.96)';
+    ctx.font = `300 27px ${FONT}`;
+    ctx.fillText('万 物 始 于 一 滴', 320, 318);
+    ctx.fillStyle = 'rgba(126,226,255,.62)';
+    ctx.font = `400 11px ${FONT}`;
+    ctx.fillText('L I Q U I D   M O T I O N   ·   D R O P', 320, 338);
+    ctx.restore();
+  }
+
+  // 细颗粒 + 暗角
+  const vg = ctx.createRadialGradient(320, 170, 110, 320, 170, 420);
+  vg.addColorStop(0, 'rgba(0,0,0,0)');
+  vg.addColorStop(1, 'rgba(0,0,0,.62)');
+  ctx.fillStyle = vg; ctx.fillRect(0, 0, W, H);
+
+  if (!V14_SCAN_PAT) {
+    const c = document.createElement('canvas'); c.width = 2; c.height = 2;
+    const g = c.getContext('2d');
+    g.fillStyle = 'rgba(255,255,255,.05)';
+    g.fillRect(0, 0, 1, 1);
+    V14_SCAN_PAT = ctx.createPattern(c, 'repeat');
+  }
+  ctx.save();
+  ctx.globalAlpha = 0.5;
+  ctx.fillStyle = V14_SCAN_PAT;
+  ctx.fillRect(0, 0, W, H);
+  ctx.restore();
+}
+
+  // ===== 共享渲染与署名 =======================================================
+  function watermark() {
+    const text = 'DeepSeek Harness 生成示例';
+    ctx.save();
+    ctx.font = '11px ' + FONT;
+    const w = ctx.measureText(text).width + 14;
+    const x = W - w - 8, y = H - 24;
+    ctx.fillStyle = 'rgba(0,0,0,.46)';
+    ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(x, y, w, 18, 4); else ctx.rect(x, y, w, 18);
+    ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,.82)';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(text, x + 7, y + 9.5);
+    ctx.restore();
+  }
+
+  function paint(t) {
+    ctx.save();
+    ctx.clearRect(0, 0, W, H);
+    try { drawScene(t); } catch (err) { console.error(err); }
+    ctx.restore();
+    watermark();
+  }
+
+  function renderAt(seconds) {
+    const t = ((Number(seconds) % DURATION) + DURATION) % DURATION;
+    paint(t);
+    syncUI(t);
+    return t;
+  }
+  window.renderAt = renderAt;
+
+  // ===== 播放、控制、减少动态 =================================================
+  const playBtn = document.getElementById('play');
+  const timeline = document.getElementById('timeline');
+  const clock = document.getElementById('clock');
+  let playing = false, base = 0, start = 0, current = 0;
+  let animationFrame = 0;
+  const reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function syncUI(t) {
+    if (EXPORT) return;
+    current = t;
+    if (timeline) timeline.value = String(t.toFixed(2));
+    if (clock) clock.textContent = t.toFixed(2) + ' / ' + DURATION.toFixed(2) + 's';
+  }
+  function frame(now) {
+    animationFrame = 0;
+    if (!playing) return;
+    const t = ((now - start) / 1000 + base) % DURATION;
+    paint(t);
+    syncUI(t);
+    animationFrame = requestAnimationFrame(frame);
+  }
+  function play() {
+    if (playing) return;
+    playing = true;
+    start = performance.now();
+    base = current;
+    if (playBtn) playBtn.textContent = '暂停';
+    animationFrame = requestAnimationFrame(frame);
+  }
+  function pause() {
+    playing = false;
+    cancelAnimationFrame(animationFrame);
+    animationFrame = 0;
+    if (playBtn) playBtn.textContent = '播放';
+  }
+  if (playBtn) playBtn.addEventListener('click', () => { playing ? pause() : play(); });
+  document.getElementById('replay')?.addEventListener('click', () => {
+    base = 0; start = performance.now(); paint(0); syncUI(0); play();
+  });
+  timeline?.addEventListener('input', () => {
+    pause(); paint(Number(timeline.value)); syncUI(Number(timeline.value));
+  });
+  window.addEventListener('keydown', e => {
+    if (e.code === 'Space') { e.preventDefault(); playing ? pause() : play(); }
+    if (e.key === 'r' || e.key === 'R') { base = 0; start = performance.now(); paint(0); syncUI(0); play(); }
+  });
+
+  if (EXPORT) {
+    document.body.classList.add('export');
+    renderAt(0);
+  } else if (reduced) {
+    renderAt(2.4);
+    pause();
+  } else {
+    renderAt(0);
+    play();
+  }
+})();
+</script>
+</body>
+</html>

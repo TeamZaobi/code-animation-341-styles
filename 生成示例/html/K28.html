@@ -1,0 +1,470 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>K28 像素 · DeepSeek Harness 生成示例</title>
+<!--
+  Provenance
+  ----------
+  风格来源：code-animation-styles 目录（《来自俯仰观照博主的动画画风整理》整理稿）
+  catalog commit: 01576924a2b316d1f11ae33f75d3c005e8781451
+  style id: K28「像素」
+  license: upstream-custom-noncommercial（俯仰观照整理稿，非商业）
+  本文件：DeepSeek Harness（deepseek-flash）根据该风格提示词新写的候选示例，
+  不是原作者样片，也不是原项目演示；仅用于风格挑选预览。共享的只有时间轴、
+  尺寸、导出接口与页脚署名，画面与动作按本风格重新设计。
+  原文“只输出代码”等语句属于素材的一部分，不覆盖本任务的交付合同。
+-->
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; min-height: 100%; background: #0c0c10; color: #e9e9ee;
+    font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif; }
+  #app { min-height: 100vh; display: flex; flex-direction: column; align-items: center;
+    justify-content: center; gap: 12px; padding: 20px; }
+  #stage { width: min(94vw, 1000px); aspect-ratio: 16 / 9; background: #000;
+    box-shadow: 0 18px 60px rgba(0,0,0,.55); position: relative; overflow: hidden; }
+  canvas { display: block; width: 100%; height: 100%; }
+  #head, #ui { width: min(94vw, 1000px); }
+  #head h1 { margin: 0 0 4px; font-size: 15px; font-weight: 600; letter-spacing: .02em; }
+  #head p { margin: 0; font-size: 12px; line-height: 1.5; color: #9a9aa8; }
+  #ui { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  #ui button { background: #1d1d26; color: #f2f2f6; border: 1px solid #343444;
+    border-radius: 7px; padding: 6px 12px; font-size: 12px; cursor: pointer; }
+  #ui button:hover { background: #272734; }
+  #ui input[type=range] { flex: 1 1 220px; min-width: 150px; accent-color: #7c8cff; }
+  #clock { font-variant-numeric: tabular-nums; font-size: 12px; color: #a9a9ba; min-width: 78px; }
+  #credit { width: min(94vw, 1000px); font-size: 11px; line-height: 1.6; color: #6f6f80; }
+  #credit b { color: #9c9cae; font-weight: 500; }
+  body.export, body.export #app { display: block; width: 640px; height: 360px; min-height: 0;
+    padding: 0; margin: 0; overflow: hidden; background: #000; }
+  body.export #stage { width: 640px; height: 360px; box-shadow: none; }
+  body.export #head, body.export #ui, body.export #credit { display: none; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="head">
+    <h1>K28 · 像素</h1>
+    <p>160×90 的低分辨率像素夜景，方块小人在草地上抬头，顶上的问号砖被顶起，灯泡蹦出来闪了几下。</p>
+  </div>
+  <div id="stage"><canvas id="c" width="640" height="360" aria-label="像素 风格动画示例"></canvas></div>
+  <div id="ui">
+    <button id="play" type="button">暂停</button>
+    <button id="replay" type="button">重播</button>
+    <input id="timeline" type="range" min="0" max="6" step="0.01" value="0" aria-label="时间轴">
+    <span id="clock">0.00 / 6.00s</span>
+  </div>
+  <div id="credit">
+    <b>DeepSeek Harness 生成示例</b>（非原项目样片）· 来源：来自俯仰观照博主的动画画风整理 ·
+    许可：upstream-custom-noncommercial（俯仰观照整理稿，非商业） · 画面与文字均由代码绘制，静音。
+  </div>
+</div>
+<script>
+(() => {
+  'use strict';
+  // ===== 共享脚手架（可改，但导出合同不要破坏）=================================
+  const W = 640, H = 360, DURATION = 6;
+  const EXPORT = new URLSearchParams(location.search).get('export') === '1';
+  const canvas = document.getElementById('c');
+  const ctx = canvas.getContext('2d');
+  const FONT = '"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",sans-serif';
+
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  const lerp = (a, b, t) => a + (b - a) * t;
+  const smooth = t => t * t * (3 - 2 * t);
+  const easeOut = t => 1 - Math.pow(1 - t, 3);
+  const easeIn = t => t * t * t;
+  function rng(seed) { let s = seed >>> 0; return () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; }; }
+
+  // ===== 场景（每个 ID 独立设计；下面的注释区由构建器替换）===================
+  // DESC: 160×90 的低分辨率像素夜景，方块小人在草地上抬头，顶上的问号砖被顶起，灯泡蹦出来闪了几下。
+// K28 像素 · DeepSeek Harness 生成示例
+// 限定 12 色、160×90 原生网格、4 倍最近邻放大；所有形状只落在整数像素格上。
+const K28 = {
+  sky0: '#12122e', sky1: '#1b1b3a', sky2: '#262650',
+  star: '#f6f2d8', moon: '#f2d98c', moonShade: '#d9b96a',
+  hill: '#2a2450', hill2: '#231d44',
+  grass: '#4f9d4f', grassDark: '#35763c', dirt: '#6b4a37', dirtDark: '#53382a',
+  ink: '#0e0e1e', skin: '#f2b489', hair: '#7a3b2e',
+  tunic: '#3f7cc4', tunicDark: '#2b568c', gold: '#e8b33a', goldDark: '#b6821f',
+  white: '#f7f4e8', bulb: '#ffe680', cyan: '#7fe6d8',
+};
+const K28_OW = 160, K28_OH = 90, K28_S = 4;
+const K28_OFF = document.createElement('canvas');
+K28_OFF.width = K28_OW; K28_OFF.height = K28_OH;
+const oc = K28_OFF.getContext('2d');
+
+const K28_STARS = (() => {
+  const r = rng(2816);
+  return Array.from({ length: 22 }, () => ({ x: Math.floor(r() * 160), y: Math.floor(r() * 44), big: r() > 0.78, ph: r() * 6 }));
+})();
+const K28_TUFTS = (() => {
+  const r = rng(2844);
+  return Array.from({ length: 26 }, () => ({ x: Math.floor(r() * 158), h: 1 + Math.floor(r() * 2), ph: r() * 6 }));
+})();
+const K28_DUST = (() => {
+  const r = rng(2851);
+  return Array.from({ length: 14 }, () => ({ x: Math.floor(r() * 160), y: Math.floor(r() * 90), ph: r() * 6 }));
+})();
+
+const k28seg = (t, a, b) => clamp((t - a) / (b - a), 0, 1);
+const k28ease = p => 1 - Math.pow(1 - p, 3);
+function px(x, y, w, h, c) { oc.fillStyle = c; oc.fillRect(x | 0, y | 0, w | 0, h | 0); }
+function pxLine(x, y, w, h, c) { px(x, y, w, h, c); }
+
+function k28Sky(t) {
+  px(0, 0, 160, 34, K28.sky0);
+  px(0, 34, 160, 18, K28.sky1);
+  px(0, 52, 160, 16, K28.sky2);
+  // 抖动过渡：交界处隔像素点
+  for (let x = 0; x < 160; x += 2) {
+    px(x, 33, 1, 1, K28.sky1);
+    px(x + 1, 51, 1, 1, K28.sky2);
+  }
+  for (const s of K28_STARS) {
+    const tw = Math.sin(t * 2.2 + s.ph);
+    if (tw < -0.55) continue;
+    px(s.x, s.y, 1, 1, K28.star);
+    if (s.big && tw > 0.2) { px(s.x - 1, s.y, 1, 1, K28.star); px(s.x + 1, s.y, 1, 1, K28.star); px(s.x, s.y - 1, 1, 1, K28.star); }
+  }
+  // 两团缓慢横移的夜云（6 秒正好走满一屏，循环无缝）
+  const cloudSpeed = 160 / 6;
+  for (let ci = 0; ci < 2; ci++) {
+    const cx = ((ci * 84 + t * cloudSpeed) % 168) - 14;
+    const cy = ci === 0 ? 22 : 44;
+    const cF = ci === 0 ? '#303058' : '#2a2a4e';
+    const cT = ci === 0 ? '#3b3b68' : '#33335a';
+    px(cx + 4, cy + 4, 18, 3, cF);
+    px(cx, cy + 7, 26, 3, cF);
+    px(cx + 6, cy + 2, 8, 3, cT);
+    px(cx + 14, cy + 3, 6, 2, cT);
+    px(cx + 2, cy + 7, 8, 2, cT);
+  }
+  // 月亮（方块圆）
+  const mx = 128, my = 9;
+  px(mx + 4, my, 4, 1, K28.moon);
+  px(mx + 2, my + 1, 8, 1, K28.moon);
+  px(mx + 1, my + 2, 10, 1, K28.moon);
+  px(mx, my + 3, 12, 4, K28.moon);
+  px(mx + 1, my + 7, 10, 1, K28.moon);
+  px(mx + 2, my + 8, 8, 1, K28.moon);
+  px(mx + 4, my + 9, 4, 1, K28.moon);
+  px(mx + 8, my + 3, 2, 2, K28.moonShade);
+  px(mx + 4, my + 5, 3, 2, K28.moonShade);
+  px(mx + 9, my + 6, 1, 1, K28.moonShade);
+  px(mx + 3, my + 3, 2, 1, '#fdf2c4');
+}
+
+function k28Hills() {
+  // 方块阶梯状的远山
+  const steps = [[0, 60, 26, 10], [22, 56, 30, 14], [48, 61, 22, 9], [66, 57, 34, 13], [96, 62, 20, 8], [112, 58, 30, 12], [138, 61, 22, 9]];
+  for (const [x, y, w, h] of steps) {
+    px(x, y, w, h, K28.hill2);
+    px(x, y, w, 1, K28.hill);
+  }
+  px(0, 66, 160, 4, K28.hill2);
+}
+
+function k28Tree() {
+  const x = 122, base = 70;
+  px(x + 5, base - 12, 4, 12, K28.dirtDark);
+  px(x + 5, base - 12, 1, 12, K28.dirt);
+  // 方块树冠
+  px(x, base - 26, 15, 3, K28.grassDark);
+  px(x - 2, base - 23, 19, 4, K28.grass);
+  px(x, base - 19, 15, 3, K28.grass);
+  px(x - 1, base - 21, 4, 2, K28.grassDark);
+  px(x + 10, base - 24, 4, 2, K28.grass);
+  px(x + 3, base - 24, 5, 2, '#6fbf5f');
+}
+
+function k28Ground(t) {
+  px(0, 70, 160, 20, K28.dirt);
+  px(0, 70, 160, 3, K28.grass);
+  px(0, 73, 160, 1, K28.grassDark);
+  // 泥土里的深色石块
+  for (let i = 0; i < 26; i++) {
+    const x = (i * 37 + 11) % 156, y = 77 + (i * 13) % 11;
+    px(x, y, i % 3 === 0 ? 3 : 2, 1, K28.dirtDark);
+  }
+  for (const g of K28_TUFTS) {
+    const sway = Math.sin(t * 1.4 + g.ph) > 0 ? 1 : 0;
+    px(g.x, 70 - g.h, 1, g.h, K28.grassDark);
+    if (g.h > 1) px(g.x + 1, 69 - g.h + sway, 1, 1, K28.grass);
+  }
+}
+
+function k28Block(x, y, used, bump) {
+  const by = y - bump;
+  px(x, by, 14, 14, K28.ink);
+  px(x + 1, by + 1, 12, 12, used ? '#8a6247' : K28.gold);
+  px(x + 1, by + 1, 12, 1, used ? '#a67b58' : '#ffd873');
+  px(x + 1, by + 12, 12, 1, used ? '#6b4a37' : K28.goldDark);
+  // 四角铆钉
+  px(x + 2, by + 2, 1, 1, K28.ink);
+  px(x + 11, by + 2, 1, 1, K28.ink);
+  px(x + 2, by + 11, 1, 1, K28.ink);
+  px(x + 11, by + 11, 1, 1, K28.ink);
+  if (!used) {
+    // 像素问号
+    const q = K28.ink;
+    px(x + 5, by + 4, 4, 1, q);
+    px(x + 4, by + 5, 1, 1, q); px(x + 9, by + 5, 1, 1, q);
+    px(x + 9, by + 6, 1, 2, q);
+    px(x + 7, by + 7, 2, 1, q);
+    px(x + 7, by + 8, 1, 1, q);
+    px(x + 7, by + 10, 1, 1, q);
+  }
+}
+
+function k28Char(t, gy) {
+  const x = 52;
+  const breathe = Math.sin(t * 2.4) > 0 ? 1 : 0;
+  const y = gy - breathe;
+  const line = K28.ink;
+  // 影子
+  px(x + 1, gy, 14, 1, '#5a3d2c');
+  // 腿
+  px(x + 3, y - 8, 3, 8, line); px(x + 4, y - 7, 1, 6, '#42598f');
+  px(x + 9, y - 8, 3, 8, line); px(x + 10, y - 7, 1, 6, '#42598f');
+  px(x + 3, y - 2, 4, 2, line); px(x + 9, y - 2, 4, 2, line);
+  px(x + 4, y - 1, 2, 1, '#8a5a3a'); px(x + 10, y - 1, 2, 1, '#8a5a3a');
+  // 身体
+  px(x + 2, y - 19, 11, 12, line);
+  px(x + 3, y - 18, 9, 10, K28.tunic);
+  px(x + 3, y - 18, 3, 10, '#5a94d8');
+  px(x + 3, y - 10, 9, 2, K28.goldDark);
+  px(x + 6, y - 10, 2, 2, K28.gold);
+  // 左臂
+  px(x + 1, y - 17, 2, 7, line);
+  px(x + 1, y - 16, 2, 5, K28.tunicDark);
+  // 右臂：t>2.1 举起
+  const up = t > 2.1;
+  if (!up) {
+    px(x + 12, y - 17, 2, 7, line);
+    px(x + 12, y - 16, 2, 5, K28.tunicDark);
+    px(x + 12, y - 10, 2, 2, K28.skin);
+  } else {
+    // 斜举的手臂：像素阶梯
+    for (let i = 0; i < 6; i++) {
+      px(x + 12 + i, y - 17 - i, 3, 3, line);
+      px(x + 12 + i, y - 17 - i, 2, 2, i > 3 ? '#5a94d8' : K28.tunic);
+    }
+    px(x + 17, y - 26, 4, 4, line);
+    px(x + 18, y - 25, 2, 2, K28.skin);
+  }
+  // 头
+  px(x + 3, y - 29, 10, 11, line);
+  px(x + 4, y - 28, 8, 9, K28.skin);
+  // 头发
+  px(x + 4, y - 28, 8, 3, K28.hair);
+  px(x + 4, y - 25, 2, 2, K28.hair);
+  px(x + 10, y - 25, 2, 3, K28.hair);
+  // 眼睛：t>2.1 时抬头（眼睛上移一格）
+  const ey = up ? y - 22 : y - 23;
+  px(x + 6, ey, 1, 2, line);
+  px(x + 9, ey, 1, 2, line);
+  px(x + 7, ey + 3, 2, 1, '#b9684f');
+  // 阴影面
+  px(x + 10, y - 21, 2, 2, '#e09a72');
+}
+
+function k28Bulb(bx, by, glow) {
+  const g = K28.bulb;
+  px(bx + 3, by, 3, 1, g);
+  px(bx + 2, by + 1, 5, 1, g);
+  px(bx + 1, by + 2, 7, 3, g);
+  px(bx + 2, by + 5, 5, 2, g);
+  px(bx + 3, by + 7, 3, 1, '#e8c46a');
+  px(bx + 3, by + 8, 3, 1, K28.goldDark);
+  px(bx + 4, by + 9, 1, 1, '#6b4a37');
+  // 灯丝
+  px(bx + 3, by + 3, 1, 2, '#fff6c2');
+  px(bx + 5, by + 3, 1, 2, '#fff6c2');
+  if (glow > 0.2) {
+    const a = glow;
+    px(bx - 1, by + 3, 1, 1, a > 0.6 ? K28.star : '#8d7a4a');
+    px(bx + 9, by + 3, 1, 1, a > 0.6 ? K28.star : '#8d7a4a');
+    px(bx + 3, by - 2, 1, 1, a > 0.6 ? K28.star : '#8d7a4a');
+    px(bx + 4, by + 11, 1, 1, a > 0.6 ? K28.star : '#8d7a4a');
+    if (a > 0.8) {
+      px(bx - 2, by + 1, 1, 1, g); px(bx + 10, by + 1, 1, 1, g);
+      px(bx, by - 1, 1, 1, g);
+    }
+  }
+}
+
+function k28Spark(x, y, s, c) {
+  px(x, y, 1, 1, c);
+  if (s > 0) { px(x - s, y, 1, 1, c); px(x + s, y, 1, 1, c); px(x, y - s, 1, 1, c); px(x, y + s, 1, 1, c); }
+}
+
+function k28Text(txt, x, y, size, color, shadow, weight) {
+  ctx.font = `${weight || 800} ${size}px ${FONT}`;
+  ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+  ctx.fillStyle = shadow || '#0a0a18';
+  ctx.fillText(txt, x + 3, y + 3);
+  ctx.fillStyle = color;
+  ctx.fillText(txt, x, y);
+}
+
+function drawScene(t) {
+  oc.clearRect(0, 0, K28_OW, K28_OH);
+  k28Sky(t);
+  k28Hills();
+  k28Ground(t);
+  k28Tree();
+
+  // 砖块：1.35s 被顶起
+  const bumpP = k28seg(t, 1.35, 1.95);
+  const bump = Math.sin(bumpP * Math.PI) * 7;
+  k28Block(80, 27, false, bump);
+
+  // 砖块顶起之后：灯泡弹出并悬停
+  const popP = k28ease(k28seg(t, 1.9, 2.6));
+  const bulbFloat = Math.sin(t * 2.1) * 1.2;
+  if (popP > 0.04) k28Bulb(83, 36 - popP * 22 + bulbFloat, popP);
+
+  // 人物
+  k28Char(t, 70);
+  // 星屑
+  const sp = k28seg(t, 2.5, 3.4);
+  if (sp > 0) {
+    const sx = 90 + Math.round(Math.sin(t * 1.7) * 4), sy = 12 + Math.round(Math.cos(t * 1.3) * 3);
+    k28Spark(sx, sy, sp > 0.5 ? 2 : 1, sp > 0.5 ? K28.white : K28.cyan);
+    k28Spark(74 + Math.round(Math.sin(t * 1.1) * 3), 20 + Math.round(Math.cos(t * 2) * 4), 1, K28.cyan);
+  }
+
+  // 浮尘（像素小点）
+  for (const d of K28_DUST) {
+    const yy = (d.y + Math.round(t * 3)) % 90;
+    if (yy < 70 && Math.sin(t * 2 + d.ph) > 0.3) px(d.x, yy, 1, 1, '#3d3a66');
+  }
+
+  // 放大到 640×360，最近邻
+  ctx.imageSmoothingEnabled = false;
+  ctx.drawImage(K28_OFF, 0, 0, 640, 360);
+  ctx.imageSmoothingEnabled = true;
+
+  // 叠加可读的中文 HUD
+  ctx.save();
+  k28Text('像素冒险', 18, 40, 27, '#ffe680', '#0a0a18');
+  ctx.fillStyle = '#9fd8ff';
+  ctx.font = `600 13px ${FONT}`;
+  ctx.fillText('8-BIT · 12 色 · 160×90', 19, 58);
+  // HUD 标记
+  ctx.fillStyle = 'rgba(10,10,24,.72)';
+  ctx.fillRect(18, 66, 84, 18);
+  ctx.strokeStyle = '#ffe680'; ctx.lineWidth = 1;
+  ctx.strokeRect(18.5, 66.5, 83, 17);
+  ctx.fillStyle = '#ffe680';
+  ctx.font = `600 12px ${FONT}`;
+  ctx.fillText('LEVEL 1-1', 25, 79);
+  // 想法 +1
+  const upP = k28seg(t, 2.7, 3.2);
+  if (upP > 0) {
+    ctx.globalAlpha = upP;
+    k28Text('想法 +1', 376, 64, 17, '#f7f4e8', '#0a0a18', 700);
+    ctx.globalAlpha = 1;
+  }
+  ctx.restore();
+}
+
+  // ===== 共享渲染与署名 =======================================================
+  function watermark() {
+    const text = 'DeepSeek Harness 生成示例';
+    ctx.save();
+    ctx.font = '11px ' + FONT;
+    const w = ctx.measureText(text).width + 14;
+    const x = W - w - 8, y = H - 24;
+    ctx.fillStyle = 'rgba(0,0,0,.46)';
+    ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(x, y, w, 18, 4); else ctx.rect(x, y, w, 18);
+    ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,.82)';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(text, x + 7, y + 9.5);
+    ctx.restore();
+  }
+
+  function paint(t) {
+    ctx.save();
+    ctx.clearRect(0, 0, W, H);
+    try { drawScene(t); } catch (err) { console.error(err); }
+    ctx.restore();
+    watermark();
+  }
+
+  function renderAt(seconds) {
+    const t = ((Number(seconds) % DURATION) + DURATION) % DURATION;
+    paint(t);
+    syncUI(t);
+    return t;
+  }
+  window.renderAt = renderAt;
+
+  // ===== 播放、控制、减少动态 =================================================
+  const playBtn = document.getElementById('play');
+  const timeline = document.getElementById('timeline');
+  const clock = document.getElementById('clock');
+  let playing = false, base = 0, start = 0, current = 0;
+  let animationFrame = 0;
+  const reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function syncUI(t) {
+    if (EXPORT) return;
+    current = t;
+    if (timeline) timeline.value = String(t.toFixed(2));
+    if (clock) clock.textContent = t.toFixed(2) + ' / ' + DURATION.toFixed(2) + 's';
+  }
+  function frame(now) {
+    animationFrame = 0;
+    if (!playing) return;
+    const t = ((now - start) / 1000 + base) % DURATION;
+    paint(t);
+    syncUI(t);
+    animationFrame = requestAnimationFrame(frame);
+  }
+  function play() {
+    if (playing) return;
+    playing = true;
+    start = performance.now();
+    base = current;
+    if (playBtn) playBtn.textContent = '暂停';
+    animationFrame = requestAnimationFrame(frame);
+  }
+  function pause() {
+    playing = false;
+    cancelAnimationFrame(animationFrame);
+    animationFrame = 0;
+    if (playBtn) playBtn.textContent = '播放';
+  }
+  if (playBtn) playBtn.addEventListener('click', () => { playing ? pause() : play(); });
+  document.getElementById('replay')?.addEventListener('click', () => {
+    base = 0; start = performance.now(); paint(0); syncUI(0); play();
+  });
+  timeline?.addEventListener('input', () => {
+    pause(); paint(Number(timeline.value)); syncUI(Number(timeline.value));
+  });
+  window.addEventListener('keydown', e => {
+    if (e.code === 'Space') { e.preventDefault(); playing ? pause() : play(); }
+    if (e.key === 'r' || e.key === 'R') { base = 0; start = performance.now(); paint(0); syncUI(0); play(); }
+  });
+
+  if (EXPORT) {
+    document.body.classList.add('export');
+    renderAt(0);
+  } else if (reduced) {
+    renderAt(2.4);
+    pause();
+  } else {
+    renderAt(0);
+    play();
+  }
+})();
+</script>
+</body>
+</html>

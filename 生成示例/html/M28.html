@@ -1,0 +1,520 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>M28 对称暖色的电影感空镜 · DeepSeek Harness 生成示例</title>
+<!--
+  Provenance
+  ----------
+  风格来源：code-animation-styles 目录（《来自俯仰观照博主的动画画风整理》整理稿）
+  catalog commit: 01576924a2b316d1f11ae33f75d3c005e8781451
+  style id: M28「对称暖色的电影感空镜」
+  license: upstream-custom-noncommercial（俯仰观照整理稿，非商业）
+  本文件：DeepSeek Harness（deepseek-flash）根据该风格提示词新写的候选示例，
+  不是原作者样片，也不是原项目演示；仅用于风格挑选预览。共享的只有时间轴、
+  尺寸、导出接口与页脚署名，画面与动作按本风格重新设计。
+  原文“只输出代码”等语句属于素材的一部分，不覆盖本任务的交付合同。
+-->
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; min-height: 100%; background: #0c0c10; color: #e9e9ee;
+    font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif; }
+  #app { min-height: 100vh; display: flex; flex-direction: column; align-items: center;
+    justify-content: center; gap: 12px; padding: 20px; }
+  #stage { width: min(94vw, 1000px); aspect-ratio: 16 / 9; background: #000;
+    box-shadow: 0 18px 60px rgba(0,0,0,.55); position: relative; overflow: hidden; }
+  canvas { display: block; width: 100%; height: 100%; }
+  #head, #ui { width: min(94vw, 1000px); }
+  #head h1 { margin: 0 0 4px; font-size: 15px; font-weight: 600; letter-spacing: .02em; }
+  #head p { margin: 0; font-size: 12px; line-height: 1.5; color: #9a9aa8; }
+  #ui { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  #ui button { background: #1d1d26; color: #f2f2f6; border: 1px solid #343444;
+    border-radius: 7px; padding: 6px 12px; font-size: 12px; cursor: pointer; }
+  #ui button:hover { background: #272734; }
+  #ui input[type=range] { flex: 1 1 220px; min-width: 150px; accent-color: #7c8cff; }
+  #clock { font-variant-numeric: tabular-nums; font-size: 12px; color: #a9a9ba; min-width: 78px; }
+  #credit { width: min(94vw, 1000px); font-size: 11px; line-height: 1.6; color: #6f6f80; }
+  #credit b { color: #9c9cae; font-weight: 500; }
+  body.export, body.export #app { display: block; width: 640px; height: 360px; min-height: 0;
+    padding: 0; margin: 0; overflow: hidden; background: #000; }
+  body.export #stage { width: 640px; height: 360px; box-shadow: none; }
+  body.export #head, body.export #ui, body.export #credit { display: none; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="head">
+    <h1>M28 · 对称暖色的电影感空镜</h1>
+    <p>温暖车厢里左右对称的一扇大窗，窗外四季轮转、树影横过；桌上正中一杯咖啡冒着热气，镜头纹丝不动。</p>
+  </div>
+  <div id="stage"><canvas id="c" width="640" height="360" aria-label="对称暖色的电影感空镜 风格动画示例"></canvas></div>
+  <div id="ui">
+    <button id="play" type="button">暂停</button>
+    <button id="replay" type="button">重播</button>
+    <input id="timeline" type="range" min="0" max="6" step="0.01" value="0" aria-label="时间轴">
+    <span id="clock">0.00 / 6.00s</span>
+  </div>
+  <div id="credit">
+    <b>DeepSeek Harness 生成示例</b>（非原项目样片）· 来源：来自俯仰观照博主的动画画风整理 ·
+    许可：upstream-custom-noncommercial（俯仰观照整理稿，非商业） · 画面与文字均由代码绘制，静音。
+  </div>
+</div>
+<script>
+(() => {
+  'use strict';
+  // ===== 共享脚手架（可改，但导出合同不要破坏）=================================
+  const W = 640, H = 360, DURATION = 6;
+  const EXPORT = new URLSearchParams(location.search).get('export') === '1';
+  const canvas = document.getElementById('c');
+  const ctx = canvas.getContext('2d');
+  const FONT = '"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",sans-serif';
+
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  const lerp = (a, b, t) => a + (b - a) * t;
+  const smooth = t => t * t * (3 - 2 * t);
+  const easeOut = t => 1 - Math.pow(1 - t, 3);
+  const easeIn = t => t * t * t;
+  function rng(seed) { let s = seed >>> 0; return () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; }; }
+
+  // ===== 场景（每个 ID 独立设计；下面的注释区由构建器替换）===================
+  // DESC: 温暖车厢里左右对称的一扇大窗，窗外四季轮转、树影横过；桌上正中一杯咖啡冒着热气，镜头纹丝不动。
+// M28 对称暖色的电影感空镜 · DeepSeek Harness 生成示例
+const M28_CREAM = '#f6e6d8';
+const M28_SEASONS = [
+  { name: '春', sky: ['#ffe2d0', '#ffc2ac'], hill1: '#c9a3a8', hill2: '#b0868f', tree: '#7b4e4a', leaf: '#ffb3c2', dot: 'petal' },
+  { name: '夏', sky: ['#ffe9bd', '#ffc995'], hill1: '#cbb079', hill2: '#a98f5c', tree: '#5b5d3c', leaf: '#9dba6a', dot: 'sun' },
+  { name: '秋', sky: ['#ffd9b0', '#f2a175'], hill1: '#c69064', hill2: '#a16b47', tree: '#6d4636', leaf: '#e08a4e', dot: 'leaf' },
+  { name: '冬', sky: ['#f5e6ec', '#dcc6d5'], hill1: '#cfc2cd', hill2: '#ada0b1', tree: '#5f4b55', leaf: '#ffffff', dot: 'snow' },
+];
+const M28_SEQ = [0, 1, 2, 3, 0];
+const M28_AT = [0, 1.45, 2.9, 4.35, 5.6];
+const M28_WIN = { x: 172, y: 40, w: 296, h: 224, r: 26 };
+const M28_TREES = [
+  { x: 6, s: 1.0 }, { x: 66, s: 0.78 }, { x: 122, s: 1.12 }, { x: 178, s: 0.86 },
+  { x: 232, s: 1.04 }, { x: 284, s: 0.72 },
+];
+const M28_DOTS = (() => {
+  const r = rng(2828);
+  return Array.from({ length: 26 }, () => ({ x: r() * 296, y: r() * 220, s: 1.2 + r() * 2.6, sp: 0.4 + r() * 0.9, ph: r() * 6.28 }));
+})();
+
+function m28seg(t, a, b) { return clamp((t - a) / (b - a), 0, 1); }
+function m28e(t) { return 1 - Math.pow(1 - t, 3); }
+function m28RR(x, y, w, h, r) {
+  ctx.beginPath();
+  if (ctx.roundRect) ctx.roundRect(x, y, w, h, r); else ctx.rect(x, y, w, h);
+}
+
+function m28Outside(idx, alpha, t) {
+  if (alpha <= 0.001) return;
+  const S = M28_SEASONS[idx];
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  // 天空
+  const sg = ctx.createLinearGradient(0, 0, 0, 160);
+  sg.addColorStop(0, S.sky[0]);
+  sg.addColorStop(1, S.sky[1]);
+  ctx.fillStyle = sg; ctx.fillRect(0, 0, 296, 226);
+  // 太阳 / 一团柔光（左右对称构图里它也居中偏右一点，不抢中心）
+  const sunX = 214, sunY = 52;
+  const sg2 = ctx.createRadialGradient(sunX, sunY, 2, sunX, sunY, 56);
+  sg2.addColorStop(0, 'rgba(255,244,220,.95)');
+  sg2.addColorStop(0.35, 'rgba(255,226,180,.55)');
+  sg2.addColorStop(1, 'rgba(255,220,180,0)');
+  ctx.fillStyle = sg2; ctx.fillRect(sunX - 60, sunY - 60, 120, 120);
+  ctx.fillStyle = 'rgba(255,250,238,.92)';
+  ctx.beginPath(); ctx.arc(sunX, sunY, 15, 0, Math.PI * 2); ctx.fill();
+  // 云带：横向拉长，稳稳地过
+  ctx.fillStyle = 'rgba(255,255,255,.22)';
+  for (let i = 0; i < 3; i++) {
+    const cx = ((i * 118 + t * (5 + i * 2)) % 380) - 40;
+    ctx.beginPath();
+    ctx.ellipse(cx, 62 + i * 22, 52 - i * 8, 8, 0, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  // 远山两层，视差
+  const ridge = (amp, freq, baseY, off, color) => {
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.moveTo(-40, 226);
+    for (let x = -40; x <= 340; x += 10) {
+      const y = baseY + Math.sin((x + off) / freq) * amp + Math.sin((x + off) / (freq * 0.37)) * amp * 0.4;
+      ctx.lineTo(x, y);
+    }
+    ctx.lineTo(340, 226);
+    ctx.closePath(); ctx.fill();
+  };
+  ridge(11, 74, 146, t * 12, S.hill1);
+  ridge(8, 52, 164, t * 22 + 40, S.hill2);
+  // 地面带
+  ctx.fillStyle = S.hill2;
+  ctx.fillRect(0, 176, 296, 50);
+
+  // 树：从右往左稳稳地掠过
+  const scroll = (t * 46) % 296;
+  for (const tr of M28_TREES) {
+    const x = ((tr.x - scroll) % 296 + 296) % 296;
+    const baseY = 186, h = 62 * tr.s;
+    ctx.fillStyle = S.tree;
+    ctx.fillRect(x - 2.4 * tr.s, baseY - h, 4.8 * tr.s, h);
+    // 枝
+    ctx.strokeStyle = S.tree; ctx.lineWidth = 2 * tr.s; ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(x, baseY - h * 0.62); ctx.lineTo(x - 13 * tr.s, baseY - h * 0.86);
+    ctx.moveTo(x, baseY - h * 0.72); ctx.lineTo(x + 14 * tr.s, baseY - h * 0.94);
+    ctx.stroke();
+    // 冠：团块，冬天空枝
+    if (idx !== 3) {
+      ctx.fillStyle = S.leaf;
+      const blobs = [[0, -h - 4, 22], [-15 * tr.s, -h + 6, 15], [16 * tr.s, -h + 2, 17], [-4, -h + 16, 16]];
+      for (const [bx, by, br] of blobs) {
+        ctx.beginPath();
+        ctx.ellipse(x + bx * tr.s, baseY + by, br * tr.s, br * 0.78 * tr.s, 0, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    } else {
+      // 雪压在枝上
+      ctx.strokeStyle = 'rgba(255,255,255,.9)'; ctx.lineWidth = 2.4 * tr.s;
+      ctx.beginPath();
+      ctx.moveTo(x - 13 * tr.s, baseY - h * 0.86); ctx.lineTo(x - 3 * tr.s, baseY - h * 0.87);
+      ctx.moveTo(x + 14 * tr.s, baseY - h * 0.94); ctx.lineTo(x + 4 * tr.s, baseY - h * 0.95);
+      ctx.stroke();
+    }
+  }
+  // 飘落/飘过的点：花瓣、光点、落叶、雪
+  for (const d of M28_DOTS) {
+    const px = ((d.x + t * 22 * d.sp) % 300);
+    const py = ((d.y + t * (14 + 10 * d.sp) + Math.sin(t * 1.4 + d.ph) * 6) % 224);
+    ctx.save();
+    ctx.globalAlpha = alpha * 0.72;
+    if (idx === 0 || idx === 2) {
+      ctx.translate(px, py); ctx.rotate(d.ph + t * 1.2 * d.sp);
+      ctx.fillStyle = idx === 0 ? '#ffd7de' : '#f0a86a';
+      ctx.beginPath(); ctx.ellipse(0, 0, d.s * 1.5, d.s * 0.75, 0, 0, Math.PI * 2); ctx.fill();
+    } else if (idx === 3) {
+      ctx.fillStyle = 'rgba(255,255,255,.95)';
+      ctx.beginPath(); ctx.arc(px, py, d.s * 0.8, 0, Math.PI * 2); ctx.fill();
+    } else {
+      ctx.fillStyle = 'rgba(255,246,214,.75)';
+      ctx.beginPath(); ctx.arc(px, py, d.s * 0.5, 0, Math.PI * 2); ctx.fill();
+    }
+    ctx.restore();
+  }
+  ctx.restore();
+}
+
+function m28Carriage() {
+  // 车厢内壁：暖粉棕，中间受窗光最亮
+  const g = ctx.createLinearGradient(0, 0, 0, H);
+  g.addColorStop(0, '#3a2327');
+  g.addColorStop(0.55, '#4a2c2d');
+  g.addColorStop(1, '#2a1a1d');
+  ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  const glow = ctx.createRadialGradient(320, 170, 30, 320, 170, 300);
+  glow.addColorStop(0, 'rgba(255,196,150,.26)');
+  glow.addColorStop(0.6, 'rgba(255,170,140,.07)');
+  glow.addColorStop(1, 'rgba(0,0,0,.18)');
+  ctx.fillStyle = glow; ctx.fillRect(0, 0, W, H);
+  // 两侧对称的小壁灯（在窗帘外侧，不挡窗）
+  for (const side of [-1, 1]) {
+    const x = 320 + side * 252;
+    const lg = ctx.createRadialGradient(x, 232, 2, x, 232, 40);
+    lg.addColorStop(0, 'rgba(255,214,164,.5)');
+    lg.addColorStop(1, 'rgba(255,200,150,0)');
+    ctx.fillStyle = lg; ctx.beginPath(); ctx.arc(x, 232, 40, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#ffd9a8';
+    ctx.beginPath(); ctx.ellipse(x, 232, 11, 6, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = 'rgba(70,44,40,.9)'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(x, 238); ctx.lineTo(x, 268); ctx.stroke();
+  }
+}
+
+function m28Curtains(t) {
+  const sway = Math.sin(t * 0.7) * 1.6;
+  for (const side of [-1, 1]) {
+    const inner = side < 0 ? 168 : 472;      // 靠窗一侧
+    const outer = side < 0 ? 84 : 556;       // 靠外一侧
+    const g = ctx.createLinearGradient(inner, 0, outer, 0);
+    g.addColorStop(0, 'rgba(160,96,96,.92)');
+    g.addColorStop(0.42, 'rgba(122,66,70,.95)');
+    g.addColorStop(1, 'rgba(86,44,50,.98)');
+    ctx.fillStyle = g;
+    ctx.beginPath();
+    ctx.moveTo(inner - side * 4, 26);
+    ctx.quadraticCurveTo(outer + side * 6, 70, outer + side * sway, 200);
+    ctx.quadraticCurveTo(outer - side * 8, 268, inner - side * 12, 300);
+    ctx.lineTo(inner + side * 8, 300);
+    ctx.quadraticCurveTo(inner + side * 20, 120, inner - side * 4, 26);
+    ctx.closePath();
+    ctx.fill();
+    // 折痕
+    ctx.strokeStyle = 'rgba(38,18,22,.35)'; ctx.lineWidth = 2;
+    for (let i = 1; i <= 3; i++) {
+      const f = i / 4;
+      const x = lerp(inner, outer, f) + side * sway * f;
+      ctx.beginPath();
+      ctx.moveTo(x, 44 + i * 6);
+      ctx.quadraticCurveTo(x + side * 6, 170, x - side * 4, 292);
+      ctx.stroke();
+    }
+    // 束带
+    ctx.fillStyle = 'rgba(214,158,120,.55)';
+    ctx.fillRect(lerp(inner, outer, 0.55) - 22, 214, 44, 9);
+  }
+}
+
+function m28Table() {
+  const g = ctx.createLinearGradient(0, 256, 0, H);
+  g.addColorStop(0, '#6b4238');
+  g.addColorStop(1, '#33201f');
+  ctx.fillStyle = g; ctx.fillRect(0, 262, W, H - 262);
+  // 桌沿高光（窗光落下来）
+  ctx.fillStyle = 'rgba(255,206,164,.22)';
+  ctx.fillRect(0, 262, W, 3);
+  ctx.save();
+  ctx.globalAlpha = 0.5;
+  const spill = ctx.createLinearGradient(0, 262, 0, 340);
+  spill.addColorStop(0, 'rgba(255,214,176,.34)');
+  spill.addColorStop(1, 'rgba(255,214,176,0)');
+  ctx.fillStyle = spill;
+  ctx.beginPath();
+  ctx.moveTo(196, 262); ctx.lineTo(444, 262); ctx.lineTo(512, 340); ctx.lineTo(128, 340);
+  ctx.closePath(); ctx.fill();
+  ctx.restore();
+}
+
+function m28Cup(t) {
+  const cx = 320, topY = 262, botY = 310;
+  // 碟
+  ctx.save();
+  ctx.fillStyle = 'rgba(24,12,14,.35)';
+  ctx.beginPath(); ctx.ellipse(cx, 318, 70, 12, 0, 0, Math.PI * 2); ctx.fill();
+  const dg = ctx.createLinearGradient(0, 306, 0, 324);
+  dg.addColorStop(0, '#f8ebdc');
+  dg.addColorStop(1, '#c8a99a');
+  ctx.fillStyle = dg;
+  ctx.beginPath(); ctx.ellipse(cx, 314, 64, 13, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.strokeStyle = 'rgba(255,236,214,.55)'; ctx.lineWidth = 1.4;
+  ctx.beginPath(); ctx.ellipse(cx, 314, 64, 13, 0, Math.PI * 0.05, Math.PI * 0.95); ctx.stroke();
+  // 杯身（左右对称双耳）
+  const bg = ctx.createLinearGradient(cx - 40, 0, cx + 40, 0);
+  bg.addColorStop(0, '#d8b7a6');
+  bg.addColorStop(0.35, '#fff4e6');
+  bg.addColorStop(0.72, '#f0d4c2');
+  bg.addColorStop(1, '#c7a291');
+  ctx.fillStyle = bg;
+  ctx.beginPath();
+  ctx.moveTo(cx - 38, topY);
+  ctx.quadraticCurveTo(cx - 34, botY - 6, cx - 26, botY);
+  ctx.lineTo(cx + 26, botY);
+  ctx.quadraticCurveTo(cx + 34, botY - 6, cx + 38, topY);
+  ctx.closePath(); ctx.fill();
+  // 双耳
+  for (const side of [-1, 1]) {
+    ctx.strokeStyle = '#e9c9b6'; ctx.lineWidth = 5;
+    ctx.beginPath();
+    ctx.arc(cx + side * 38, topY + 18, 11, side < 0 ? Math.PI * 0.5 : -Math.PI * 0.5, side < 0 ? Math.PI * 1.5 : Math.PI * 0.5);
+    ctx.stroke();
+  }
+  // 杯口与咖啡
+  ctx.fillStyle = '#7a4634';
+  ctx.beginPath(); ctx.ellipse(cx, topY, 38, 8, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = '#3d1f16';
+  ctx.beginPath(); ctx.ellipse(cx, topY + 0.6, 32, 6, 0, 0, Math.PI * 2); ctx.fill();
+  // 咖啡上的暖光
+  ctx.fillStyle = 'rgba(255,196,132,.35)';
+  ctx.beginPath(); ctx.ellipse(cx - 8, topY - 1, 13, 2.4, -0.1, 0, Math.PI * 2); ctx.fill();
+  // 杯口沿
+  ctx.strokeStyle = 'rgba(255,247,236,.9)'; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.ellipse(cx, topY, 38, 8, 0, 0, Math.PI * 2); ctx.stroke();
+  // 热气：左右对称两缕
+  ctx.save();
+  ctx.strokeStyle = 'rgba(255,244,232,.42)';
+  ctx.lineWidth = 2.4; ctx.lineCap = 'round';
+  for (const side of [-1, 1]) {
+    ctx.beginPath();
+    for (let i = 0; i <= 22; i++) {
+      const p = i / 22;
+      const y = topY - 6 - p * 66;
+      const x = cx + side * (10 + p * 12) + Math.sin(p * 5.2 + t * 1.8 + side) * (4 + p * 7);
+      if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+  }
+  ctx.restore();
+  ctx.restore();
+}
+
+function m28WindowFrame() {
+  const Wn = M28_WIN;
+  // 窗洞透出的暖光
+  ctx.save();
+  ctx.shadowColor = 'rgba(255,198,150,.5)';
+  ctx.shadowBlur = 26;
+  ctx.strokeStyle = '#7d534c';
+  ctx.lineWidth = 16;
+  m28RR(Wn.x - 8, Wn.y - 8, Wn.w + 16, Wn.h + 16, Wn.r + 6);
+  ctx.stroke();
+  ctx.restore();
+  // 内框亮边
+  ctx.strokeStyle = 'rgba(255,222,186,.55)';
+  ctx.lineWidth = 2.4;
+  m28RR(Wn.x - 1, Wn.y - 1, Wn.w + 2, Wn.h + 2, Wn.r);
+  ctx.stroke();
+}
+
+function drawScene(t) {
+  // 季节推进与交叉淡入
+  let k = 0;
+  for (let i = 0; i < M28_AT.length; i++) if (t >= M28_AT[i]) k = i;
+  const idx = M28_SEQ[k];
+  const blend = k > 0 ? m28e(m28seg(t, M28_AT[k], M28_AT[k] + 0.26)) : 1;
+
+  m28Carriage();
+  m28Curtains(t);
+  m28Table();
+
+  // 窗外
+  const Wn = M28_WIN;
+  ctx.save();
+  m28RR(Wn.x, Wn.y, Wn.w, Wn.h, Wn.r);
+  ctx.clip();
+  ctx.translate(Wn.x, Wn.y);
+  if (k > 0) m28Outside(M28_SEQ[k - 1], 1 - blend, t);
+  m28Outside(idx, blend, t);
+  // 玻璃上的暖色反光 + 一道对称的斜光
+  ctx.fillStyle = 'rgba(255,190,150,.10)';
+  ctx.fillRect(0, 0, Wn.w, Wn.h);
+  ctx.save();
+  ctx.globalAlpha = 0.10;
+  ctx.fillStyle = '#fff2e0';
+  ctx.beginPath();
+  ctx.moveTo(40, 0); ctx.lineTo(96, 0); ctx.lineTo(6, 224); ctx.lineTo(-50, 224);
+  ctx.closePath(); ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(248, 0); ctx.lineTo(270, 0); ctx.lineTo(180, 224); ctx.lineTo(158, 224);
+  ctx.closePath(); ctx.fill();
+  ctx.restore();
+  ctx.restore();
+  m28WindowFrame();
+  m28Cup(t);
+
+  // 季节标签（左下，避开署名区）
+  ctx.save();
+  const label = M28_SEASONS[idx].name;
+  ctx.fillStyle = 'rgba(255,232,210,.62)';
+  ctx.font = `600 13px ${FONT}`;
+  ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+  ctx.fillText(label + '  ·  窗外', 96, 342);
+  ctx.fillStyle = 'rgba(255,232,210,.30)';
+  ctx.fillRect(96, 326, 24, 2);
+  ctx.restore();
+
+  // 暖色调 + 柔和暗角
+  ctx.save();
+  const grade = ctx.createRadialGradient(320, 210, 60, 320, 210, 400);
+  grade.addColorStop(0, 'rgba(255,206,170,.10)');
+  grade.addColorStop(0.6, 'rgba(255,170,140,.03)');
+  grade.addColorStop(1, 'rgba(48,20,24,.34)');
+  ctx.fillStyle = grade; ctx.fillRect(0, 0, W, H);
+  ctx.restore();
+}
+
+  // ===== 共享渲染与署名 =======================================================
+  function watermark() {
+    const text = 'DeepSeek Harness 生成示例';
+    ctx.save();
+    ctx.font = '11px ' + FONT;
+    const w = ctx.measureText(text).width + 14;
+    const x = W - w - 8, y = H - 24;
+    ctx.fillStyle = 'rgba(0,0,0,.46)';
+    ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(x, y, w, 18, 4); else ctx.rect(x, y, w, 18);
+    ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,.82)';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(text, x + 7, y + 9.5);
+    ctx.restore();
+  }
+
+  function paint(t) {
+    ctx.save();
+    ctx.clearRect(0, 0, W, H);
+    try { drawScene(t); } catch (err) { console.error(err); }
+    ctx.restore();
+    watermark();
+  }
+
+  function renderAt(seconds) {
+    const t = ((Number(seconds) % DURATION) + DURATION) % DURATION;
+    paint(t);
+    syncUI(t);
+    return t;
+  }
+  window.renderAt = renderAt;
+
+  // ===== 播放、控制、减少动态 =================================================
+  const playBtn = document.getElementById('play');
+  const timeline = document.getElementById('timeline');
+  const clock = document.getElementById('clock');
+  let playing = false, base = 0, start = 0, current = 0;
+  let animationFrame = 0;
+  const reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function syncUI(t) {
+    if (EXPORT) return;
+    current = t;
+    if (timeline) timeline.value = String(t.toFixed(2));
+    if (clock) clock.textContent = t.toFixed(2) + ' / ' + DURATION.toFixed(2) + 's';
+  }
+  function frame(now) {
+    animationFrame = 0;
+    if (!playing) return;
+    const t = ((now - start) / 1000 + base) % DURATION;
+    paint(t);
+    syncUI(t);
+    animationFrame = requestAnimationFrame(frame);
+  }
+  function play() {
+    if (playing) return;
+    playing = true;
+    start = performance.now();
+    base = current;
+    if (playBtn) playBtn.textContent = '暂停';
+    animationFrame = requestAnimationFrame(frame);
+  }
+  function pause() {
+    playing = false;
+    cancelAnimationFrame(animationFrame);
+    animationFrame = 0;
+    if (playBtn) playBtn.textContent = '播放';
+  }
+  if (playBtn) playBtn.addEventListener('click', () => { playing ? pause() : play(); });
+  document.getElementById('replay')?.addEventListener('click', () => {
+    base = 0; start = performance.now(); paint(0); syncUI(0); play();
+  });
+  timeline?.addEventListener('input', () => {
+    pause(); paint(Number(timeline.value)); syncUI(Number(timeline.value));
+  });
+  window.addEventListener('keydown', e => {
+    if (e.code === 'Space') { e.preventDefault(); playing ? pause() : play(); }
+    if (e.key === 'r' || e.key === 'R') { base = 0; start = performance.now(); paint(0); syncUI(0); play(); }
+  });
+
+  if (EXPORT) {
+    document.body.classList.add('export');
+    renderAt(0);
+  } else if (reduced) {
+    renderAt(2.4);
+    pause();
+  } else {
+    renderAt(0);
+    play();
+  }
+})();
+</script>
+</body>
+</html>

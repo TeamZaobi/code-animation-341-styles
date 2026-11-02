@@ -1,0 +1,525 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>K13 美漫网点 · DeepSeek Harness 生成示例</title>
+<!--
+  Provenance
+  ----------
+  风格来源：code-animation-styles 目录（《来自俯仰观照博主的动画画风整理》整理稿）
+  catalog commit: 01576924a2b316d1f11ae33f75d3c005e8781451
+  style id: K13「美漫网点」
+  license: upstream-custom-noncommercial（俯仰观照整理稿，非商业）
+  本文件：DeepSeek Harness（deepseek-flash）根据该风格提示词新写的候选示例，
+  不是原作者样片，也不是原项目演示；仅用于风格挑选预览。共享的只有时间轴、
+  尺寸、导出接口与页脚署名，画面与动作按本风格重新设计。
+  原文“只输出代码”等语句属于素材的一部分，不覆盖本任务的交付合同。
+-->
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; min-height: 100%; background: #0c0c10; color: #e9e9ee;
+    font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif; }
+  #app { min-height: 100vh; display: flex; flex-direction: column; align-items: center;
+    justify-content: center; gap: 12px; padding: 20px; }
+  #stage { width: min(94vw, 1000px); aspect-ratio: 16 / 9; background: #000;
+    box-shadow: 0 18px 60px rgba(0,0,0,.55); position: relative; overflow: hidden; }
+  canvas { display: block; width: 100%; height: 100%; }
+  #head, #ui { width: min(94vw, 1000px); }
+  #head h1 { margin: 0 0 4px; font-size: 15px; font-weight: 600; letter-spacing: .02em; }
+  #head p { margin: 0; font-size: 12px; line-height: 1.5; color: #9a9aa8; }
+  #ui { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  #ui button { background: #1d1d26; color: #f2f2f6; border: 1px solid #343444;
+    border-radius: 7px; padding: 6px 12px; font-size: 12px; cursor: pointer; }
+  #ui button:hover { background: #272734; }
+  #ui input[type=range] { flex: 1 1 220px; min-width: 150px; accent-color: #7c8cff; }
+  #clock { font-variant-numeric: tabular-nums; font-size: 12px; color: #a9a9ba; min-width: 78px; }
+  #credit { width: min(94vw, 1000px); font-size: 11px; line-height: 1.6; color: #6f6f80; }
+  #credit b { color: #9c9cae; font-weight: 500; }
+  body.export, body.export #app { display: block; width: 640px; height: 360px; min-height: 0;
+    padding: 0; margin: 0; overflow: hidden; background: #000; }
+  body.export #stage { width: 640px; height: 360px; box-shadow: none; }
+  body.export #head, body.export #ui, body.export #credit { display: none; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="head">
+    <h1>K13 · 美漫网点</h1>
+    <p>美漫网点风格，粗黑线条的英雄一拳砸下来，黄色爆炸星后面全是网点与放射速度线。</p>
+  </div>
+  <div id="stage"><canvas id="c" width="640" height="360" aria-label="美漫网点 风格动画示例"></canvas></div>
+  <div id="ui">
+    <button id="play" type="button">暂停</button>
+    <button id="replay" type="button">重播</button>
+    <input id="timeline" type="range" min="0" max="6" step="0.01" value="0" aria-label="时间轴">
+    <span id="clock">0.00 / 6.00s</span>
+  </div>
+  <div id="credit">
+    <b>DeepSeek Harness 生成示例</b>（非原项目样片）· 来源：来自俯仰观照博主的动画画风整理 ·
+    许可：upstream-custom-noncommercial（俯仰观照整理稿，非商业） · 画面与文字均由代码绘制，静音。
+  </div>
+</div>
+<script>
+(() => {
+  'use strict';
+  // ===== 共享脚手架（可改，但导出合同不要破坏）=================================
+  const W = 640, H = 360, DURATION = 6;
+  const EXPORT = new URLSearchParams(location.search).get('export') === '1';
+  const canvas = document.getElementById('c');
+  const ctx = canvas.getContext('2d');
+  const FONT = '"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",sans-serif';
+
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  const lerp = (a, b, t) => a + (b - a) * t;
+  const smooth = t => t * t * (3 - 2 * t);
+  const easeOut = t => 1 - Math.pow(1 - t, 3);
+  const easeIn = t => t * t * t;
+  function rng(seed) { let s = seed >>> 0; return () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; }; }
+
+  // ===== 场景（每个 ID 独立设计；下面的注释区由构建器替换）===================
+  // DESC: 美漫网点风格，粗黑线条的英雄一拳砸下来，黄色爆炸星后面全是网点与放射速度线。
+// K13 美漫网点 · DeepSeek Harness 生成示例
+const K13_INK = '#141414', K13_PAPER = '#f3e8cf', K13_RED = '#e23b2e', K13_BLUE = '#2b4c8c';
+const K13_YELLOW = '#f5c531', K13_SKIN = '#f0b184';
+
+// 网点：加载时画一次小图，之后只用 pattern
+const K13_PAT = (() => {
+  const c = document.createElement('canvas');
+  c.width = 14; c.height = 14;
+  const g = c.getContext('2d');
+  g.fillStyle = K13_INK;
+  g.beginPath(); g.arc(7, 7, 3.4, 0, Math.PI * 2); g.fill();
+  return ctx.createPattern(c, 'repeat');
+})();
+
+function k13seg(t, a, b) { return clamp((t - a) / (b - a), 0, 1); }
+function k13ease(p) { return 1 - Math.pow(1 - p, 3); }
+function k13back(p) { const c = 2.4, q = clamp(p, 0, 1) - 1; return 1 + (c + 1) * q * q * q + c * q * q; }
+function k13outline(w) { ctx.lineWidth = w; ctx.strokeStyle = K13_INK; ctx.lineJoin = 'round'; ctx.lineCap = 'round'; }
+
+// 网点填充
+function k13halftone(path, scale, color) {
+  ctx.save();
+  ctx.scale(scale, scale);
+  ctx.fillStyle = K13_PAT;
+  if (color) {
+    ctx.save();
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.fillStyle = color;
+    ctx.fill(path);
+    ctx.restore();
+  }
+  ctx.fill(path);
+  ctx.restore();
+}
+
+function k13Burst(cx, cy, r, spikes, seed, fill, stroke, rot) {
+  ctx.beginPath();
+  for (let i = 0; i < spikes * 2; i++) {
+    const a = (i / (spikes * 2)) * Math.PI * 2 + (rot || 0);
+    const rr = i % 2 ? r * 0.62 : r * (0.92 + 0.08 * Math.sin(i * seed));
+    const x = cx + Math.cos(a) * rr, y = cy + Math.sin(a) * rr;
+    if (i) ctx.lineTo(x, y); else ctx.moveTo(x, y);
+  }
+  ctx.closePath();
+  if (fill) { ctx.fillStyle = fill; ctx.fill(); }
+  if (stroke) { k13outline(stroke); ctx.stroke(); }
+}
+
+function k13Hero(cx, cy, s, t, punchP) {
+  ctx.save();
+  ctx.translate(cx, cy); ctx.scale(s, s);
+  k13outline(6);
+
+  // 举起的拳头（先画，压在肩后）
+  const arms = punchP;
+  ctx.save();
+  ctx.translate(56, -64 - 46 * arms);
+  ctx.rotate(-0.5 + 0.25 * arms);
+  // 前臂
+  ctx.fillStyle = K13_BLUE;
+  ctx.beginPath();
+  ctx.moveTo(-14, 10); ctx.lineTo(14, 10); ctx.lineTo(20, 62); ctx.lineTo(-20, 62);
+  ctx.closePath(); ctx.fill(); ctx.stroke();
+  // 拳头
+  ctx.fillStyle = K13_RED;
+  ctx.beginPath();
+  ctx.moveTo(-24, 4); ctx.quadraticCurveTo(-30, -26, 0, -34);
+  ctx.quadraticCurveTo(30, -26, 24, 4); ctx.quadraticCurveTo(0, 16, -24, 4);
+  ctx.closePath(); ctx.fill(); ctx.stroke();
+  // 指节
+  ctx.save(); k13outline(3.4);
+  for (let i = -1; i <= 1; i++) {
+    ctx.beginPath(); ctx.arc(i * 11, -20, 5, Math.PI * 0.15, Math.PI * 0.85, true); ctx.stroke();
+  }
+  ctx.restore();
+  // 速度短线（拳头周围）
+  ctx.save(); k13outline(4);
+  for (let i = 0; i < 5; i++) {
+    const a = -Math.PI * 0.9 + i * 0.32;
+    ctx.beginPath();
+    ctx.moveTo(Math.cos(a) * 44, Math.sin(a) * 44);
+    ctx.lineTo(Math.cos(a) * 62, Math.sin(a) * 62);
+    ctx.stroke();
+  }
+  ctx.restore();
+  ctx.restore();
+
+  // 脖子
+  ctx.fillStyle = K13_SKIN;
+  ctx.beginPath();
+  ctx.moveTo(-22, -8); ctx.lineTo(22, -8); ctx.lineTo(26, 30); ctx.lineTo(-26, 30);
+  ctx.closePath(); ctx.fill(); ctx.stroke();
+
+  // 躯干
+  ctx.beginPath();
+  ctx.moveTo(-104, 150);
+  ctx.lineTo(-86, 34);
+  ctx.quadraticCurveTo(-66, -6, -30, -14);
+  ctx.lineTo(30, -14);
+  ctx.quadraticCurveTo(66, -6, 86, 34);
+  ctx.lineTo(104, 150);
+  ctx.closePath();
+  ctx.fillStyle = K13_BLUE; ctx.fill(); ctx.stroke();
+  // 胸口高光块
+  ctx.save();
+  ctx.beginPath();
+  ctx.moveTo(-104, 150); ctx.lineTo(-86, 34);
+  ctx.quadraticCurveTo(-66, -6, -30, -14); ctx.lineTo(-4, -14);
+  ctx.lineTo(-18, 150); ctx.closePath();
+  ctx.fillStyle = 'rgba(255,255,255,.16)'; ctx.fill();
+  ctx.restore();
+  // 胸肌线
+  ctx.save(); k13outline(5);
+  ctx.beginPath();
+  ctx.moveTo(-52, 44); ctx.quadraticCurveTo(-22, 74, 0, 44);
+  ctx.quadraticCurveTo(22, 74, 52, 44);
+  ctx.stroke();
+  // 胸口星标
+  ctx.beginPath();
+  for (let i = 0; i < 10; i++) {
+    const a = -Math.PI / 2 + i * Math.PI / 5;
+    const rr = i % 2 ? 13 : 28;
+    const x = Math.cos(a) * rr * 0.9, y = 96 + Math.sin(a) * rr * 0.9;
+    if (i) ctx.lineTo(x, y); else ctx.moveTo(x, y);
+  }
+  ctx.closePath();
+  ctx.fillStyle = K13_YELLOW; ctx.fill(); ctx.stroke();
+  ctx.restore();
+
+  // 头
+  ctx.beginPath();
+  ctx.moveTo(-36, -88);
+  ctx.quadraticCurveTo(-44, -40, -28, -18);
+  ctx.quadraticCurveTo(-14, -4, 0, -2);
+  ctx.quadraticCurveTo(14, -4, 28, -18);
+  ctx.quadraticCurveTo(44, -40, 36, -88);
+  ctx.quadraticCurveTo(22, -112, 0, -112);
+  ctx.quadraticCurveTo(-22, -112, -36, -88);
+  ctx.closePath();
+  ctx.fillStyle = K13_SKIN; ctx.fill(); ctx.stroke();
+  // 下巴阴影（网点）
+  ctx.save();
+  ctx.beginPath();
+  ctx.moveTo(-28, -18); ctx.quadraticCurveTo(-14, -4, 0, -2);
+  ctx.quadraticCurveTo(14, -4, 28, -18); ctx.lineTo(20, -30); ctx.lineTo(-20, -30);
+  ctx.closePath();
+  ctx.clip();
+  ctx.fillStyle = K13_PAT; ctx.fillRect(-40, -34, 80, 40);
+  ctx.restore();
+
+  // 头发：黑色尖刺
+  ctx.beginPath();
+  ctx.moveTo(-38, -84);
+  ctx.lineTo(-52, -104); ctx.lineTo(-34, -100); ctx.lineTo(-40, -122);
+  ctx.lineTo(-18, -108); ctx.lineTo(-12, -132); ctx.lineTo(6, -110);
+  ctx.lineTo(18, -134); ctx.lineTo(24, -106); ctx.lineTo(44, -118);
+  ctx.lineTo(38, -96); ctx.lineTo(50, -84); ctx.lineTo(34, -78);
+  ctx.quadraticCurveTo(16, -94, 0, -92);
+  ctx.quadraticCurveTo(-18, -94, -38, -84);
+  ctx.closePath();
+  ctx.fillStyle = K13_INK; ctx.fill();
+
+  // 眼罩
+  ctx.beginPath();
+  ctx.moveTo(-40, -76); ctx.lineTo(-6, -80); ctx.lineTo(-2, -68); ctx.lineTo(-10, -62);
+  ctx.lineTo(-38, -64); ctx.closePath();
+  ctx.moveTo(40, -76); ctx.lineTo(6, -80); ctx.lineTo(2, -68); ctx.lineTo(10, -62);
+  ctx.lineTo(38, -64); ctx.closePath();
+  ctx.fillStyle = K13_INK; ctx.fill();
+
+  // 眼睛：白眼 + 黑瞳
+  ctx.fillStyle = '#ffffff';
+  ctx.beginPath(); ctx.ellipse(-22, -72, 11, 6.5, -0.1, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(22, -72, 11, 6.5, 0.1, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = K13_INK;
+  ctx.beginPath(); ctx.arc(-19, -72, 4, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.arc(19, -72, 4, 0, Math.PI * 2); ctx.fill();
+  // 眉毛
+  ctx.save(); k13outline(7);
+  ctx.beginPath(); ctx.moveTo(-38, -86); ctx.lineTo(-8, -78); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(38, -86); ctx.lineTo(8, -78); ctx.stroke();
+  ctx.restore();
+
+  // 张嘴喊
+  ctx.beginPath();
+  ctx.moveTo(-16, -36);
+  ctx.quadraticCurveTo(0, -28, 16, -36);
+  ctx.quadraticCurveTo(12, -12, 0, -12);
+  ctx.quadraticCurveTo(-12, -12, -16, -36);
+  ctx.closePath();
+  ctx.fillStyle = K13_INK; ctx.fill();
+  ctx.fillStyle = '#ffffff';
+  ctx.beginPath();
+  ctx.moveTo(-11, -33); ctx.lineTo(11, -33); ctx.lineTo(8, -27); ctx.lineTo(-8, -27);
+  ctx.closePath(); ctx.fill();
+  // 鼻
+  ctx.save(); k13outline(4.5);
+  ctx.beginPath(); ctx.moveTo(2, -52); ctx.lineTo(-4, -44); ctx.lineTo(4, -42); ctx.stroke();
+  ctx.restore();
+
+  // 肩膀阴影网点
+  ctx.save();
+  ctx.beginPath();
+  ctx.moveTo(60, 20); ctx.quadraticCurveTo(78, 40, 84, 80); ctx.lineTo(104, 150); ctx.lineTo(64, 150);
+  ctx.quadraticCurveTo(66, 70, 52, 26); ctx.closePath();
+  ctx.clip();
+  ctx.fillStyle = K13_PAT; ctx.fillRect(40, 0, 90, 160);
+  ctx.restore();
+
+  ctx.restore();
+}
+
+function drawScene(t) {
+  // 纸底
+  ctx.fillStyle = K13_PAPER; ctx.fillRect(0, 0, W, H);
+
+  // 震动（前 2.4 秒）
+  const shake = t < 2.6 ? (1 - t / 2.6) : 0;
+  const sx = Math.sin(t * 47) * 3 * shake, sy = Math.cos(t * 39) * 3 * shake;
+
+  ctx.save();
+  ctx.translate(sx, sy);
+
+  // 红色网点角块
+  ctx.save();
+  ctx.fillStyle = K13_RED;
+  ctx.beginPath();
+  ctx.moveTo(0, 0); ctx.lineTo(230, 0);
+  ctx.quadraticCurveTo(120, 70, 0, 132);
+  ctx.closePath(); ctx.fill();
+  ctx.restore();
+  ctx.save();
+  ctx.beginPath();
+  ctx.moveTo(0, 0); ctx.lineTo(230, 0);
+  ctx.quadraticCurveTo(120, 70, 0, 132);
+  ctx.closePath();
+  ctx.clip();
+  ctx.save(); ctx.scale(1.6, 1.6); ctx.fillStyle = K13_PAT; ctx.fillRect(0, 0, 200, 120); ctx.restore();
+  ctx.restore();
+
+  // 放射速度线
+  const cx0 = 392, cy0 = 196;
+  ctx.save();
+  ctx.strokeStyle = K13_INK; ctx.lineCap = 'round';
+  const lineN = 46;
+  for (let i = 0; i < lineN; i++) {
+    const a = (i / lineN) * Math.PI * 2 + Math.sin(t * 0.6) * 0.03;
+    const r0 = 176 + Math.sin(i * 2.1 + t * 5) * 16;
+    const wgt = 1.6 + (i % 4) * 1.6;
+    ctx.lineWidth = wgt;
+    ctx.beginPath();
+    ctx.moveTo(cx0 + Math.cos(a) * r0, cy0 + Math.sin(a) * r0);
+    ctx.lineTo(cx0 + Math.cos(a) * 520, cy0 + Math.sin(a) * 520);
+    ctx.stroke();
+  }
+  ctx.restore();
+
+  // 黄色爆炸星
+  const burstP = k13ease(k13seg(t, 0, 0.9));
+  const pulse = 1 + Math.sin(t * 5) * 0.02;
+  k13Burst(cx0, cy0, 210 * burstP * pulse, 14, 2.3, K13_YELLOW, 7, t * 0.02);
+  // 星内网点（只在下半部）
+  ctx.save();
+  k13Burst(cx0, cy0, 210 * burstP * pulse, 14, 2.3, null, null, t * 0.02);
+  ctx.clip();
+  ctx.save();
+  ctx.globalAlpha = 0.5; ctx.scale(1.9, 1.9);
+  ctx.fillStyle = K13_PAT;
+  ctx.fillRect(cx0 - 120, cy0 + 40, 240, 200);
+  ctx.restore();
+  ctx.restore();
+
+  // 英雄：从 1.5 倍砸进画面
+  const inP = k13seg(t, 0, 0.85);
+  const hs = 1.42 - 0.42 * k13back(inP);
+  const punchP = k13ease(k13seg(t, 0.9, 2.2));
+  k13Hero(392, 236, hs * 1.05, t, punchP);
+
+  // 冲击环
+  const ringP = k13seg(t, 0.85, 1.9);
+  if (ringP > 0 && ringP < 1) {
+    ctx.save();
+    ctx.strokeStyle = K13_INK; ctx.lineWidth = 8 * (1 - ringP);
+    ctx.beginPath(); ctx.arc(392, 210, 90 + 220 * k13ease(ringP), 0, Math.PI * 2); ctx.stroke();
+    ctx.restore();
+  }
+
+  // 「砰！」爆炸字
+  const bangP = k13seg(t, 1.9, 2.5);
+  if (bangP > 0) {
+    ctx.save();
+    ctx.translate(136, 132);
+    ctx.rotate(-0.16);
+    const bs = k13back(bangP);
+    ctx.scale(bs, bs);
+    k13Burst(0, 0, 96, 11, 1.7, K13_YELLOW, 6, 0.2);
+    ctx.save();
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.font = `900 62px ${FONT}`;
+    ctx.lineWidth = 12; ctx.lineJoin = 'round'; ctx.strokeStyle = K13_INK;
+    ctx.strokeText('砰！', 0, 2);
+    ctx.fillStyle = K13_RED;
+    ctx.fillText('砰！', 0, 2);
+    ctx.restore();
+    ctx.restore();
+  }
+
+  ctx.restore(); // shake
+
+  // 边框
+  ctx.save();
+  ctx.strokeStyle = K13_INK; ctx.lineWidth = 10;
+  ctx.strokeRect(5, 5, W - 10, H - 10);
+  ctx.restore();
+
+  // 标题条
+  ctx.save();
+  ctx.fillStyle = K13_INK;
+  ctx.fillRect(22, 22, 286, 40);
+  ctx.fillStyle = '#fff9ea';
+  ctx.font = `800 22px ${FONT}`; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+  ctx.fillText('一个念头，炸开了', 34, 42);
+  ctx.restore();
+
+  // 底部字幕条
+  const capP = k13seg(t, 3.6, 4.3);
+  if (capP > 0) {
+    ctx.save();
+    ctx.globalAlpha = capP;
+    ctx.fillStyle = K13_INK;
+    ctx.fillRect(22, 306, 300, 34);
+    ctx.fillStyle = K13_YELLOW;
+    ctx.font = `700 16px ${FONT}`; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+    ctx.fillText('粗线 · 网点 · 速度线', 34, 324);
+    ctx.restore();
+  }
+
+  // 角标（压在黑色小牌子上，避免被爆炸星吃掉）
+  ctx.save();
+  ctx.fillStyle = K13_INK;
+  ctx.fillRect(402, 12, 214, 26);
+  ctx.fillStyle = K13_YELLOW;
+  ctx.font = `800 14px ${FONT}`; ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+  ctx.fillText('K13 · 美漫网点 / halftone', 604, 25);
+  ctx.restore();
+}
+
+  // ===== 共享渲染与署名 =======================================================
+  function watermark() {
+    const text = 'DeepSeek Harness 生成示例';
+    ctx.save();
+    ctx.font = '11px ' + FONT;
+    const w = ctx.measureText(text).width + 14;
+    const x = W - w - 8, y = H - 24;
+    ctx.fillStyle = 'rgba(0,0,0,.46)';
+    ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(x, y, w, 18, 4); else ctx.rect(x, y, w, 18);
+    ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,.82)';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(text, x + 7, y + 9.5);
+    ctx.restore();
+  }
+
+  function paint(t) {
+    ctx.save();
+    ctx.clearRect(0, 0, W, H);
+    try { drawScene(t); } catch (err) { console.error(err); }
+    ctx.restore();
+    watermark();
+  }
+
+  function renderAt(seconds) {
+    const t = ((Number(seconds) % DURATION) + DURATION) % DURATION;
+    paint(t);
+    syncUI(t);
+    return t;
+  }
+  window.renderAt = renderAt;
+
+  // ===== 播放、控制、减少动态 =================================================
+  const playBtn = document.getElementById('play');
+  const timeline = document.getElementById('timeline');
+  const clock = document.getElementById('clock');
+  let playing = false, base = 0, start = 0, current = 0;
+  let animationFrame = 0;
+  const reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function syncUI(t) {
+    if (EXPORT) return;
+    current = t;
+    if (timeline) timeline.value = String(t.toFixed(2));
+    if (clock) clock.textContent = t.toFixed(2) + ' / ' + DURATION.toFixed(2) + 's';
+  }
+  function frame(now) {
+    animationFrame = 0;
+    if (!playing) return;
+    const t = ((now - start) / 1000 + base) % DURATION;
+    paint(t);
+    syncUI(t);
+    animationFrame = requestAnimationFrame(frame);
+  }
+  function play() {
+    if (playing) return;
+    playing = true;
+    start = performance.now();
+    base = current;
+    if (playBtn) playBtn.textContent = '暂停';
+    animationFrame = requestAnimationFrame(frame);
+  }
+  function pause() {
+    playing = false;
+    cancelAnimationFrame(animationFrame);
+    animationFrame = 0;
+    if (playBtn) playBtn.textContent = '播放';
+  }
+  if (playBtn) playBtn.addEventListener('click', () => { playing ? pause() : play(); });
+  document.getElementById('replay')?.addEventListener('click', () => {
+    base = 0; start = performance.now(); paint(0); syncUI(0); play();
+  });
+  timeline?.addEventListener('input', () => {
+    pause(); paint(Number(timeline.value)); syncUI(Number(timeline.value));
+  });
+  window.addEventListener('keydown', e => {
+    if (e.code === 'Space') { e.preventDefault(); playing ? pause() : play(); }
+    if (e.key === 'r' || e.key === 'R') { base = 0; start = performance.now(); paint(0); syncUI(0); play(); }
+  });
+
+  if (EXPORT) {
+    document.body.classList.add('export');
+    renderAt(0);
+  } else if (reduced) {
+    renderAt(2.4);
+    pause();
+  } else {
+    renderAt(0);
+    play();
+  }
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,468 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>M23 五幕讲解（万能讲解模板） · DeepSeek Harness 生成示例</title>
+<!--
+  Provenance
+  ----------
+  风格来源：code-animation-styles 目录（《来自俯仰观照博主的动画画风整理》整理稿）
+  catalog commit: 01576924a2b316d1f11ae33f75d3c005e8781451
+  style id: M23「五幕讲解（万能讲解模板）」
+  license: upstream-custom-noncommercial（俯仰观照整理稿，非商业）
+  本文件：DeepSeek Harness（deepseek-flash）根据该风格提示词新写的候选示例，
+  不是原作者样片，也不是原项目演示；仅用于风格挑选预览。共享的只有时间轴、
+  尺寸、导出接口与页脚署名，画面与动作按本风格重新设计。
+  原文“只输出代码”等语句属于素材的一部分，不覆盖本任务的交付合同。
+-->
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; min-height: 100%; background: #0c0c10; color: #e9e9ee;
+    font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif; }
+  #app { min-height: 100vh; display: flex; flex-direction: column; align-items: center;
+    justify-content: center; gap: 12px; padding: 20px; }
+  #stage { width: min(94vw, 1000px); aspect-ratio: 16 / 9; background: #000;
+    box-shadow: 0 18px 60px rgba(0,0,0,.55); position: relative; overflow: hidden; }
+  canvas { display: block; width: 100%; height: 100%; }
+  #head, #ui { width: min(94vw, 1000px); }
+  #head h1 { margin: 0 0 4px; font-size: 15px; font-weight: 600; letter-spacing: .02em; }
+  #head p { margin: 0; font-size: 12px; line-height: 1.5; color: #9a9aa8; }
+  #ui { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  #ui button { background: #1d1d26; color: #f2f2f6; border: 1px solid #343444;
+    border-radius: 7px; padding: 6px 12px; font-size: 12px; cursor: pointer; }
+  #ui button:hover { background: #272734; }
+  #ui input[type=range] { flex: 1 1 220px; min-width: 150px; accent-color: #7c8cff; }
+  #clock { font-variant-numeric: tabular-nums; font-size: 12px; color: #a9a9ba; min-width: 78px; }
+  #credit { width: min(94vw, 1000px); font-size: 11px; line-height: 1.6; color: #6f6f80; }
+  #credit b { color: #9c9cae; font-weight: 500; }
+  body.export, body.export #app { display: block; width: 640px; height: 360px; min-height: 0;
+    padding: 0; margin: 0; overflow: hidden; background: #000; }
+  body.export #stage { width: 640px; height: 360px; box-shadow: none; }
+  body.export #head, body.export #ui, body.export #credit { display: none; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="head">
+    <h1>M23 · 五幕讲解（万能讲解模板）</h1>
+    <p>五幕平涂大字讲解：问题、定义、三步、例子、收尾，大色块硬切加横推转场，底部五个进度点。</p>
+  </div>
+  <div id="stage"><canvas id="c" width="640" height="360" aria-label="五幕讲解（万能讲解模板） 风格动画示例"></canvas></div>
+  <div id="ui">
+    <button id="play" type="button">暂停</button>
+    <button id="replay" type="button">重播</button>
+    <input id="timeline" type="range" min="0" max="6" step="0.01" value="0" aria-label="时间轴">
+    <span id="clock">0.00 / 6.00s</span>
+  </div>
+  <div id="credit">
+    <b>DeepSeek Harness 生成示例</b>（非原项目样片）· 来源：来自俯仰观照博主的动画画风整理 ·
+    许可：upstream-custom-noncommercial（俯仰观照整理稿，非商业） · 画面与文字均由代码绘制，静音。
+  </div>
+</div>
+<script>
+(() => {
+  'use strict';
+  // ===== 共享脚手架（可改，但导出合同不要破坏）=================================
+  const W = 640, H = 360, DURATION = 6;
+  const EXPORT = new URLSearchParams(location.search).get('export') === '1';
+  const canvas = document.getElementById('c');
+  const ctx = canvas.getContext('2d');
+  const FONT = '"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",sans-serif';
+
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  const lerp = (a, b, t) => a + (b - a) * t;
+  const smooth = t => t * t * (3 - 2 * t);
+  const easeOut = t => 1 - Math.pow(1 - t, 3);
+  const easeIn = t => t * t * t;
+  function rng(seed) { let s = seed >>> 0; return () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; }; }
+
+  // ===== 场景（每个 ID 独立设计；下面的注释区由构建器替换）===================
+  // DESC: 五幕平涂大字讲解：问题、定义、三步、例子、收尾，大色块硬切加横推转场，底部五个进度点。
+// M23 五幕讲解 · DeepSeek Harness 生成示例
+const M23_INK = '#141a2e', M23_CREAM = '#f3efe3', M23_YELLOW = '#ffd23f', M23_TOMATO = '#e4572e', M23_GREEN = '#2a9d8f';
+const M23_N = 5, M23_ACT = 1.2;
+const M23_BG = [M23_CREAM, M23_INK, M23_YELLOW, M23_CREAM, M23_TOMATO];
+const M23_FG = [M23_INK, M23_CREAM, M23_INK, M23_INK, M23_CREAM];
+const M23_LABELS = ['01 / 问题', '02 / 是什么', '03 / 怎么用', '04 / 例子', '05 / 收尾'];
+
+function m23seg(t, a, b) { return clamp((t - a) / (b - a), 0, 1); }
+function m23e(t) { return 1 - Math.pow(1 - t, 3); }
+function m23spring(p) {
+  if (p <= 0) return 0;
+  if (p >= 1) return 1;
+  return 1 - Math.exp(-7 * p) * Math.cos(9 * p) * (1 - p);
+}
+function m23Text(str, x, y, size, color, weight, align) {
+  ctx.fillStyle = color;
+  ctx.font = `${weight || 800} ${size}px ${FONT}`;
+  ctx.textAlign = align || 'left';
+  ctx.textBaseline = 'alphabetic';
+  ctx.fillText(str, x, y);
+}
+function m23Label(idx) {
+  const fg = M23_FG[idx];
+  ctx.save();
+  ctx.globalAlpha = 0.75;
+  ctx.fillStyle = fg;
+  ctx.fillRect(26, 26, 16, 3);
+  ctx.font = `700 12px ${FONT}`;
+  ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+  ctx.fillText(M23_LABELS[idx], 50, 32);
+  ctx.restore();
+}
+function m23Card(x, y, w, h, rot, lines) {
+  ctx.save();
+  ctx.translate(x + w / 2, y + h / 2);
+  ctx.rotate(rot);
+  ctx.fillStyle = 'rgba(255,255,255,.94)';
+  ctx.strokeStyle = 'rgba(20,26,46,.55)'; ctx.lineWidth = 1.6;
+  ctx.beginPath();
+  if (ctx.roundRect) ctx.roundRect(-w / 2, -h / 2, w, h, 4); else ctx.rect(-w / 2, -h / 2, w, h);
+  ctx.fill(); ctx.stroke();
+  ctx.fillStyle = 'rgba(20,26,46,.28)';
+  for (let i = 0; i < lines; i++) {
+    ctx.fillRect(-w / 2 + 10, -h / 2 + 12 + i * 9, w - 20 - (i % 2) * 14, 2.4);
+  }
+  ctx.restore();
+}
+
+// ---- 第一幕：问题 ----
+function m23Act1(lt) {
+  ctx.fillStyle = M23_CREAM; ctx.fillRect(0, 0, W, H);
+  m23Label(0);
+  const p1 = m23e(m23seg(lt, -0.14, 0.2));
+  ctx.save();
+  ctx.globalAlpha = clamp(p1 * 1.2, 0, 1);
+  ctx.translate(0, (1 - p1) * 18);
+  m23Text('东西越堆越多', 52, 148, 44, M23_INK, 800);
+  ctx.restore();
+  const p2 = m23e(m23seg(lt, 0.34, 0.62));
+  ctx.save();
+  ctx.globalAlpha = p2;
+  ctx.translate(0, (1 - p2) * 18);
+  m23Text('找不到想要的', 52, 206, 44, M23_TOMATO, 800);
+  ctx.restore();
+  // 散落的文件卡
+  const float = Math.sin(lt * 5) * 3;
+  m23Card(398, 96 + float, 78, 92, -0.14, 4);
+  m23Card(486, 128 - float, 78, 92, 0.11, 3);
+  m23Card(432, 206 + float * 0.7, 78, 92, -0.05, 5);
+  // 大红叹号
+  const ep = m23spring(m23seg(lt, 0.5, 0.72));
+  if (ep > 0.01) {
+    ctx.save();
+    ctx.translate(372, 268); ctx.scale(ep, ep);
+    m23Text('?', 0, 7, 36, M23_TOMATO, 800, 'center');
+    ctx.restore();
+  }
+}
+
+// ---- 第二幕：是什么 ----
+function m23Act2(lt) {
+  ctx.fillStyle = M23_INK; ctx.fillRect(0, 0, W, H);
+  m23Label(1);
+  const p1 = m23e(m23seg(lt, 0.02, 0.28));
+  ctx.save(); ctx.globalAlpha = p1; ctx.translate(0, (1 - p1) * 18);
+  m23Text('先有个盒子', 52, 152, 42, M23_CREAM, 800);
+  ctx.restore();
+  const p2 = m23e(m23seg(lt, 0.3, 0.55));
+  ctx.save(); ctx.globalAlpha = p2 * 0.8;
+  m23Text('所有东西，都往里放', 54, 188, 16, M23_CREAM, 500);
+  ctx.restore();
+  // 盒子
+  const bp = m23spring(m23seg(lt, 0.12, 0.45));
+  ctx.save();
+  ctx.translate(438, 176); ctx.scale(bp, bp); ctx.translate(-438, -176);
+  ctx.strokeStyle = M23_YELLOW; ctx.lineWidth = 3;
+  ctx.fillStyle = 'rgba(255,210,63,.10)';
+  ctx.beginPath();
+  if (ctx.roundRect) ctx.roundRect(372, 110, 132, 132, 12); else ctx.rect(372, 110, 132, 132);
+  ctx.fill(); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(372, 146); ctx.lineTo(504, 146); ctx.stroke();
+  ctx.fillStyle = M23_YELLOW; ctx.fillRect(430, 137, 16, 18);
+  ctx.restore();
+  // 卡片飞进盒子
+  for (let i = 0; i < 3; i++) {
+    const p = m23e(m23seg(lt, 0.34 + i * 0.14, 0.78 + i * 0.14));
+    if (p <= 0) continue;
+    const x0 = 92 + i * 30, y0 = 250 + i * 20;
+    const x1 = 420, y1 = 168;
+    const x = lerp(x0, x1, p), y = lerp(y0, y1, p) - Math.sin(p * Math.PI) * 60;
+    const sc = lerp(1, 0.24, p);
+    ctx.save();
+    ctx.globalAlpha = 0.95;
+    ctx.translate(x, y); ctx.scale(sc, sc); ctx.rotate(lerp(-0.2, 0.3, p));
+    m23Card(-39, -46, 78, 92, 0, 3);
+    ctx.restore();
+  }
+}
+
+// ---- 第三幕：三步 ----
+function m23Act3(lt) {
+  ctx.fillStyle = M23_YELLOW; ctx.fillRect(0, 0, W, H);
+  m23Label(2);
+  const p1 = m23e(m23seg(lt, 0.02, 0.26));
+  ctx.save(); ctx.globalAlpha = p1; ctx.translate(0, (1 - p1) * 18);
+  m23Text('三步就够', 52, 148, 46, M23_INK, 800);
+  m23Text('收 · 分 · 找', 56, 196, 18, 'rgba(20,26,46,.62)', 600);
+  ctx.restore();
+  const items = [['01', '收起来'], ['02', '分好类'], ['03', '找得到']];
+  items.forEach((it, i) => {
+    const p = m23spring(m23seg(lt, 0.18 + i * 0.19, 0.42 + i * 0.19));
+    if (p <= 0.01) return;
+    const y = 96 + i * 68;
+    ctx.save();
+    ctx.translate(352 + 210, y + 26);
+    ctx.scale(p, p);
+    ctx.translate(-(352 + 210), -(y + 26));
+    ctx.globalAlpha = clamp(p * 1.5, 0, 1);
+    ctx.fillStyle = M23_INK;
+    ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(352, y, 236, 52, 8); else ctx.rect(352, y, 236, 52);
+    ctx.fill();
+    ctx.fillStyle = M23_YELLOW; ctx.font = `800 15px ${FONT}`;
+    ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+    ctx.fillText(it[0], 370, y + 27);
+    ctx.fillStyle = M23_CREAM; ctx.font = `700 22px ${FONT}`;
+    ctx.fillText(it[1], 404, y + 27);
+    ctx.restore();
+  });
+}
+
+// ---- 第四幕：例子 ----
+function m23Act4(lt) {
+  ctx.fillStyle = M23_CREAM; ctx.fillRect(0, 0, W, H);
+  m23Label(3);
+  const p1 = m23e(m23seg(lt, 0.02, 0.24));
+  ctx.save(); ctx.globalAlpha = p1;
+  m23Text('不用翻文件夹', 120, 84, 26, M23_INK, 800);
+  ctx.restore();
+  // 搜索框
+  const bp = m23e(m23seg(lt, 0.06, 0.3));
+  ctx.save();
+  ctx.globalAlpha = bp;
+  ctx.fillStyle = '#ffffff';
+  ctx.strokeStyle = M23_INK; ctx.lineWidth = 3;
+  ctx.beginPath();
+  if (ctx.roundRect) ctx.roundRect(120, 104, 400, 50, 25); else ctx.rect(120, 104, 400, 50);
+  ctx.fill(); ctx.stroke();
+  // 放大镜
+  ctx.strokeStyle = M23_INK; ctx.lineWidth = 3; ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.arc(148, 127, 8, 0, Math.PI * 2); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(154, 133); ctx.lineTo(161, 140); ctx.stroke();
+  ctx.restore();
+  // 逐字打字
+  const full = '上个月的报价单';
+  const n = Math.floor(clamp((lt - 0.1) / 0.42, 0, 1) * full.length);
+  const typed = full.slice(0, n);
+  ctx.save();
+  ctx.fillStyle = M23_INK; ctx.font = `600 19px ${FONT}`;
+  ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+  ctx.fillText(typed, 174, 130);
+  if (n < full.length || (lt * 4) % 2 < 1) {
+    ctx.fillStyle = M23_TOMATO;
+    const tw = ctx.measureText(typed).width;
+    ctx.fillRect(174 + tw + 2, 118, 2, 24);
+  }
+  ctx.restore();
+  // 结果
+  const rp = m23e(m23seg(lt, 0.56, 0.78));
+  if (rp > 0) {
+    ctx.save();
+    ctx.globalAlpha = rp;
+    ctx.translate(0, (1 - rp) * 16);
+    ctx.fillStyle = '#ffffff';
+    ctx.strokeStyle = 'rgba(20,26,46,.3)'; ctx.lineWidth = 1.6;
+    ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(120, 176, 400, 74, 8); else ctx.rect(120, 176, 400, 74);
+    ctx.fill(); ctx.stroke();
+    ctx.fillStyle = 'rgba(20,26,46,.3)';
+    ctx.fillRect(138, 192, 150, 3);
+    ctx.fillRect(138, 204, 250, 3);
+    ctx.fillRect(138, 216, 96, 3);
+    ctx.fillStyle = M23_GREEN;
+    ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(424, 196, 78, 28, 6); else ctx.rect(424, 196, 78, 28);
+    ctx.fill();
+    ctx.fillStyle = '#ffffff'; ctx.font = `700 14px ${FONT}`;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('翻到了', 463, 210);
+    ctx.restore();
+  }
+}
+
+// ---- 第五幕：收尾 ----
+function m23Act5(lt) {
+  ctx.fillStyle = M23_TOMATO; ctx.fillRect(0, 0, W, H);
+  m23Label(4);
+  const p1 = m23spring(m23seg(lt, 0.04, 0.34));
+  ctx.save();
+  ctx.translate(320, 168); ctx.scale(p1, p1); ctx.translate(-320, -168);
+  ctx.globalAlpha = clamp(p1 * 1.4, 0, 1);
+  m23Text('这一期，讲完了', 64, 172, 46, M23_CREAM, 800);
+  ctx.restore();
+  // 右侧大编号，撑住结尾卡片
+  ctx.save();
+  ctx.globalAlpha = 0.16;
+  m23Text('05', 486, 300, 104, M23_CREAM, 800, 'left');
+  ctx.restore();
+  const p2 = m23e(m23seg(lt, 0.26, 0.5));
+  ctx.save(); ctx.globalAlpha = p2 * 0.9;
+  m23Text('五幕，讲清一件事', 66, 210, 17, 'rgba(243,239,227,.85)', 500);
+  ctx.restore();
+  const p3 = m23e(m23seg(lt, 0.44, 0.66));
+  if (p3 > 0) {
+    ctx.save();
+    ctx.globalAlpha = p3;
+    ctx.fillStyle = M23_INK;
+    ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(64, 236, 108, 36, 18); else ctx.rect(64, 236, 108, 36);
+    ctx.fill();
+    ctx.fillStyle = M23_YELLOW; ctx.font = `700 15px ${FONT}`;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('下期继续', 118, 255);
+    ctx.restore();
+  }
+  // 五条短横，代表五幕
+  for (let i = 0; i < 5; i++) {
+    const p = m23e(m23seg(lt, 0.5 + i * 0.04, 0.7 + i * 0.04));
+    ctx.save();
+    ctx.globalAlpha = p * 0.7;
+    ctx.fillStyle = M23_CREAM;
+    ctx.fillRect(64 + i * 14, 300, 9 * p, 4);
+    ctx.restore();
+  }
+}
+
+const M23_ACTS = [m23Act1, m23Act2, m23Act3, m23Act4, m23Act5];
+
+function drawScene(t) {
+  const k = Math.min(M23_N - 1, Math.floor(t / M23_ACT));
+  const lt = t - k * M23_ACT;
+  const trans = 0.16;
+  if (k > 0 && lt < trans) {
+    const e = m23e(lt / trans);
+    // 前一幕横推出去，当前幕推进来
+    ctx.save();
+    ctx.translate(-e * W, 0);
+    M23_ACTS[k - 1](M23_ACT);
+    ctx.restore();
+    ctx.save();
+    ctx.translate((1 - e) * W, 0);
+    M23_ACTS[k](lt);
+    ctx.restore();
+  } else {
+    M23_ACTS[k](lt);
+  }
+
+  // 固定进度点（不与右下署名区冲突）
+  ctx.save();
+  for (let i = 0; i < M23_N; i++) {
+    const on = i === k;
+    ctx.fillStyle = on ? M23_FG[k] : 'rgba(20,26,46,.22)';
+    if (k === 1 || k === 4) ctx.fillStyle = on ? M23_FG[k] : 'rgba(243,239,227,.30)';
+    ctx.beginPath();
+    ctx.arc(30 + i * 15, 334, on ? 4 : 2.6, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.restore();
+}
+
+  // ===== 共享渲染与署名 =======================================================
+  function watermark() {
+    const text = 'DeepSeek Harness 生成示例';
+    ctx.save();
+    ctx.font = '11px ' + FONT;
+    const w = ctx.measureText(text).width + 14;
+    const x = W - w - 8, y = H - 24;
+    ctx.fillStyle = 'rgba(0,0,0,.46)';
+    ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(x, y, w, 18, 4); else ctx.rect(x, y, w, 18);
+    ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,.82)';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(text, x + 7, y + 9.5);
+    ctx.restore();
+  }
+
+  function paint(t) {
+    ctx.save();
+    ctx.clearRect(0, 0, W, H);
+    try { drawScene(t); } catch (err) { console.error(err); }
+    ctx.restore();
+    watermark();
+  }
+
+  function renderAt(seconds) {
+    const t = ((Number(seconds) % DURATION) + DURATION) % DURATION;
+    paint(t);
+    syncUI(t);
+    return t;
+  }
+  window.renderAt = renderAt;
+
+  // ===== 播放、控制、减少动态 =================================================
+  const playBtn = document.getElementById('play');
+  const timeline = document.getElementById('timeline');
+  const clock = document.getElementById('clock');
+  let playing = false, base = 0, start = 0, current = 0;
+  let animationFrame = 0;
+  const reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function syncUI(t) {
+    if (EXPORT) return;
+    current = t;
+    if (timeline) timeline.value = String(t.toFixed(2));
+    if (clock) clock.textContent = t.toFixed(2) + ' / ' + DURATION.toFixed(2) + 's';
+  }
+  function frame(now) {
+    animationFrame = 0;
+    if (!playing) return;
+    const t = ((now - start) / 1000 + base) % DURATION;
+    paint(t);
+    syncUI(t);
+    animationFrame = requestAnimationFrame(frame);
+  }
+  function play() {
+    if (playing) return;
+    playing = true;
+    start = performance.now();
+    base = current;
+    if (playBtn) playBtn.textContent = '暂停';
+    animationFrame = requestAnimationFrame(frame);
+  }
+  function pause() {
+    playing = false;
+    cancelAnimationFrame(animationFrame);
+    animationFrame = 0;
+    if (playBtn) playBtn.textContent = '播放';
+  }
+  if (playBtn) playBtn.addEventListener('click', () => { playing ? pause() : play(); });
+  document.getElementById('replay')?.addEventListener('click', () => {
+    base = 0; start = performance.now(); paint(0); syncUI(0); play();
+  });
+  timeline?.addEventListener('input', () => {
+    pause(); paint(Number(timeline.value)); syncUI(Number(timeline.value));
+  });
+  window.addEventListener('keydown', e => {
+    if (e.code === 'Space') { e.preventDefault(); playing ? pause() : play(); }
+    if (e.key === 'r' || e.key === 'R') { base = 0; start = performance.now(); paint(0); syncUI(0); play(); }
+  });
+
+  if (EXPORT) {
+    document.body.classList.add('export');
+    renderAt(0);
+  } else if (reduced) {
+    renderAt(2.4);
+    pause();
+  } else {
+    renderAt(0);
+    play();
+  }
+})();
+</script>
+</body>
+</html>

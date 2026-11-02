@@ -1,0 +1,453 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>M12 剪纸皮影 · DeepSeek Harness 生成示例</title>
+<!--
+  Provenance
+  ----------
+  风格来源：code-animation-styles 目录（《来自俯仰观照博主的动画画风整理》整理稿）
+  catalog commit: 01576924a2b316d1f11ae33f75d3c005e8781451
+  style id: M12「剪纸皮影」
+  license: upstream-custom-noncommercial（俯仰观照整理稿，非商业）
+  本文件：DeepSeek Harness（deepseek-flash）根据该风格提示词新写的候选示例，
+  不是原作者样片，也不是原项目演示；仅用于风格挑选预览。共享的只有时间轴、
+  尺寸、导出接口与页脚署名，画面与动作按本风格重新设计。
+  原文“只输出代码”等语句属于素材的一部分，不覆盖本任务的交付合同。
+-->
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; min-height: 100%; background: #0c0c10; color: #e9e9ee;
+    font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif; }
+  #app { min-height: 100vh; display: flex; flex-direction: column; align-items: center;
+    justify-content: center; gap: 12px; padding: 20px; }
+  #stage { width: min(94vw, 1000px); aspect-ratio: 16 / 9; background: #000;
+    box-shadow: 0 18px 60px rgba(0,0,0,.55); position: relative; overflow: hidden; }
+  canvas { display: block; width: 100%; height: 100%; }
+  #head, #ui { width: min(94vw, 1000px); }
+  #head h1 { margin: 0 0 4px; font-size: 15px; font-weight: 600; letter-spacing: .02em; }
+  #head p { margin: 0; font-size: 12px; line-height: 1.5; color: #9a9aa8; }
+  #ui { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  #ui button { background: #1d1d26; color: #f2f2f6; border: 1px solid #343444;
+    border-radius: 7px; padding: 6px 12px; font-size: 12px; cursor: pointer; }
+  #ui button:hover { background: #272734; }
+  #ui input[type=range] { flex: 1 1 220px; min-width: 150px; accent-color: #7c8cff; }
+  #clock { font-variant-numeric: tabular-nums; font-size: 12px; color: #a9a9ba; min-width: 78px; }
+  #credit { width: min(94vw, 1000px); font-size: 11px; line-height: 1.6; color: #6f6f80; }
+  #credit b { color: #9c9cae; font-weight: 500; }
+  body.export, body.export #app { display: block; width: 640px; height: 360px; min-height: 0;
+    padding: 0; margin: 0; overflow: hidden; background: #000; }
+  body.export #stage { width: 640px; height: 360px; box-shadow: none; }
+  body.export #head, body.export #ui, body.export #credit { display: none; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="head">
+    <h1>M12 · 剪纸皮影</h1>
+    <p>灯后的纸幕上，剪纸的祖孙俩慢慢走到一盏灯下，影子在暖光里重合——「家，是有人等你」。</p>
+  </div>
+  <div id="stage"><canvas id="c" width="640" height="360" aria-label="剪纸皮影 风格动画示例"></canvas></div>
+  <div id="ui">
+    <button id="play" type="button">暂停</button>
+    <button id="replay" type="button">重播</button>
+    <input id="timeline" type="range" min="0" max="6" step="0.01" value="0" aria-label="时间轴">
+    <span id="clock">0.00 / 6.00s</span>
+  </div>
+  <div id="credit">
+    <b>DeepSeek Harness 生成示例</b>（非原项目样片）· 来源：来自俯仰观照博主的动画画风整理 ·
+    许可：upstream-custom-noncommercial（俯仰观照整理稿，非商业） · 画面与文字均由代码绘制，静音。
+  </div>
+</div>
+<script>
+(() => {
+  'use strict';
+  // ===== 共享脚手架（可改，但导出合同不要破坏）=================================
+  const W = 640, H = 360, DURATION = 6;
+  const EXPORT = new URLSearchParams(location.search).get('export') === '1';
+  const canvas = document.getElementById('c');
+  const ctx = canvas.getContext('2d');
+  const FONT = '"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",sans-serif';
+
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  const lerp = (a, b, t) => a + (b - a) * t;
+  const smooth = t => t * t * (3 - 2 * t);
+  const easeOut = t => 1 - Math.pow(1 - t, 3);
+  const easeIn = t => t * t * t;
+  function rng(seed) { let s = seed >>> 0; return () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; }; }
+
+  // ===== 场景（每个 ID 独立设计；下面的注释区由构建器替换）===================
+  // DESC: 灯后的纸幕上，剪纸的祖孙俩慢慢走到一盏灯下，影子在暖光里重合——「家，是有人等你」。
+// M12 剪纸皮影 · DeepSeek Harness 生成示例
+const M12_DARK = '#1b0f0a', M12_DARK2 = '#241209', M12_CREAM = '#f7e6c2', M12_AMBER = '#f0a94b';
+
+function m12p(t, a, b) { return clamp((t - a) / (b - a), 0, 1); }
+// 皮影是被人拿着杆演的：关节动作按 8 格一停
+function m12step(t) { return Math.floor(t * 8) / 8; }
+
+const M12_GRAIN = (() => {
+  const r = rng(1212);
+  return Array.from({ length: 640 }, () => ({
+    x: 44 + r() * 552, y: 30 + r() * 296, a: 0.02 + r() * 0.06, s: 0.6 + r() * 1.4
+  }));
+})();
+
+function m12screen() {
+  ctx.fillStyle = M12_DARK; ctx.fillRect(0, 0, W, H);
+  const g = ctx.createRadialGradient(320, 176, 24, 320, 186, 350);
+  g.addColorStop(0, '#ffe0ad');
+  g.addColorStop(.5, '#e9a95e');
+  g.addColorStop(1, '#8a4820');
+  ctx.fillStyle = g;
+  ctx.fillRect(44, 30, 552, 296);
+  for (const d of M12_GRAIN) {
+    ctx.fillStyle = 'rgba(80,36,10,' + d.a.toFixed(3) + ')';
+    ctx.fillRect(d.x, d.y, d.s, d.s);
+  }
+  const v = ctx.createRadialGradient(320, 170, 110, 320, 186, 380);
+  v.addColorStop(0, 'rgba(70,28,8,0)');
+  v.addColorStop(1, 'rgba(64,26,6,.6)');
+  ctx.fillStyle = v;
+  ctx.fillRect(44, 30, 552, 296);
+}
+
+function m12frame() {
+  // 木框 + 剪纸花边
+  ctx.save();
+  ctx.fillStyle = M12_DARK2;
+  ctx.fillRect(30, 18, 580, 12); ctx.fillRect(30, 326, 580, 12);
+  ctx.fillRect(30, 18, 14, 320); ctx.fillRect(596, 18, 14, 320);
+  ctx.fillStyle = M12_DARK2;
+  for (let x = 40; x < 600; x += 17) {
+    ctx.beginPath(); ctx.arc(x, 30, 7.5, 0, Math.PI); ctx.fill();
+    ctx.beginPath(); ctx.arc(x, 326, 7.5, Math.PI, 0); ctx.fill();
+  }
+  for (let y = 26; y < 330; y += 17) {
+    ctx.beginPath(); ctx.arc(44, y, 7.5, -Math.PI / 2, Math.PI / 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(596, y, 7.5, Math.PI / 2, -Math.PI / 2); ctx.fill();
+  }
+  ctx.restore();
+}
+
+function m12roof() {
+  ctx.save();
+  ctx.fillStyle = M12_DARK;
+  ctx.beginPath();
+  ctx.moveTo(40, 26);
+  ctx.lineTo(600, 26);
+  ctx.lineTo(600, 104);
+  ctx.quadraticCurveTo(556, 124, 508, 112);
+  ctx.quadraticCurveTo(430, 140, 320, 140);
+  ctx.quadraticCurveTo(210, 140, 132, 112);
+  ctx.quadraticCurveTo(84, 124, 40, 104);
+  ctx.closePath();
+  ctx.fill();
+  // 瓦当
+  ctx.fillStyle = 'rgba(247,230,194,.16)';
+  for (let x = 92; x < 552; x += 26) {
+    ctx.beginPath(); ctx.arc(x, 96 + Math.abs(x - 320) * 0.06, 3.4, 0, Math.PI * 2); ctx.fill();
+  }
+  // 檐下的镂空
+  ctx.fillStyle = 'rgba(240,170,86,.35)';
+  ctx.beginPath(); ctx.arc(320, 128, 4, 0, Math.PI * 2); ctx.fill();
+  ctx.restore();
+}
+
+function m12lantern(x, y, s, glow, sway) {
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(sway);
+  // 灯绳
+  ctx.strokeStyle = 'rgba(27,15,10,.85)'; ctx.lineWidth = 1.4;
+  ctx.beginPath(); ctx.moveTo(0, -14 * s); ctx.lineTo(0, 0); ctx.stroke();
+  // 光晕
+  if (glow > 0.01) {
+    const g = ctx.createRadialGradient(0, 16 * s, 4, 0, 16 * s, 96 * s);
+    g.addColorStop(0, 'rgba(255,214,140,' + (0.55 * glow).toFixed(3) + ')');
+    g.addColorStop(.45, 'rgba(255,168,80,' + (0.22 * glow).toFixed(3) + ')');
+    g.addColorStop(1, 'rgba(255,150,60,0)');
+    ctx.fillStyle = g;
+    ctx.beginPath(); ctx.arc(0, 16 * s, 96 * s, 0, Math.PI * 2); ctx.fill();
+  }
+  // 灯身
+  ctx.fillStyle = '#ffd493';
+  ctx.beginPath(); ctx.ellipse(0, 18 * s, 15 * s, 19 * s, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.strokeStyle = M12_DARK; ctx.lineWidth = 1.4;
+  ctx.stroke();
+  ctx.strokeStyle = 'rgba(60,26,8,.5)'; ctx.lineWidth = 1;
+  for (let i = -2; i <= 2; i++) {
+    ctx.beginPath();
+    ctx.ellipse(0, 18 * s, Math.abs(i) * 3.6 * s + 2, 19 * s, 0, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+  // 顶盖与底
+  ctx.fillStyle = M12_DARK;
+  ctx.fillRect(-9 * s, 0, 18 * s, 4 * s);
+  ctx.fillRect(-7 * s, 35 * s, 14 * s, 3.4 * s);
+  // 穗子
+  ctx.strokeStyle = '#e2712f'; ctx.lineWidth = 1.2;
+  for (let i = -2; i <= 2; i++) {
+    ctx.beginPath();
+    ctx.moveTo(i * 2.4 * s, 38 * s);
+    ctx.lineTo(i * 3.2 * s, 50 * s);
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+// 皮影人：剪影 + 关节 + 操纵杆 + 镂空
+function m12puppet(x, feetY, s, pose) {
+  const lean = pose.lean || 0;
+  ctx.save();
+  ctx.translate(x, feetY);
+  ctx.rotate(lean);
+  ctx.scale(s, s);
+  const dark = M12_DARK;
+  // 腿
+  ctx.fillStyle = dark;
+  ctx.beginPath();
+  ctx.moveTo(-9, 0); ctx.lineTo(-3, 0); ctx.lineTo(-1, -34); ctx.lineTo(-8, -34); ctx.closePath(); ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(4, 0); ctx.lineTo(10, 0); ctx.lineTo(9, -34); ctx.lineTo(2, -34); ctx.closePath(); ctx.fill();
+  // 袍子
+  ctx.beginPath();
+  ctx.moveTo(-16, -32);
+  ctx.quadraticCurveTo(-19, -56, -11, -70);
+  ctx.lineTo(11, -70);
+  ctx.quadraticCurveTo(19, -56, 16, -32);
+  ctx.closePath();
+  ctx.fill();
+  // 镂空花纹
+  ctx.fillStyle = 'rgba(247,230,194,.20)';
+  for (let i = 0; i < 3; i++) {
+    ctx.beginPath(); ctx.arc(-7 + i * 7, -58, 2.4, 0, Math.PI * 2); ctx.fill();
+  }
+  ctx.beginPath(); ctx.arc(0, -44, 3, 0, Math.PI * 2); ctx.fill();
+  // 头（侧影：发髻 + 额头 + 鼻）
+  ctx.fillStyle = dark;
+  ctx.beginPath();
+  ctx.moveTo(-10, -70);
+  ctx.quadraticCurveTo(-13, -80, -6, -85);
+  ctx.quadraticCurveTo(0, -88, 5, -84);
+  ctx.lineTo(9, -81);
+  ctx.lineTo(13, -76);
+  ctx.lineTo(8, -74);
+  ctx.lineTo(10, -70);
+  ctx.quadraticCurveTo(0, -67, -10, -70);
+  ctx.closePath();
+  ctx.fill();
+  // 发髻
+  ctx.beginPath(); ctx.arc(-6, -86, 4.6, 0, Math.PI * 2); ctx.fill();
+  // 手臂（两节，带铆钉）
+  function arm(sx, sy, a1, a2, len) {
+    const ex = sx + Math.cos(a1) * len, ey = sy + Math.sin(a1) * len;
+    const hx = ex + Math.cos(a2) * len * 0.9, hy = ey + Math.sin(a2) * len * 0.9;
+    ctx.strokeStyle = dark; ctx.lineWidth = 5.4; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(sx, sy); ctx.lineTo(ex, ey); ctx.lineTo(hx, hy); ctx.stroke();
+    ctx.fillStyle = 'rgba(240,169,75,.55)';
+    ctx.beginPath(); ctx.arc(ex, ey, 1.8, 0, Math.PI * 2); ctx.fill();
+    return [hx, hy];
+  }
+  const hand = arm(9, -66, pose.arm1 === undefined ? 1.1 : pose.arm1, pose.arm2 === undefined ? 1.3 : pose.arm2, 20);
+  arm(-9, -66, pose.arm3 === undefined ? 1.9 : pose.arm3, pose.arm4 === undefined ? 2.1 : pose.arm4, 20);
+  // 背光描边
+  ctx.globalCompositeOperation = 'lighter';
+  ctx.strokeStyle = 'rgba(255,196,120,.30)';
+  ctx.lineWidth = 1.1;
+  ctx.beginPath();
+  ctx.moveTo(-16, -32);
+  ctx.quadraticCurveTo(-19, -56, -11, -70);
+  ctx.stroke();
+  ctx.globalCompositeOperation = 'source-over';
+  ctx.restore();
+}
+
+function drawScene(t) {
+  m12screen();
+  const st = m12step(t);
+
+  // 灯：一开场就亮着，结尾更暖
+  const glow = 0.5 + 0.5 * m12p(t, 3.4, 5.2);
+  const sway = Math.sin(st * 2.4) * 0.05;
+  m12lantern(320, 146, 1.3, glow, sway);
+
+  m12roof();
+
+  // 地面
+  ctx.save();
+  ctx.fillStyle = M12_DARK;
+  ctx.beginPath();
+  ctx.moveTo(40, 330);
+  for (let x = 40; x <= 600; x += 8) ctx.lineTo(x, 292 + Math.sin(x * 0.045) * 4);
+  ctx.lineTo(600, 330);
+  ctx.closePath(); ctx.fill();
+  ctx.restore();
+
+  // 小孩：从右边一路小跑过来，停在奶奶身边
+  const runP = 1 - Math.pow(1 - m12p(t, 0.05, 1.9), 2);
+  const childX = lerp(566, 402, runP);
+  const hop = t > 1.9 && t < 2.5 ? Math.abs(Math.sin((t - 1.9) * Math.PI * 3.2)) * 7 : 0;
+  const childRun = Math.sin(st * 9) * 0.1 * (1 - m12p(t, 1.7, 2.0));
+  m12puppet(childX, 292 - hop, 0.95, {
+    lean: -0.05 + childRun,
+    arm1: 0.7 + Math.sin(st * 9) * 0.5,
+    arm2: 1.1,
+    arm3: 2.4 - Math.sin(st * 9) * 0.5,
+    arm4: 2.0
+  });
+
+  // 奶奶：抬手去迎
+  const reach = m12p(t, 2.1, 3.0);
+  m12puppet(268, 292, 1.45, {
+    lean: 0.02 + 0.04 * Math.sin(st * 2),
+    arm1: lerp(1.15, 0.35, reach),
+    arm2: lerp(1.35, 0.95, reach),
+    arm3: 1.95,
+    arm4: 2.15
+  });
+
+  // 两个人的影子在灯下轻微叠在一起
+  if (t > 3.4) {
+    const blend = m12p(t, 3.4, 5.0);
+    ctx.save();
+    ctx.globalAlpha = blend * 0.5;
+    ctx.fillStyle = M12_DARK;
+    ctx.beginPath();
+    ctx.ellipse(330, 296, 132 * blend, 7, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  // 光斑落在两个人身上
+  ctx.save();
+  ctx.globalCompositeOperation = 'lighter';
+  const lg = ctx.createRadialGradient(320, 210, 10, 320, 240, 190);
+  lg.addColorStop(0, 'rgba(255,206,130,.16)');
+  lg.addColorStop(1, 'rgba(255,180,90,0)');
+  ctx.fillStyle = lg;
+  ctx.fillRect(44, 30, 552, 296);
+  ctx.restore();
+
+  m12frame();
+
+  // 字幕
+  const tp = m12p(t, 4.5, 5.2);
+  if (tp > 0) {
+    ctx.save();
+    ctx.globalAlpha = tp;
+    ctx.fillStyle = M12_CREAM;
+    ctx.font = `500 26px ${FONT}`;
+    ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+    ctx.fillText('家，是有人等你', 72, 316);
+    ctx.strokeStyle = 'rgba(240,169,75,.7)'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(72, 324); ctx.lineTo(72 + 108 * tp, 324); ctx.stroke();
+    ctx.restore();
+  }
+  // 左上角标识
+  ctx.save();
+  ctx.globalAlpha = 0.6;
+  ctx.fillStyle = M12_CREAM;
+  ctx.font = `500 13px ${FONT}`;
+  ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+  ctx.fillText('剪纸皮影 · 一盏灯', 52, 48);
+  ctx.restore();
+}
+
+  // ===== 共享渲染与署名 =======================================================
+  function watermark() {
+    const text = 'DeepSeek Harness 生成示例';
+    ctx.save();
+    ctx.font = '11px ' + FONT;
+    const w = ctx.measureText(text).width + 14;
+    const x = W - w - 8, y = H - 24;
+    ctx.fillStyle = 'rgba(0,0,0,.46)';
+    ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(x, y, w, 18, 4); else ctx.rect(x, y, w, 18);
+    ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,.82)';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(text, x + 7, y + 9.5);
+    ctx.restore();
+  }
+
+  function paint(t) {
+    ctx.save();
+    ctx.clearRect(0, 0, W, H);
+    try { drawScene(t); } catch (err) { console.error(err); }
+    ctx.restore();
+    watermark();
+  }
+
+  function renderAt(seconds) {
+    const t = ((Number(seconds) % DURATION) + DURATION) % DURATION;
+    paint(t);
+    syncUI(t);
+    return t;
+  }
+  window.renderAt = renderAt;
+
+  // ===== 播放、控制、减少动态 =================================================
+  const playBtn = document.getElementById('play');
+  const timeline = document.getElementById('timeline');
+  const clock = document.getElementById('clock');
+  let playing = false, base = 0, start = 0, current = 0;
+  let animationFrame = 0;
+  const reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function syncUI(t) {
+    if (EXPORT) return;
+    current = t;
+    if (timeline) timeline.value = String(t.toFixed(2));
+    if (clock) clock.textContent = t.toFixed(2) + ' / ' + DURATION.toFixed(2) + 's';
+  }
+  function frame(now) {
+    animationFrame = 0;
+    if (!playing) return;
+    const t = ((now - start) / 1000 + base) % DURATION;
+    paint(t);
+    syncUI(t);
+    animationFrame = requestAnimationFrame(frame);
+  }
+  function play() {
+    if (playing) return;
+    playing = true;
+    start = performance.now();
+    base = current;
+    if (playBtn) playBtn.textContent = '暂停';
+    animationFrame = requestAnimationFrame(frame);
+  }
+  function pause() {
+    playing = false;
+    cancelAnimationFrame(animationFrame);
+    animationFrame = 0;
+    if (playBtn) playBtn.textContent = '播放';
+  }
+  if (playBtn) playBtn.addEventListener('click', () => { playing ? pause() : play(); });
+  document.getElementById('replay')?.addEventListener('click', () => {
+    base = 0; start = performance.now(); paint(0); syncUI(0); play();
+  });
+  timeline?.addEventListener('input', () => {
+    pause(); paint(Number(timeline.value)); syncUI(Number(timeline.value));
+  });
+  window.addEventListener('keydown', e => {
+    if (e.code === 'Space') { e.preventDefault(); playing ? pause() : play(); }
+    if (e.key === 'r' || e.key === 'R') { base = 0; start = performance.now(); paint(0); syncUI(0); play(); }
+  });
+
+  if (EXPORT) {
+    document.body.classList.add('export');
+    renderAt(0);
+  } else if (reduced) {
+    renderAt(2.4);
+    pause();
+  } else {
+    renderAt(0);
+    play();
+  }
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,451 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>K15 橡皮管 1930 · DeepSeek Harness 生成示例</title>
+<!--
+  Provenance
+  ----------
+  风格来源：code-animation-styles 目录（《来自俯仰观照博主的动画画风整理》整理稿）
+  catalog commit: 01576924a2b316d1f11ae33f75d3c005e8781451
+  style id: K15「橡皮管 1930」
+  license: upstream-custom-noncommercial（俯仰观照整理稿，非商业）
+  本文件：DeepSeek Harness（deepseek-flash）根据该风格提示词新写的候选示例，
+  不是原作者样片，也不是原项目演示；仅用于风格挑选预览。共享的只有时间轴、
+  尺寸、导出接口与页脚署名，画面与动作按本风格重新设计。
+  原文“只输出代码”等语句属于素材的一部分，不覆盖本任务的交付合同。
+-->
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; min-height: 100%; background: #0c0c10; color: #e9e9ee;
+    font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif; }
+  #app { min-height: 100vh; display: flex; flex-direction: column; align-items: center;
+    justify-content: center; gap: 12px; padding: 20px; }
+  #stage { width: min(94vw, 1000px); aspect-ratio: 16 / 9; background: #000;
+    box-shadow: 0 18px 60px rgba(0,0,0,.55); position: relative; overflow: hidden; }
+  canvas { display: block; width: 100%; height: 100%; }
+  #head, #ui { width: min(94vw, 1000px); }
+  #head h1 { margin: 0 0 4px; font-size: 15px; font-weight: 600; letter-spacing: .02em; }
+  #head p { margin: 0; font-size: 12px; line-height: 1.5; color: #9a9aa8; }
+  #ui { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  #ui button { background: #1d1d26; color: #f2f2f6; border: 1px solid #343444;
+    border-radius: 7px; padding: 6px 12px; font-size: 12px; cursor: pointer; }
+  #ui button:hover { background: #272734; }
+  #ui input[type=range] { flex: 1 1 220px; min-width: 150px; accent-color: #7c8cff; }
+  #clock { font-variant-numeric: tabular-nums; font-size: 12px; color: #a9a9ba; min-width: 78px; }
+  #credit { width: min(94vw, 1000px); font-size: 11px; line-height: 1.6; color: #6f6f80; }
+  #credit b { color: #9c9cae; font-weight: 500; }
+  body.export, body.export #app { display: block; width: 640px; height: 360px; min-height: 0;
+    padding: 0; margin: 0; overflow: hidden; background: #000; }
+  body.export #stage { width: 640px; height: 360px; box-shadow: none; }
+  body.export #head, body.export #ui, body.export #credit { display: none; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="head">
+    <h1>K15 · 橡皮管 1930</h1>
+    <p>1930 橡皮管动画：黑白旧片上，手脚如软管的小猫蹦跳，头顶灯泡亮起，胶片颗粒与划痕闪动。</p>
+  </div>
+  <div id="stage"><canvas id="c" width="640" height="360" aria-label="橡皮管 1930 风格动画示例"></canvas></div>
+  <div id="ui">
+    <button id="play" type="button">暂停</button>
+    <button id="replay" type="button">重播</button>
+    <input id="timeline" type="range" min="0" max="6" step="0.01" value="0" aria-label="时间轴">
+    <span id="clock">0.00 / 6.00s</span>
+  </div>
+  <div id="credit">
+    <b>DeepSeek Harness 生成示例</b>（非原项目样片）· 来源：来自俯仰观照博主的动画画风整理 ·
+    许可：upstream-custom-noncommercial（俯仰观照整理稿，非商业） · 画面与文字均由代码绘制，静音。
+  </div>
+</div>
+<script>
+(() => {
+  'use strict';
+  // ===== 共享脚手架（可改，但导出合同不要破坏）=================================
+  const W = 640, H = 360, DURATION = 6;
+  const EXPORT = new URLSearchParams(location.search).get('export') === '1';
+  const canvas = document.getElementById('c');
+  const ctx = canvas.getContext('2d');
+  const FONT = '"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",sans-serif';
+
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  const lerp = (a, b, t) => a + (b - a) * t;
+  const smooth = t => t * t * (3 - 2 * t);
+  const easeOut = t => 1 - Math.pow(1 - t, 3);
+  const easeIn = t => t * t * t;
+  function rng(seed) { let s = seed >>> 0; return () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; }; }
+
+  // ===== 场景（每个 ID 独立设计；下面的注释区由构建器替换）===================
+  // DESC: 1930 橡皮管动画：黑白旧片上，手脚如软管的小猫蹦跳，头顶灯泡亮起，胶片颗粒与划痕闪动。
+const K15_CREAM = '#efe3c8';
+const K15_PAPER = '#f8f1de';
+const K15_INK = '#1e1812';
+const K15_SEPIA = '#c9a26a';
+const K15_BULB = '#f6cf6b';
+
+const K15_GRAIN = (() => {
+  const r = rng(1930);
+  return Array.from({ length: 820 }, () => ({ x: r() * W, y: r() * H, s: 0.5 + r() * 1.7, a: 0.015 + r() * 0.07 }));
+})();
+const K15_DUST = (() => {
+  const r = rng(77);
+  return Array.from({ length: 40 }, () => ({ x: r() * W, y: r() * H, r: 0.5 + r() * 2.2, a: 0.08 + r() * 0.2 }));
+})();
+const K15_SCRATCH = (() => {
+  const r = rng(1931);
+  return Array.from({ length: 7 }, () => ({ x: r() * W, y0: r() * H, len: 24 + r() * 100, sp: 0.4 + r() * 1.4, a: 0.05 + r() * 0.1 }));
+})();
+
+function k15seg(t, a, b) { return clamp((t - a) / (b - a), 0, 1); }
+function k15ease(p) { return 1 - Math.pow(1 - p, 3); }
+function k15pop(p) {
+  p = clamp(p, 0, 1);
+  const c1 = 1.9, c3 = c1 + 1;
+  return 1 + c3 * Math.pow(p - 1, 3) + c1 * Math.pow(p - 1, 2);
+}
+function k15Hose(pts, width) {
+  ctx.save();
+  ctx.strokeStyle = K15_INK; ctx.lineWidth = width; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+  ctx.beginPath(); ctx.moveTo(pts[0][0], pts[0][1]);
+  for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i][0], pts[i][1]);
+  ctx.stroke(); ctx.restore();
+}
+function k15Glove(x, y, r, rot) {
+  ctx.save();
+  ctx.translate(x, y); ctx.rotate(rot || 0);
+  ctx.fillStyle = K15_PAPER; ctx.strokeStyle = K15_INK; ctx.lineWidth = 3.4;
+  ctx.beginPath();
+  ctx.arc(0, 0, r, 0, Math.PI * 2);
+  ctx.arc(-r * 0.85, -r * 0.2, r * 0.42, 0, Math.PI * 2);
+  ctx.arc(-r * 0.5, -r * 0.78, r * 0.36, 0, Math.PI * 2);
+  ctx.fill(); ctx.stroke();
+  // 指缝
+  ctx.beginPath(); ctx.moveTo(-r * 0.4, -r * 0.2); ctx.lineTo(-r * 0.05, -r * 0.35); ctx.stroke();
+  ctx.restore();
+}
+function k15PieEye(x, y, rx, ry, blink) {
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.fillStyle = K15_PAPER; ctx.strokeStyle = K15_INK; ctx.lineWidth = 3.2;
+  ctx.beginPath(); ctx.ellipse(0, 0, rx, ry, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+  if (blink) {
+    ctx.fillStyle = K15_INK;
+    ctx.beginPath(); ctx.ellipse(0, 0, rx * 0.82, ry * 0.18, 0, 0, Math.PI * 2); ctx.fill();
+  } else {
+    // 饼形瞳孔：从圆心切出的黑扇块，朝右上方看
+    ctx.fillStyle = K15_INK;
+    ctx.beginPath(); ctx.moveTo(0, 0);
+    ctx.arc(0, 0, Math.min(rx, ry) * 0.74, -0.75, 0.12);
+    ctx.closePath(); ctx.fill();
+    ctx.beginPath(); ctx.arc(-rx * 0.35, -ry * 0.3, 1.9, 0, Math.PI * 2);
+    ctx.fillStyle = K15_PAPER; ctx.fill();
+  }
+  ctx.restore();
+}
+
+function k15Cat(t) {
+  const hop = Math.abs(Math.sin(t * 3.4)) * 5;
+  const sway = Math.sin(t * 3.4) * 0.03;
+  ctx.save();
+  ctx.translate(0, -hop);
+
+  // 地面影子
+  ctx.save();
+  ctx.fillStyle = 'rgba(30,24,18,.16)';
+  ctx.beginPath(); ctx.ellipse(238, 306, 92, 12, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.restore();
+
+  // 尾巴
+  const tw = Math.sin(t * 2.8) * 10;
+  k15Hose([[274, 238], [314, 228 + tw], [334, 198 + tw * 0.6], [322, 176 + tw * 0.4]], 9);
+
+  // 腿：软管
+  k15Hose([[220, 264], [210, 282], [204, 296]], 9);
+  k15Hose([[256, 264], [266, 282], [272, 294]], 9);
+  // 大鞋
+  ctx.save();
+  ctx.fillStyle = K15_PAPER; ctx.strokeStyle = K15_INK; ctx.lineWidth = 4;
+  ctx.beginPath(); ctx.ellipse(196, 302, 24, 11, -0.12, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+  ctx.beginPath(); ctx.ellipse(282, 300, 24, 11, 0.12, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+  ctx.restore();
+
+  // 身体
+  ctx.save();
+  ctx.translate(238, 222 + Math.sin(t * 3.4 + 1.2) * 2);
+  ctx.fillStyle = K15_INK;
+  ctx.beginPath(); ctx.ellipse(0, 0, 42, 50, 0, 0, Math.PI * 2); ctx.fill();
+  // 白肚皮
+  ctx.fillStyle = K15_PAPER;
+  ctx.beginPath(); ctx.ellipse(2, 6, 24, 30, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.restore();
+
+  // 手臂：一低一高，高臂挥动
+  const wave = Math.sin(t * 4.2) * 16;
+  k15Hose([[206, 196], [176, 214], [160, 196]], 9);
+  k15Hose([[270, 196], [300, 180], [308 + wave * 0.25, 152 - wave * 0.6]], 9);
+  k15Glove(157, 193, 13, -0.5);
+  k15Glove(310 + wave * 0.25, 147 - wave * 0.6, 13, 0.4);
+
+  // 头
+  ctx.save();
+  ctx.translate(238, 134);
+  ctx.rotate(sway);
+  // 耳朵
+  ctx.fillStyle = K15_INK;
+  ctx.beginPath(); ctx.moveTo(-44, -26); ctx.lineTo(-58, -66); ctx.lineTo(-16, -46); ctx.closePath(); ctx.fill();
+  ctx.beginPath(); ctx.moveTo(44, -26); ctx.lineTo(58, -66); ctx.lineTo(16, -46); ctx.closePath(); ctx.fill();
+  // 头
+  ctx.beginPath(); ctx.arc(0, 0, 54, 0, Math.PI * 2); ctx.fill();
+  // 嘴套
+  ctx.fillStyle = K15_PAPER;
+  ctx.beginPath(); ctx.ellipse(0, 20, 36, 25, 0, 0, Math.PI * 2); ctx.fill();
+  // 眼睛
+  const blink = (t > 2.55 && t < 2.75) || (t > 5.2 && t < 5.32);
+  k15PieEye(-22, -12, 15, 18, blink);
+  k15PieEye(22, -12, 15, 18, blink);
+  // 鼻子与嘴
+  ctx.fillStyle = K15_INK;
+  ctx.beginPath();
+  ctx.moveTo(-6, 10); ctx.quadraticCurveTo(0, 6, 6, 10); ctx.quadraticCurveTo(0, 17, -6, 10);
+  ctx.fill();
+  ctx.strokeStyle = K15_INK; ctx.lineWidth = 2.8; ctx.lineCap = 'round';
+  ctx.beginPath();
+  ctx.moveTo(0, 15); ctx.lineTo(0, 24);
+  ctx.moveTo(0, 24); ctx.quadraticCurveTo(-9, 33, -17, 25);
+  ctx.moveTo(0, 24); ctx.quadraticCurveTo(9, 33, 17, 25);
+  ctx.stroke();
+  // 胡须
+  ctx.lineWidth = 2.2;
+  for (let i = 0; i < 3; i++) {
+    const yy = 14 + i * 6;
+    ctx.beginPath(); ctx.moveTo(-26, yy); ctx.lineTo(-52, yy - 4 + i * 3); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(26, yy); ctx.lineTo(52, yy - 4 + i * 3); ctx.stroke();
+  }
+  // 高光
+  ctx.strokeStyle = 'rgba(248,241,222,.35)'; ctx.lineWidth = 5;
+  ctx.beginPath(); ctx.arc(0, 0, 46, Math.PI * 1.15, Math.PI * 1.45); ctx.stroke();
+  ctx.restore();
+  ctx.restore();
+
+  // 灯泡
+  const bp = k15pop(k15seg(t, 1.45, 2.0));
+  if (bp > 0.01) {
+    ctx.save();
+    ctx.translate(340, 62);
+    ctx.scale(bp, bp);
+    // 光晕
+    const glow = k15ease(k15seg(t, 1.9, 2.6));
+    if (glow > 0) {
+      const g = ctx.createRadialGradient(0, 0, 4, 0, 0, 62);
+      g.addColorStop(0, `rgba(246,207,107,${0.4 * glow})`);
+      g.addColorStop(1, 'rgba(246,207,107,0)');
+      ctx.fillStyle = g;
+      ctx.beginPath(); ctx.arc(0, 0, 62, 0, Math.PI * 2); ctx.fill();
+    }
+    // 玻璃
+    ctx.beginPath();
+    ctx.arc(0, -2, 17, Math.PI * 0.9, Math.PI * 2.1);
+    ctx.lineTo(7, 17); ctx.lineTo(-7, 17); ctx.closePath();
+    ctx.fillStyle = K15_BULB; ctx.fill();
+    ctx.strokeStyle = K15_INK; ctx.lineWidth = 3.2; ctx.stroke();
+    // 灯座
+    ctx.fillStyle = K15_PAPER;
+    ctx.beginPath(); ctx.roundRect(-7, 16, 14, 9, 2); ctx.fill(); ctx.stroke();
+    // 灯丝
+    ctx.strokeStyle = K15_INK; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(-5, 11); ctx.lineTo(-2, 2); ctx.lineTo(0, 8); ctx.lineTo(2, 2); ctx.lineTo(5, 11); ctx.stroke();
+    // 光芒
+    const rp = k15ease(k15seg(t, 1.9, 2.5));
+    if (rp > 0) {
+      ctx.strokeStyle = K15_INK; ctx.lineWidth = 2.4; ctx.lineCap = 'round';
+      for (let i = 0; i < 7; i++) {
+        const a = -Math.PI * 0.95 + i * Math.PI * 0.28;
+        ctx.beginPath();
+        ctx.moveTo(Math.cos(a) * (28 + 8 * rp), Math.sin(a) * (28 + 8 * rp));
+        ctx.lineTo(Math.cos(a) * (38 + 8 * rp), Math.sin(a) * (38 + 8 * rp));
+        ctx.stroke();
+      }
+    }
+    ctx.restore();
+  }
+}
+
+function drawScene(t) {
+  // 旧纸底
+  ctx.fillStyle = K15_PAPER; ctx.fillRect(0, 0, W, H);
+  const bg = ctx.createLinearGradient(0, 0, 0, H);
+  bg.addColorStop(0, 'rgba(201,162,106,.18)');
+  bg.addColorStop(0.5, 'rgba(201,162,106,.04)');
+  bg.addColorStop(1, 'rgba(120,92,52,.18)');
+  ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+
+  // 标题
+  ctx.save();
+  ctx.fillStyle = K15_INK;
+  ctx.font = `900 30px ${FONT}`; ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+  ctx.fillText('灵感来了！', 34, 60);
+  ctx.fillStyle = 'rgba(30,24,18,.7)';
+  ctx.font = `700 13px ${FONT}`;
+  ctx.fillText('1930 · 橡皮管动画', 34, 82);
+  ctx.restore();
+
+  k15Cat(t);
+
+  // 底部字幕
+  ctx.save();
+  ctx.fillStyle = 'rgba(30,24,18,.78)';
+  ctx.font = `600 14px ${FONT}`; ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+  ctx.fillText('软管手脚 · 饼形眼 · 老胶片', 34, 330);
+  ctx.restore();
+
+  // 胶片颗粒
+  ctx.save();
+  for (const g of K15_GRAIN) {
+    ctx.fillStyle = `rgba(40,30,18,${g.a})`;
+    ctx.fillRect(g.x, g.y, g.s, g.s);
+  }
+  for (const d of K15_DUST) {
+    ctx.fillStyle = `rgba(40,30,18,${d.a * (0.5 + 0.5 * Math.sin(t * 5 + d.x))})`;
+    ctx.beginPath(); ctx.arc(d.x, d.y, d.r, 0, Math.PI * 2); ctx.fill();
+  }
+  ctx.restore();
+
+  // 竖向划痕
+  ctx.save();
+  for (const s of K15_SCRATCH) {
+    const y = (s.y0 + t * 120 * s.sp) % (H + 120) - 60;
+    ctx.strokeStyle = `rgba(248,241,222,${s.a})`;
+    ctx.lineWidth = 1.2;
+    ctx.beginPath(); ctx.moveTo(s.x, y); ctx.lineTo(s.x + 1.5, y + s.len); ctx.stroke();
+  }
+  ctx.restore();
+
+  // 暗角
+  const vg = ctx.createRadialGradient(W / 2, H / 2, 120, W / 2, H / 2, 380);
+  vg.addColorStop(0, 'rgba(30,24,18,0)');
+  vg.addColorStop(0.72, 'rgba(30,24,18,.10)');
+  vg.addColorStop(1, 'rgba(30,24,18,.58)');
+  ctx.fillStyle = vg; ctx.fillRect(0, 0, W, H);
+
+  // 放映闪烁
+  const flick = 0.03 + 0.025 * Math.sin(t * 23.7) + 0.015 * Math.sin(t * 7.1);
+  ctx.save();
+  ctx.fillStyle = `rgba(255,244,214,${Math.max(0, flick)})`;
+  ctx.fillRect(0, 0, W, H);
+  ctx.restore();
+
+  // 圆角片框
+  ctx.save();
+  ctx.strokeStyle = 'rgba(30,24,18,.5)'; ctx.lineWidth = 4;
+  ctx.beginPath(); ctx.roundRect(14, 12, W - 28, H - 24, 12); ctx.stroke();
+  ctx.restore();
+
+  // 收尾：胶片过曝
+  const fp = k15seg(t, 5.78, 5.99);
+  if (fp > 0) {
+    ctx.save();
+    ctx.globalAlpha = fp * 0.6;
+    ctx.fillStyle = '#fbf6e7'; ctx.fillRect(0, 0, W, H);
+    ctx.restore();
+  }
+}
+
+  // ===== 共享渲染与署名 =======================================================
+  function watermark() {
+    const text = 'DeepSeek Harness 生成示例';
+    ctx.save();
+    ctx.font = '11px ' + FONT;
+    const w = ctx.measureText(text).width + 14;
+    const x = W - w - 8, y = H - 24;
+    ctx.fillStyle = 'rgba(0,0,0,.46)';
+    ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(x, y, w, 18, 4); else ctx.rect(x, y, w, 18);
+    ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,.82)';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(text, x + 7, y + 9.5);
+    ctx.restore();
+  }
+
+  function paint(t) {
+    ctx.save();
+    ctx.clearRect(0, 0, W, H);
+    try { drawScene(t); } catch (err) { console.error(err); }
+    ctx.restore();
+    watermark();
+  }
+
+  function renderAt(seconds) {
+    const t = ((Number(seconds) % DURATION) + DURATION) % DURATION;
+    paint(t);
+    syncUI(t);
+    return t;
+  }
+  window.renderAt = renderAt;
+
+  // ===== 播放、控制、减少动态 =================================================
+  const playBtn = document.getElementById('play');
+  const timeline = document.getElementById('timeline');
+  const clock = document.getElementById('clock');
+  let playing = false, base = 0, start = 0, current = 0;
+  let animationFrame = 0;
+  const reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function syncUI(t) {
+    if (EXPORT) return;
+    current = t;
+    if (timeline) timeline.value = String(t.toFixed(2));
+    if (clock) clock.textContent = t.toFixed(2) + ' / ' + DURATION.toFixed(2) + 's';
+  }
+  function frame(now) {
+    animationFrame = 0;
+    if (!playing) return;
+    const t = ((now - start) / 1000 + base) % DURATION;
+    paint(t);
+    syncUI(t);
+    animationFrame = requestAnimationFrame(frame);
+  }
+  function play() {
+    if (playing) return;
+    playing = true;
+    start = performance.now();
+    base = current;
+    if (playBtn) playBtn.textContent = '暂停';
+    animationFrame = requestAnimationFrame(frame);
+  }
+  function pause() {
+    playing = false;
+    cancelAnimationFrame(animationFrame);
+    animationFrame = 0;
+    if (playBtn) playBtn.textContent = '播放';
+  }
+  if (playBtn) playBtn.addEventListener('click', () => { playing ? pause() : play(); });
+  document.getElementById('replay')?.addEventListener('click', () => {
+    base = 0; start = performance.now(); paint(0); syncUI(0); play();
+  });
+  timeline?.addEventListener('input', () => {
+    pause(); paint(Number(timeline.value)); syncUI(Number(timeline.value));
+  });
+  window.addEventListener('keydown', e => {
+    if (e.code === 'Space') { e.preventDefault(); playing ? pause() : play(); }
+    if (e.key === 'r' || e.key === 'R') { base = 0; start = performance.now(); paint(0); syncUI(0); play(); }
+  });
+
+  if (EXPORT) {
+    document.body.classList.add('export');
+    renderAt(0);
+  } else if (reduced) {
+    renderAt(2.4);
+    pause();
+  } else {
+    renderAt(0);
+    play();
+  }
+})();
+</script>
+</body>
+</html>

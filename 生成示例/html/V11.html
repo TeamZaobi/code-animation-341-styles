@@ -1,0 +1,370 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>V11 包豪斯几何 · DeepSeek Harness 生成示例</title>
+<!--
+  Provenance
+  ----------
+  风格来源：code-animation-styles 目录（《来自俯仰观照博主的动画画风整理》整理稿）
+  catalog commit: 01576924a2b316d1f11ae33f75d3c005e8781451
+  style id: V11「包豪斯几何」
+  license: MIT（mg-styles-15，Copyright (c) 2026 Vincentwei1021）
+  本文件：DeepSeek Harness（deepseek-flash）根据该风格提示词新写的候选示例，
+  不是原作者样片，也不是原项目演示；仅用于风格挑选预览。共享的只有时间轴、
+  尺寸、导出接口与页脚署名，画面与动作按本风格重新设计。
+  原文“只输出代码”等语句属于素材的一部分，不覆盖本任务的交付合同。
+-->
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; min-height: 100%; background: #0c0c10; color: #e9e9ee;
+    font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif; }
+  #app { min-height: 100vh; display: flex; flex-direction: column; align-items: center;
+    justify-content: center; gap: 12px; padding: 20px; }
+  #stage { width: min(94vw, 1000px); aspect-ratio: 16 / 9; background: #000;
+    box-shadow: 0 18px 60px rgba(0,0,0,.55); position: relative; overflow: hidden; }
+  canvas { display: block; width: 100%; height: 100%; }
+  #head, #ui { width: min(94vw, 1000px); }
+  #head h1 { margin: 0 0 4px; font-size: 15px; font-weight: 600; letter-spacing: .02em; }
+  #head p { margin: 0; font-size: 12px; line-height: 1.5; color: #9a9aa8; }
+  #ui { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  #ui button { background: #1d1d26; color: #f2f2f6; border: 1px solid #343444;
+    border-radius: 7px; padding: 6px 12px; font-size: 12px; cursor: pointer; }
+  #ui button:hover { background: #272734; }
+  #ui input[type=range] { flex: 1 1 220px; min-width: 150px; accent-color: #7c8cff; }
+  #clock { font-variant-numeric: tabular-nums; font-size: 12px; color: #a9a9ba; min-width: 78px; }
+  #credit { width: min(94vw, 1000px); font-size: 11px; line-height: 1.6; color: #6f6f80; }
+  #credit b { color: #9c9cae; font-weight: 500; }
+  body.export, body.export #app { display: block; width: 640px; height: 360px; min-height: 0;
+    padding: 0; margin: 0; overflow: hidden; background: #000; }
+  body.export #stage { width: 640px; height: 360px; box-shadow: none; }
+  body.export #head, body.export #ui, body.export #credit { display: none; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="head">
+    <h1>V11 · 包豪斯几何</h1>
+    <p>包豪斯几何：红黄蓝黑在 40px 模数网格上按 120BPM 一拍一个拍上去，绕自身中心/顶点做 90° 机械翻转，最终排成动态海报。</p>
+  </div>
+  <div id="stage"><canvas id="c" width="640" height="360" aria-label="包豪斯几何 风格动画示例"></canvas></div>
+  <div id="ui">
+    <button id="play" type="button">暂停</button>
+    <button id="replay" type="button">重播</button>
+    <input id="timeline" type="range" min="0" max="6" step="0.01" value="0" aria-label="时间轴">
+    <span id="clock">0.00 / 6.00s</span>
+  </div>
+  <div id="credit">
+    <b>DeepSeek Harness 生成示例</b>（非原项目样片）· 来源：来自俯仰观照博主的动画画风整理 ·
+    许可：MIT（mg-styles-15，Copyright (c) 2026 Vincentwei1021） · 画面与文字均由代码绘制，静音。
+  </div>
+</div>
+<script>
+(() => {
+  'use strict';
+  // ===== 共享脚手架（可改，但导出合同不要破坏）=================================
+  const W = 640, H = 360, DURATION = 6;
+  const EXPORT = new URLSearchParams(location.search).get('export') === '1';
+  const canvas = document.getElementById('c');
+  const ctx = canvas.getContext('2d');
+  const FONT = '"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",sans-serif';
+
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  const lerp = (a, b, t) => a + (b - a) * t;
+  const smooth = t => t * t * (3 - 2 * t);
+  const easeOut = t => 1 - Math.pow(1 - t, 3);
+  const easeIn = t => t * t * t;
+  function rng(seed) { let s = seed >>> 0; return () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; }; }
+
+  // ===== 场景（每个 ID 独立设计；下面的注释区由构建器替换）===================
+  // DESC: 包豪斯几何：红黄蓝黑在 40px 模数网格上按 120BPM 一拍一个拍上去，绕自身中心/顶点做 90° 机械翻转，最终排成动态海报。
+// V11 包豪斯几何 · DeepSeek Harness 生成示例
+const V11_BG = '#F2EDE0', V11_INK = '#141414';
+const V11_RED = '#E03C31', V11_YELLOW = '#F5C518', V11_BLUE = '#1A4E9B';
+
+function v11seg(t, a, b) { return clamp((t - a) / (b - a), 0, 1); }
+function v11quad(p) { return p < 0.5 ? 2 * p * p : 1 - Math.pow(-2 * p + 2, 2) / 2; }
+// 拍点：瞬时出现（0.09s 硬着陆，无 overshoot，机械感是特征）
+function v11hit(t, at, dur) { return t >= at ? clamp((t - at) / (dur || 0.09), 0, 1) : 0; }
+// 机械翻转：到点直接换角度（前半段收起、后半段展开）
+function v11flip(t, at, from, to) {
+  const p = clamp((t - at) / 0.14, 0, 1);
+  if (p <= 0) return from;
+  if (p < 0.45) return from;
+  return to;
+}
+
+function v11grid() {
+  ctx.save();
+  ctx.strokeStyle = 'rgba(20,20,20,.09)'; ctx.lineWidth = 1;
+  for (let x = 0; x <= W; x += 40) {
+    ctx.beginPath(); ctx.moveTo(x + 0.5, 0); ctx.lineTo(x + 0.5, H); ctx.stroke();
+  }
+  for (let y = 0; y <= H; y += 40) {
+    ctx.beginPath(); ctx.moveTo(0, y + 0.5); ctx.lineTo(W, y + 0.5); ctx.stroke();
+  }
+  ctx.restore();
+}
+
+// 半色调圆：一半实色一半黑
+function v11HalfCircle(cx, cy, r, fill, rot) {
+  ctx.save();
+  ctx.translate(cx, cy); ctx.rotate(rot);
+  ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI * 2); ctx.fillStyle = fill; ctx.fill();
+  ctx.beginPath(); ctx.arc(0, 0, r, Math.PI * 0.5, Math.PI * 1.5); ctx.fillStyle = V11_INK; ctx.fill();
+  ctx.restore();
+}
+
+function v11Triangle(cx, cy, r, fill, rot) {
+  ctx.save();
+  ctx.translate(cx, cy); ctx.rotate(rot);
+  ctx.beginPath();
+  ctx.moveTo(0, -r); ctx.lineTo(r * 0.87, r * 0.5); ctx.lineTo(-r * 0.87, r * 0.5); ctx.closePath();
+  ctx.fillStyle = fill; ctx.fill();
+  ctx.restore();
+}
+
+function drawScene(t) {
+  ctx.fillStyle = V11_BG; ctx.fillRect(0, 0, W, H);
+  v11grid();
+
+  // 顶部黑色通栏（t=0 已在）
+  ctx.fillStyle = V11_INK;
+  ctx.fillRect(0, 0, W, 44);
+  ctx.fillStyle = V11_BG;
+  ctx.font = `700 13px ${FONT}`;
+  ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+  ctx.fillText('KONSTRUKTION', 20, 23);
+  ctx.textAlign = 'right';
+  ctx.font = `500 11px ${FONT}`;
+  ctx.fillText('20 SCHLÄGE  ·  120 BPM', W - 20, 23);
+  // 顶栏三色小方块：第 8 拍一起翻转
+  const sq = v11flip(t, 3.9, 0, Math.PI / 2);
+  [0, 1, 2].forEach(i => {
+    ctx.save();
+    ctx.translate(W - 232 + i * 15, 22);
+    ctx.rotate(sq);
+    ctx.fillStyle = [V11_RED, V11_YELLOW, V11_BLUE][i];
+    ctx.fillRect(-4.5, -4.5, 9, 9);
+    ctx.restore();
+  });
+
+  // 红色横带（起点已在画面上）
+  ctx.fillStyle = V11_RED;
+  ctx.fillRect(40, 56, 240, 40);
+
+  // 大标题（t=0 已在）
+  ctx.save();
+  ctx.fillStyle = V11_INK;
+  ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+  ctx.font = `800 52px ${FONT}`;
+  ctx.fillText('构 成', 54, 158);
+  ctx.fillStyle = V11_BLUE;
+  ctx.font = `600 11px ${FONT}`;
+  ctx.fillText('GEOMETRIC  COMPOSITION  /  NO.11', 56, 182);
+  // 细分隔线
+  ctx.strokeStyle = V11_INK; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(40, 198); ctx.lineTo(250, 198); ctx.stroke();
+  ctx.restore();
+
+  // 黄色半圆（t=0 已在），第 6 拍绕自身中心翻 90°
+  const circRot = v11flip(t, 2.95, 0, Math.PI / 2);
+  v11HalfCircle(468, 122, 64, V11_YELLOW, circRot);
+
+  // 黑色横条：第 2 拍从 0 长到整条
+  const barP = v11quad(v11seg(t, 0.86, 1.12));
+  if (barP > 0) {
+    ctx.fillStyle = V11_INK;
+    ctx.fillRect(252, 232, 220 * barP, 8);
+  }
+
+  // 蓝色三角：第 1 拍拍入，第 7 拍绕顶点翻转
+  const triP = v11hit(t, 0.36, 0.1);
+  if (triP > 0) {
+    const triRot = v11flip(t, 3.36, 0, -Math.PI / 2);
+    const s = 0.92 + 0.08 * triP;
+    ctx.save();
+    ctx.translate(392, 306);
+    ctx.rotate(triRot);
+    ctx.scale(s, s);
+    ctx.beginPath();
+    ctx.moveTo(0, -116); ctx.lineTo(58, 0); ctx.lineTo(-58, 0); ctx.closePath();
+    ctx.fillStyle = V11_BLUE; ctx.fill();
+    ctx.restore();
+  }
+
+  // 网点阵列：第 3 拍一拍一个，5×2
+  if (t >= 1.36) {
+    ctx.save();
+    ctx.fillStyle = V11_INK;
+    for (let i = 0; i < 5; i++) for (let j = 0; j < 2; j++) {
+      if (v11hit(t, 1.36 + (i + j) * 0.045, 0.05) > 0) {
+        ctx.beginPath(); ctx.arc(286 + i * 24, 164 + j * 24, 3.4, 0, Math.PI * 2); ctx.fill();
+      }
+    }
+    ctx.restore();
+  }
+
+  // 蓝色竖条：第 4 拍从底部长起
+  const vbP = v11quad(v11seg(t, 1.86, 2.12));
+  if (vbP > 0) {
+    ctx.fillStyle = V11_BLUE;
+    ctx.fillRect(576, 328 - 188 * vbP, 26, 188 * vbP);
+  }
+
+  // 黑色四分之一圆弧：第 5 拍画出
+  const arcP = v11quad(v11seg(t, 2.36, 2.66));
+  if (arcP > 0) {
+    ctx.save();
+    ctx.strokeStyle = V11_INK; ctx.lineWidth = 13;
+    ctx.beginPath();
+    ctx.arc(516, 286, 46, Math.PI * 1.5, Math.PI * 1.5 + Math.PI * arcP);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  // 红色方块：沿网格跳格 + 第 9 拍自转 90°
+  const cell = (Math.floor(t / 0.5) % 2) ? 1 : 0;
+  const orbRot = v11flip(t, 4.36, 0, Math.PI / 2);
+  ctx.save();
+  ctx.translate(300 + cell * 40, 128);
+  ctx.rotate(orbRot);
+  ctx.fillStyle = V11_RED;
+  ctx.fillRect(-11, -11, 22, 22);
+  ctx.restore();
+
+  // 数字 20：第 10 拍
+  const numP = v11hit(t, 4.86, 0.1);
+  if (numP > 0) {
+    ctx.save();
+    ctx.globalAlpha = numP;
+    ctx.fillStyle = V11_INK;
+    ctx.font = `800 40px ${FONT}`;
+    ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+    ctx.fillText('20', 54, 300);
+    ctx.font = `600 11px ${FONT}`;
+    ctx.fillStyle = 'rgba(20,20,20,.62)';
+    ctx.fillText('SCHLÄGE  ·  二十拍', 56, 318);
+    ctx.restore();
+  }
+
+  // 底部小注
+  const cp = v11seg(t, 5.1, 5.35);
+  if (cp > 0) {
+    ctx.save();
+    ctx.globalAlpha = cp;
+    ctx.fillStyle = 'rgba(20,20,20,.55)';
+    ctx.font = `500 11px ${FONT}`;
+    ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+    ctx.fillText('圆 · 三角 · 矩形 / 严格网格，一拍一个动作', 24, 338);
+    ctx.restore();
+  }
+
+  // 底部的节拍刻度：每拍亮一格
+  const beat = Math.floor(t / 0.5);
+  ctx.save();
+  for (let i = 0; i < 12; i++) {
+    ctx.fillStyle = i <= beat ? 'rgba(20,20,20,.55)' : 'rgba(20,20,20,.16)';
+    ctx.fillRect(24 + i * 10, 350, 6, 2.4);
+  }
+  ctx.restore();
+}
+
+  // ===== 共享渲染与署名 =======================================================
+  function watermark() {
+    const text = 'DeepSeek Harness 生成示例';
+    ctx.save();
+    ctx.font = '11px ' + FONT;
+    const w = ctx.measureText(text).width + 14;
+    const x = W - w - 8, y = H - 24;
+    ctx.fillStyle = 'rgba(0,0,0,.46)';
+    ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(x, y, w, 18, 4); else ctx.rect(x, y, w, 18);
+    ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,.82)';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(text, x + 7, y + 9.5);
+    ctx.restore();
+  }
+
+  function paint(t) {
+    ctx.save();
+    ctx.clearRect(0, 0, W, H);
+    try { drawScene(t); } catch (err) { console.error(err); }
+    ctx.restore();
+    watermark();
+  }
+
+  function renderAt(seconds) {
+    const t = ((Number(seconds) % DURATION) + DURATION) % DURATION;
+    paint(t);
+    syncUI(t);
+    return t;
+  }
+  window.renderAt = renderAt;
+
+  // ===== 播放、控制、减少动态 =================================================
+  const playBtn = document.getElementById('play');
+  const timeline = document.getElementById('timeline');
+  const clock = document.getElementById('clock');
+  let playing = false, base = 0, start = 0, current = 0;
+  let animationFrame = 0;
+  const reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function syncUI(t) {
+    if (EXPORT) return;
+    current = t;
+    if (timeline) timeline.value = String(t.toFixed(2));
+    if (clock) clock.textContent = t.toFixed(2) + ' / ' + DURATION.toFixed(2) + 's';
+  }
+  function frame(now) {
+    animationFrame = 0;
+    if (!playing) return;
+    const t = ((now - start) / 1000 + base) % DURATION;
+    paint(t);
+    syncUI(t);
+    animationFrame = requestAnimationFrame(frame);
+  }
+  function play() {
+    if (playing) return;
+    playing = true;
+    start = performance.now();
+    base = current;
+    if (playBtn) playBtn.textContent = '暂停';
+    animationFrame = requestAnimationFrame(frame);
+  }
+  function pause() {
+    playing = false;
+    cancelAnimationFrame(animationFrame);
+    animationFrame = 0;
+    if (playBtn) playBtn.textContent = '播放';
+  }
+  if (playBtn) playBtn.addEventListener('click', () => { playing ? pause() : play(); });
+  document.getElementById('replay')?.addEventListener('click', () => {
+    base = 0; start = performance.now(); paint(0); syncUI(0); play();
+  });
+  timeline?.addEventListener('input', () => {
+    pause(); paint(Number(timeline.value)); syncUI(Number(timeline.value));
+  });
+  window.addEventListener('keydown', e => {
+    if (e.code === 'Space') { e.preventDefault(); playing ? pause() : play(); }
+    if (e.key === 'r' || e.key === 'R') { base = 0; start = performance.now(); paint(0); syncUI(0); play(); }
+  });
+
+  if (EXPORT) {
+    document.body.classList.add('export');
+    renderAt(0);
+  } else if (reduced) {
+    renderAt(2.4);
+    pause();
+  } else {
+    renderAt(0);
+    play();
+  }
+})();
+</script>
+</body>
+</html>

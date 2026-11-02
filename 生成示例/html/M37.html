@@ -1,0 +1,417 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>M37 Logo 慢慢拼出来（片头片尾） · DeepSeek Harness 生成示例</title>
+<!--
+  Provenance
+  ----------
+  风格来源：code-animation-styles 目录（《来自俯仰观照博主的动画画风整理》整理稿）
+  catalog commit: 01576924a2b316d1f11ae33f75d3c005e8781451
+  style id: M37「Logo 慢慢拼出来（片头片尾）」
+  license: upstream-custom-noncommercial（俯仰观照整理稿，非商业）
+  本文件：DeepSeek Harness（deepseek-flash）根据该风格提示词新写的候选示例，
+  不是原作者样片，也不是原项目演示；仅用于风格挑选预览。共享的只有时间轴、
+  尺寸、导出接口与页脚署名，画面与动作按本风格重新设计。
+  原文“只输出代码”等语句属于素材的一部分，不覆盖本任务的交付合同。
+-->
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; min-height: 100%; background: #0c0c10; color: #e9e9ee;
+    font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif; }
+  #app { min-height: 100vh; display: flex; flex-direction: column; align-items: center;
+    justify-content: center; gap: 12px; padding: 20px; }
+  #stage { width: min(94vw, 1000px); aspect-ratio: 16 / 9; background: #000;
+    box-shadow: 0 18px 60px rgba(0,0,0,.55); position: relative; overflow: hidden; }
+  canvas { display: block; width: 100%; height: 100%; }
+  #head, #ui { width: min(94vw, 1000px); }
+  #head h1 { margin: 0 0 4px; font-size: 15px; font-weight: 600; letter-spacing: .02em; }
+  #head p { margin: 0; font-size: 12px; line-height: 1.5; color: #9a9aa8; }
+  #ui { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  #ui button { background: #1d1d26; color: #f2f2f6; border: 1px solid #343444;
+    border-radius: 7px; padding: 6px 12px; font-size: 12px; cursor: pointer; }
+  #ui button:hover { background: #272734; }
+  #ui input[type=range] { flex: 1 1 220px; min-width: 150px; accent-color: #7c8cff; }
+  #clock { font-variant-numeric: tabular-nums; font-size: 12px; color: #a9a9ba; min-width: 78px; }
+  #credit { width: min(94vw, 1000px); font-size: 11px; line-height: 1.6; color: #6f6f80; }
+  #credit b { color: #9c9cae; font-weight: 500; }
+  body.export, body.export #app { display: block; width: 640px; height: 360px; min-height: 0;
+    padding: 0; margin: 0; overflow: hidden; background: #000; }
+  body.export #stage { width: 640px; height: 360px; box-shadow: none; }
+  body.export #head, body.export #ui, body.export #credit { display: none; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="head">
+    <h1>M37 · Logo 慢慢拼出来（片头片尾）</h1>
+    <p>深色场里六块金属碎片从画外慢慢旋转聚拢，咔一下拼成环形标志，字标跟上，一道高光缓缓扫过。</p>
+  </div>
+  <div id="stage"><canvas id="c" width="640" height="360" aria-label="Logo 慢慢拼出来（片头片尾） 风格动画示例"></canvas></div>
+  <div id="ui">
+    <button id="play" type="button">暂停</button>
+    <button id="replay" type="button">重播</button>
+    <input id="timeline" type="range" min="0" max="6" step="0.01" value="0" aria-label="时间轴">
+    <span id="clock">0.00 / 6.00s</span>
+  </div>
+  <div id="credit">
+    <b>DeepSeek Harness 生成示例</b>（非原项目样片）· 来源：来自俯仰观照博主的动画画风整理 ·
+    许可：upstream-custom-noncommercial（俯仰观照整理稿，非商业） · 画面与文字均由代码绘制，静音。
+  </div>
+</div>
+<script>
+(() => {
+  'use strict';
+  // ===== 共享脚手架（可改，但导出合同不要破坏）=================================
+  const W = 640, H = 360, DURATION = 6;
+  const EXPORT = new URLSearchParams(location.search).get('export') === '1';
+  const canvas = document.getElementById('c');
+  const ctx = canvas.getContext('2d');
+  const FONT = '"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",sans-serif';
+
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  const lerp = (a, b, t) => a + (b - a) * t;
+  const smooth = t => t * t * (3 - 2 * t);
+  const easeOut = t => 1 - Math.pow(1 - t, 3);
+  const easeIn = t => t * t * t;
+  function rng(seed) { let s = seed >>> 0; return () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; }; }
+
+  // ===== 场景（每个 ID 独立设计；下面的注释区由构建器替换）===================
+  // DESC: 深色场里六块金属碎片从画外慢慢旋转聚拢，咔一下拼成环形标志，字标跟上，一道高光缓缓扫过。
+// M37 Logo 慢慢拼出来 · DeepSeek Harness 生成示例
+const M37_GOLD = '#e8b25c', M37_GOLD2 = '#f6d79a', M37_TEAL = '#5fd0c4';
+const M37_IN = 22, M37_OUT = 70, M37_HALF = 0.46;
+const M37_SHARDS = (() => {
+  const r = rng(3737);
+  return Array.from({ length: 6 }, (_, i) => {
+    const a = r() * Math.PI * 2;
+    return {
+      i,
+      final: i * Math.PI / 3,
+      sx: Math.cos(a) * (300 + r() * 320),
+      sy: Math.sin(a) * (240 + r() * 220),
+      srot: (r() - 0.5) * 4.2,
+      sscale: 1.5 + r() * 0.7,
+      delay: i * 0.13,
+      accent: i === 2 || i === 5,
+    };
+  });
+})();
+const M37_DUST = (() => {
+  const r = rng(737);
+  return Array.from({ length: 46 }, () => ({ a: r() * Math.PI * 2, d: 260 + r() * 260, s: 0.6 + r() * 1.6, sp: 0.5 + r() }));
+})();
+
+function m37seg(t, a, b) { return clamp((t - a) / (b - a), 0, 1); }
+function m37e(t) { return 1 - Math.pow(1 - t, 3); }
+function m37spring(p) {
+  if (p <= 0) return 0;
+  if (p >= 1) return 1;
+  return 1 - Math.exp(-5.2 * p) * Math.cos(7.5 * p) * (1 - p * 0.25);
+}
+
+function m37Background(t) {
+  const g = ctx.createLinearGradient(0, 0, 0, H);
+  g.addColorStop(0, '#101320');
+  g.addColorStop(0.55, '#0c0e18');
+  g.addColorStop(1, '#070810');
+  ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  const glow = ctx.createRadialGradient(320, 158, 20, 320, 158, 260);
+  glow.addColorStop(0, 'rgba(232,178,92,.16)');
+  glow.addColorStop(0.5, 'rgba(232,178,92,.05)');
+  glow.addColorStop(1, 'rgba(10,12,20,0)');
+  ctx.fillStyle = glow; ctx.fillRect(0, 0, W, H);
+  // 同心细环，给「拼合」一个坐标感
+  ctx.save();
+  ctx.strokeStyle = 'rgba(232,178,92,.10)';
+  ctx.lineWidth = 1;
+  for (let i = 0; i < 3; i++) {
+    ctx.beginPath(); ctx.arc(320, 158, 96 + i * 46, 0, Math.PI * 2); ctx.stroke();
+  }
+  ctx.restore();
+}
+
+function m37Shard(sh, p, t) {
+  if (p <= 0.001) return;
+  const cx = 320, cy = 158;
+  const x = lerp(cx + sh.sx, cx, p);
+  const y = lerp(cy + sh.sy, cy, p);
+  const rot = lerp(sh.srot, sh.final, m37spring(p));
+  const sc = lerp(sh.sscale, 1, p);
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(rot);
+  ctx.scale(sc, sc);
+  ctx.globalAlpha = clamp(p * 1.8, 0, 1);
+  const g = ctx.createLinearGradient(-M37_OUT, -M37_OUT, M37_OUT, M37_OUT);
+  g.addColorStop(0, sh.accent ? M37_TEAL : M37_GOLD2);
+  g.addColorStop(0.55, sh.accent ? '#2f9188' : M37_GOLD);
+  g.addColorStop(1, sh.accent ? '#1c5b56' : '#9a6a2e');
+  ctx.fillStyle = g;
+  const p1 = [Math.cos(-M37_HALF) * M37_IN, Math.sin(-M37_HALF) * M37_IN];
+  const p2 = [Math.cos(-M37_HALF * 0.8) * M37_OUT, Math.sin(-M37_HALF * 0.8) * M37_OUT];
+  const p3 = [Math.cos(M37_HALF * 0.8) * M37_OUT, Math.sin(M37_HALF * 0.8) * M37_OUT];
+  const p4 = [Math.cos(M37_HALF) * M37_IN, Math.sin(M37_HALF) * M37_IN];
+  ctx.beginPath();
+  ctx.moveTo(p1[0], p1[1]);
+  ctx.lineTo(p2[0], p2[1]);
+  ctx.lineTo(p3[0], p3[1]);
+  ctx.lineTo(p4[0], p4[1]);
+  ctx.closePath();
+  ctx.fill();
+  // 边缘高光
+  ctx.strokeStyle = 'rgba(255,240,210,.32)';
+  ctx.lineWidth = 1.2;
+  ctx.stroke();
+  ctx.restore();
+  // 落位瞬间的小闪光
+  const snap = m37seg(t, 1.85 + sh.delay, 2.25 + sh.delay);
+  if (snap > 0 && snap < 1) {
+    ctx.save();
+    ctx.globalAlpha = (1 - snap) * 0.8;
+    ctx.strokeStyle = M37_GOLD2;
+    ctx.lineWidth = 1.6;
+    ctx.beginPath();
+    ctx.arc(320 + Math.cos(sh.final) * 42, 158 + Math.sin(sh.final) * 42, 6 + snap * 22, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.restore();
+  }
+}
+
+function drawScene(t) {
+  const zoom = 1 + 0.05 * m37e(m37seg(t, 0, 6));
+  ctx.save();
+  ctx.translate(320, 180);
+  ctx.scale(zoom, zoom);
+  ctx.translate(-320, -180);
+  m37Background(t);
+
+  // 未落位的碎屑
+  const dustP = 1 - m37e(m37seg(t, 0.2, 3.2));
+  if (dustP > 0) {
+    ctx.save();
+    for (const d of M37_DUST) {
+      const pull = m37e(m37seg(t, 0.3 + d.sp * 0.2, 3.0));
+      const dist = d.d * (1 - pull * 0.92);
+      const a = d.a + t * 0.15 * d.sp;
+      ctx.globalAlpha = dustP * 0.5;
+      ctx.fillStyle = M37_GOLD2;
+      ctx.beginPath();
+      ctx.arc(320 + Math.cos(a) * dist, 158 + Math.sin(a) * dist * 0.72, d.s, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  // 成品轮廓：从一开始就隐约在那儿，碎片是往里填
+  ctx.save();
+  for (let i = 0; i < 6; i++) {
+    ctx.save();
+    ctx.translate(320, 158);
+    ctx.rotate(i * Math.PI / 3);
+    ctx.fillStyle = 'rgba(232,178,92,.16)';
+    ctx.beginPath();
+    ctx.moveTo(Math.cos(-M37_HALF) * M37_IN, Math.sin(-M37_HALF) * M37_IN);
+    ctx.lineTo(Math.cos(-M37_HALF * 0.8) * M37_OUT, Math.sin(-M37_HALF * 0.8) * M37_OUT);
+    ctx.lineTo(Math.cos(M37_HALF * 0.8) * M37_OUT, Math.sin(M37_HALF * 0.8) * M37_OUT);
+    ctx.lineTo(Math.cos(M37_HALF) * M37_IN, Math.sin(M37_HALF) * M37_IN);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+  }
+  ctx.restore();
+
+  // 碎片聚拢：越往后越慢
+  for (const sh of M37_SHARDS) {
+    const p = m37spring(m37seg(t, 0.35 + sh.delay, 2.7 + sh.delay * 0.6));
+    m37Shard(sh, p, t);
+  }
+
+  // 拼合后的中心
+  const core = m37e(m37seg(t, 2.5, 3.0));
+  if (core > 0) {
+    ctx.save();
+    ctx.globalAlpha = core;
+    ctx.strokeStyle = 'rgba(246,215,154,.5)';
+    ctx.lineWidth = 1.4;
+    ctx.beginPath(); ctx.arc(320, 158, M37_IN - 2, 0, Math.PI * 2); ctx.stroke();
+    const pulse = 1 + 0.14 * Math.sin(t * 3.2);
+    ctx.fillStyle = M37_GOLD2;
+    ctx.beginPath(); ctx.arc(320, 158, 7 * pulse, 0, Math.PI * 2); ctx.fill();
+    // 外面一圈缓慢转的弧
+    ctx.strokeStyle = 'rgba(95,208,196,.55)';
+    ctx.lineWidth = 2.4;
+    ctx.beginPath();
+    ctx.arc(320, 158, M37_OUT + 16, -0.6 + t * 0.25, 1.5 + t * 0.25);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  // 字标：字距慢慢收紧
+  const wp = m37e(m37seg(t, 3.25, 4.05));
+  if (wp > 0) {
+    ctx.save();
+    ctx.globalAlpha = wp;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
+    ctx.fillStyle = '#f2ead9';
+    ctx.font = `800 34px ${FONT}`;
+    const track = lerp(16, 4, m37e(m37seg(t, 3.6, 4.6)));
+    const chars = ['拼', '合'];
+    const total = 34 * 2 + track;
+    chars.forEach((ch, i) => {
+      ctx.fillText(ch, 320 - total / 2 + 17 + i * (34 + track), 286 + (1 - wp) * 8);
+    });
+    ctx.fillStyle = 'rgba(242,234,217,.45)';
+    ctx.font = `500 11px ${FONT}`;
+    ctx.fillText('SLOW REVEAL  /  片头 · 片尾', 320, 312);
+    ctx.restore();
+  }
+
+  // 高光扫过
+  const sweep = m37seg(t, 4.35, 5.25);
+  if (sweep > 0 && sweep < 1) {
+    ctx.save();
+    ctx.globalAlpha = Math.sin(sweep * Math.PI) * 0.32;
+    ctx.beginPath(); ctx.arc(320, 158, 104, 0, Math.PI * 2); ctx.clip();
+    ctx.translate(320, 158);
+    ctx.rotate(-0.55);
+    const x = lerp(-150, 150, m37e(sweep));
+    const g = ctx.createLinearGradient(x - 26, 0, x + 26, 0);
+    g.addColorStop(0, 'rgba(255,255,255,0)');
+    g.addColorStop(0.5, 'rgba(255,250,235,.8)');
+    g.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.fillStyle = g;
+    ctx.fillRect(x - 26, -110, 52, 220);
+    ctx.restore();
+  }
+  ctx.restore();
+
+  // 碎片计数：让第一帧也有信息
+  let placed = 0;
+  for (const sh of M37_SHARDS) {
+    if (m37spring(m37seg(t, 0.35 + sh.delay, 2.7 + sh.delay * 0.6)) > 0.965) placed++;
+  }
+  ctx.save();
+  ctx.globalAlpha = 0.55;
+  ctx.fillStyle = '#f2ead9';
+  ctx.font = `600 13px ${FONT}`;
+  ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+  ctx.fillText('碎片  ' + String(placed).padStart(2, '0') + ' / 06', 34, 326);
+  ctx.globalAlpha = 0.9;
+  ctx.fillStyle = M37_GOLD;
+  ctx.fillRect(34, 300, 42, 2);
+  ctx.restore();
+  // 角落小字
+  ctx.save();
+  ctx.globalAlpha = 0.42;
+  ctx.fillStyle = '#f2ead9';
+  ctx.font = `600 10px ${FONT}`;
+  ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+  ctx.fillText('LOGO  /  SHARDS → MARK', 24, 24);
+  ctx.restore();
+
+  // 暗角
+  const vg = ctx.createRadialGradient(320, 170, 170, 320, 170, 430);
+  vg.addColorStop(0, 'rgba(0,0,0,0)');
+  vg.addColorStop(1, 'rgba(0,0,0,.5)');
+  ctx.fillStyle = vg; ctx.fillRect(0, 0, W, H);
+}
+
+  // ===== 共享渲染与署名 =======================================================
+  function watermark() {
+    const text = 'DeepSeek Harness 生成示例';
+    ctx.save();
+    ctx.font = '11px ' + FONT;
+    const w = ctx.measureText(text).width + 14;
+    const x = W - w - 8, y = H - 24;
+    ctx.fillStyle = 'rgba(0,0,0,.46)';
+    ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(x, y, w, 18, 4); else ctx.rect(x, y, w, 18);
+    ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,.82)';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(text, x + 7, y + 9.5);
+    ctx.restore();
+  }
+
+  function paint(t) {
+    ctx.save();
+    ctx.clearRect(0, 0, W, H);
+    try { drawScene(t); } catch (err) { console.error(err); }
+    ctx.restore();
+    watermark();
+  }
+
+  function renderAt(seconds) {
+    const t = ((Number(seconds) % DURATION) + DURATION) % DURATION;
+    paint(t);
+    syncUI(t);
+    return t;
+  }
+  window.renderAt = renderAt;
+
+  // ===== 播放、控制、减少动态 =================================================
+  const playBtn = document.getElementById('play');
+  const timeline = document.getElementById('timeline');
+  const clock = document.getElementById('clock');
+  let playing = false, base = 0, start = 0, current = 0;
+  let animationFrame = 0;
+  const reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function syncUI(t) {
+    if (EXPORT) return;
+    current = t;
+    if (timeline) timeline.value = String(t.toFixed(2));
+    if (clock) clock.textContent = t.toFixed(2) + ' / ' + DURATION.toFixed(2) + 's';
+  }
+  function frame(now) {
+    animationFrame = 0;
+    if (!playing) return;
+    const t = ((now - start) / 1000 + base) % DURATION;
+    paint(t);
+    syncUI(t);
+    animationFrame = requestAnimationFrame(frame);
+  }
+  function play() {
+    if (playing) return;
+    playing = true;
+    start = performance.now();
+    base = current;
+    if (playBtn) playBtn.textContent = '暂停';
+    animationFrame = requestAnimationFrame(frame);
+  }
+  function pause() {
+    playing = false;
+    cancelAnimationFrame(animationFrame);
+    animationFrame = 0;
+    if (playBtn) playBtn.textContent = '播放';
+  }
+  if (playBtn) playBtn.addEventListener('click', () => { playing ? pause() : play(); });
+  document.getElementById('replay')?.addEventListener('click', () => {
+    base = 0; start = performance.now(); paint(0); syncUI(0); play();
+  });
+  timeline?.addEventListener('input', () => {
+    pause(); paint(Number(timeline.value)); syncUI(Number(timeline.value));
+  });
+  window.addEventListener('keydown', e => {
+    if (e.code === 'Space') { e.preventDefault(); playing ? pause() : play(); }
+    if (e.key === 'r' || e.key === 'R') { base = 0; start = performance.now(); paint(0); syncUI(0); play(); }
+  });
+
+  if (EXPORT) {
+    document.body.classList.add('export');
+    renderAt(0);
+  } else if (reduced) {
+    renderAt(2.4);
+    pause();
+  } else {
+    renderAt(0);
+    play();
+  }
+})();
+</script>
+</body>
+</html>

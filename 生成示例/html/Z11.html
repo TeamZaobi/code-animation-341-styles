@@ -1,0 +1,586 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Z11 京剧脸谱 · DeepSeek Harness 生成示例</title>
+<!--
+  Provenance
+  ----------
+  风格来源：code-animation-styles 目录（《来自俯仰观照博主的动画画风整理》整理稿）
+  catalog commit: 01576924a2b316d1f11ae33f75d3c005e8781451
+  style id: Z11「京剧脸谱」
+  license: upstream-custom-noncommercial（俯仰观照整理稿，非商业）
+  本文件：DeepSeek Harness（deepseek-flash）根据该风格提示词新写的候选示例，
+  不是原作者样片，也不是原项目演示；仅用于风格挑选预览。共享的只有时间轴、
+  尺寸、导出接口与页脚署名，画面与动作按本风格重新设计。
+  原文“只输出代码”等语句属于素材的一部分，不覆盖本任务的交付合同。
+-->
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; min-height: 100%; background: #0c0c10; color: #e9e9ee;
+    font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif; }
+  #app { min-height: 100vh; display: flex; flex-direction: column; align-items: center;
+    justify-content: center; gap: 12px; padding: 20px; }
+  #stage { width: min(94vw, 1000px); aspect-ratio: 16 / 9; background: #000;
+    box-shadow: 0 18px 60px rgba(0,0,0,.55); position: relative; overflow: hidden; }
+  canvas { display: block; width: 100%; height: 100%; }
+  #head, #ui { width: min(94vw, 1000px); }
+  #head h1 { margin: 0 0 4px; font-size: 15px; font-weight: 600; letter-spacing: .02em; }
+  #head p { margin: 0; font-size: 12px; line-height: 1.5; color: #9a9aa8; }
+  #ui { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  #ui button { background: #1d1d26; color: #f2f2f6; border: 1px solid #343444;
+    border-radius: 7px; padding: 6px 12px; font-size: 12px; cursor: pointer; }
+  #ui button:hover { background: #272734; }
+  #ui input[type=range] { flex: 1 1 220px; min-width: 150px; accent-color: #7c8cff; }
+  #clock { font-variant-numeric: tabular-nums; font-size: 12px; color: #a9a9ba; min-width: 78px; }
+  #credit { width: min(94vw, 1000px); font-size: 11px; line-height: 1.6; color: #6f6f80; }
+  #credit b { color: #9c9cae; font-weight: 500; }
+  body.export, body.export #app { display: block; width: 640px; height: 360px; min-height: 0;
+    padding: 0; margin: 0; overflow: hidden; background: #000; }
+  body.export #stage { width: 640px; height: 360px; box-shadow: none; }
+  body.export #head, body.export #ui, body.export #credit { display: none; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="head">
+    <h1>Z11 · 京剧脸谱</h1>
+    <p>京剧脸谱：黑底金框里，半张净角脸先勾线，另半张镜像补全，红黑白金依次上色，绒球髯口齐备。</p>
+  </div>
+  <div id="stage"><canvas id="c" width="640" height="360" aria-label="京剧脸谱 风格动画示例"></canvas></div>
+  <div id="ui">
+    <button id="play" type="button">暂停</button>
+    <button id="replay" type="button">重播</button>
+    <input id="timeline" type="range" min="0" max="6" step="0.01" value="0" aria-label="时间轴">
+    <span id="clock">0.00 / 6.00s</span>
+  </div>
+  <div id="credit">
+    <b>DeepSeek Harness 生成示例</b>（非原项目样片）· 来源：来自俯仰观照博主的动画画风整理 ·
+    许可：upstream-custom-noncommercial（俯仰观照整理稿，非商业） · 画面与文字均由代码绘制，静音。
+  </div>
+</div>
+<script>
+(() => {
+  'use strict';
+  // ===== 共享脚手架（可改，但导出合同不要破坏）=================================
+  const W = 640, H = 360, DURATION = 6;
+  const EXPORT = new URLSearchParams(location.search).get('export') === '1';
+  const canvas = document.getElementById('c');
+  const ctx = canvas.getContext('2d');
+  const FONT = '"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",sans-serif';
+
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  const lerp = (a, b, t) => a + (b - a) * t;
+  const smooth = t => t * t * (3 - 2 * t);
+  const easeOut = t => 1 - Math.pow(1 - t, 3);
+  const easeIn = t => t * t * t;
+  function rng(seed) { let s = seed >>> 0; return () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; }; }
+
+  // ===== 场景（每个 ID 独立设计；下面的注释区由构建器替换）===================
+  // DESC: 京剧脸谱：黑底金框里，半张净角脸先勾线，另半张镜像补全，红黑白金依次上色，绒球髯口齐备。
+// Z11 京剧脸谱 · DeepSeek Harness 生成示例
+
+const Z11_RED = '#c8322a', Z11_DEEP = '#8f1f18', Z11_INK = '#17130f';
+const Z11_WHITE = '#f2ece0', Z11_GOLD = '#d9a441';
+const Z11_CX = 320, Z11_CY = 152, Z11_S = 1.06;
+
+const Z11_BG = (() => {
+  const c = document.createElement('canvas'); c.width = W; c.height = H;
+  const g = c.getContext('2d');
+  const grd = g.createRadialGradient(320, 180, 60, 320, 180, 430);
+  grd.addColorStop(0, '#2c1a14');
+  grd.addColorStop(0.55, '#1b110d');
+  grd.addColorStop(1, '#0c0908');
+  g.fillStyle = grd; g.fillRect(0, 0, W, H);
+  const r = rng(1111);
+  for (let i = 0; i < 300; i++) {
+    const x = r() * W, y = r() * H;
+    g.fillStyle = `rgba(220,170,110,${0.015 + r() * 0.03})`;
+    g.fillRect(x, y, 1.4, 1.4);
+  }
+  return c;
+})();
+
+function z11seg(t, a, b) { return clamp((t - a) / (b - a), 0, 1); }
+
+// 左右对称绘制
+function z11both(fn) {
+  for (const s of [1, -1]) {
+    ctx.save();
+    ctx.scale(s, 1);
+    fn();
+    ctx.restore();
+  }
+}
+
+const Z11_FACE = () => {
+  ctx.beginPath();
+  ctx.moveTo(0, -108);
+  ctx.bezierCurveTo(30, -112, 62, -92, 82, -64);
+  ctx.bezierCurveTo(98, -40, 102, -6, 96, 26);
+  ctx.bezierCurveTo(90, 58, 72, 86, 44, 104);
+  ctx.bezierCurveTo(24, 116, 8, 120, 0, 120);
+  ctx.closePath();
+};
+
+function z11face(alpha) {
+  if (alpha <= 0) return;
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  ctx.translate(Z11_CX, Z11_CY);
+  ctx.scale(Z11_S, Z11_S);
+  z11both(() => {
+    const grd = ctx.createLinearGradient(0, -110, 0, 120);
+    grd.addColorStop(0, Z11_RED);
+    grd.addColorStop(0.55, '#bf2c24');
+    grd.addColorStop(1, Z11_DEEP);
+    ctx.fillStyle = grd;
+    Z11_FACE();
+    ctx.fill();
+  });
+  ctx.restore();
+}
+
+function z11lines(p) {
+  if (p <= 0) return;
+  ctx.save();
+  ctx.globalAlpha = Math.min(1, p * 1.4);
+  ctx.translate(Z11_CX, Z11_CY);
+  ctx.scale(Z11_S, Z11_S);
+  z11both(() => {
+    ctx.strokeStyle = Z11_INK;
+    ctx.lineWidth = 3;
+    ctx.lineJoin = 'round';
+    // 脸廓
+    Z11_FACE();
+    ctx.stroke();
+    // 眉：火焰状（加大）
+    ctx.beginPath();
+    ctx.moveTo(6, -62);
+    ctx.quadraticCurveTo(28, -90, 60, -84);
+    ctx.quadraticCurveTo(46, -72, 38, -62);
+    ctx.quadraticCurveTo(58, -66, 80, -54);
+    ctx.quadraticCurveTo(46, -44, 6, -46);
+    ctx.closePath();
+    ctx.stroke();
+    // 眼窝（加大）
+    ctx.beginPath();
+    ctx.moveTo(8, -30);
+    ctx.quadraticCurveTo(26, -54, 60, -46);
+    ctx.quadraticCurveTo(86, -40, 90, -20);
+    ctx.quadraticCurveTo(80, 0, 54, 2);
+    ctx.quadraticCurveTo(26, 4, 14, -12);
+    ctx.closePath();
+    ctx.stroke();
+    // 鼻
+    ctx.beginPath();
+    ctx.moveTo(0, -34);
+    ctx.quadraticCurveTo(16, -18, 13, 6);
+    ctx.quadraticCurveTo(10, 24, 0, 28);
+    ctx.stroke();
+    // 鼻窝
+    ctx.beginPath();
+    ctx.arc(17, 20, 8, Math.PI * 0.2, Math.PI * 1.5);
+    ctx.stroke();
+    // 下颌线
+    ctx.beginPath();
+    ctx.moveTo(0, 100);
+    ctx.quadraticCurveTo(34, 96, 52, 86);
+    ctx.stroke();
+    // 耳
+    ctx.beginPath();
+    ctx.arc(95, -2, 11, Math.PI * 0.55, Math.PI * 1.45);
+    ctx.stroke();
+  });
+  ctx.restore();
+}
+
+function z11blocks(pRed, pBlack, pWhite, pGold) {
+  ctx.save();
+  ctx.translate(Z11_CX, Z11_CY);
+  ctx.scale(Z11_S, Z11_S);
+
+  // 黑块
+  if (pBlack > 0) {
+    ctx.save();
+    ctx.globalAlpha = pBlack;
+    z11both(() => {
+      ctx.fillStyle = Z11_INK;
+      // 眉
+      ctx.beginPath();
+      ctx.moveTo(6, -62);
+      ctx.quadraticCurveTo(28, -90, 60, -84);
+      ctx.quadraticCurveTo(46, -72, 38, -62);
+      ctx.quadraticCurveTo(58, -66, 80, -54);
+      ctx.quadraticCurveTo(46, -44, 6, -46);
+      ctx.closePath();
+      ctx.fill();
+      // 眼窝
+      ctx.beginPath();
+      ctx.moveTo(8, -30);
+      ctx.quadraticCurveTo(26, -54, 60, -46);
+      ctx.quadraticCurveTo(86, -40, 90, -20);
+      ctx.quadraticCurveTo(80, 0, 54, 2);
+      ctx.quadraticCurveTo(26, 4, 14, -12);
+      ctx.closePath();
+      ctx.fill();
+      // 额上火焰（黑）
+      ctx.beginPath();
+      ctx.moveTo(0, -102);
+      ctx.quadraticCurveTo(28, -96, 32, -78);
+      ctx.quadraticCurveTo(18, -86, 10, -74);
+      ctx.quadraticCurveTo(22, -64, 0, -58);
+      ctx.closePath();
+      ctx.fill();
+      // 鼻窝
+      ctx.beginPath();
+      ctx.moveTo(0, -40);
+      ctx.quadraticCurveTo(20, -22, 16, 8);
+      ctx.quadraticCurveTo(12, 26, 0, 30);
+      ctx.closePath();
+      ctx.fill();
+      // 鬓角
+      ctx.beginPath();
+      ctx.moveTo(0, -104);
+      ctx.quadraticCurveTo(26, -110, 52, -92);
+      ctx.quadraticCurveTo(30, -104, 0, -96);
+      ctx.closePath();
+      ctx.fill();
+    });
+    ctx.restore();
+  }
+
+  // 白块：眼白、额头印、下颏
+  if (pWhite > 0) {
+    ctx.save();
+    ctx.globalAlpha = pWhite;
+    z11both(() => {
+      ctx.fillStyle = Z11_WHITE;
+      ctx.beginPath();
+      ctx.ellipse(48, -24, 19, 9.6, -0.12, 0, Math.PI * 2);
+      ctx.fill();
+      // 瞳孔
+      ctx.fillStyle = Z11_INK;
+      ctx.beginPath(); ctx.arc(51, -24, 5.2, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = 'rgba(255,255,255,0.8)';
+      ctx.beginPath(); ctx.arc(52.8, -25.4, 1.7, 0, Math.PI * 2); ctx.fill();
+      // 额中白印
+      ctx.fillStyle = Z11_WHITE;
+      ctx.beginPath();
+      ctx.moveTo(0, -96);
+      ctx.quadraticCurveTo(12, -90, 10, -76);
+      ctx.quadraticCurveTo(4, -84, 0, -80);
+      ctx.closePath();
+      ctx.fill();
+      // 下颏白
+      ctx.beginPath();
+      ctx.moveTo(0, 98);
+      ctx.quadraticCurveTo(30, 94, 48, 84);
+      ctx.quadraticCurveTo(26, 104, 0, 108);
+      ctx.closePath();
+      ctx.fill();
+    });
+    ctx.restore();
+  }
+
+  // 金线
+  if (pGold > 0) {
+    ctx.save();
+    ctx.globalAlpha = pGold;
+    z11both(() => {
+      ctx.strokeStyle = Z11_GOLD;
+      ctx.lineWidth = 2;
+      // 额上火焰
+      ctx.beginPath();
+      ctx.moveTo(0, -88);
+      ctx.quadraticCurveTo(16, -96, 26, -84);
+      ctx.quadraticCurveTo(14, -86, 8, -78);
+      ctx.stroke();
+      // 眉与眼窝描金
+      ctx.beginPath();
+      ctx.moveTo(6, -62);
+      ctx.quadraticCurveTo(28, -90, 60, -84);
+      ctx.quadraticCurveTo(46, -72, 38, -62);
+      ctx.quadraticCurveTo(58, -66, 80, -54);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(8, -30);
+      ctx.quadraticCurveTo(26, -54, 60, -46);
+      ctx.quadraticCurveTo(86, -40, 90, -20);
+      ctx.stroke();
+      // 颊上云纹
+      ctx.beginPath();
+      ctx.arc(64, 30, 17, Math.PI * 1.05, Math.PI * 2.1);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(64, 30, 9.5, Math.PI * 1.15, Math.PI * 2.2);
+      ctx.stroke();
+      // 鼻梁竖金
+      ctx.beginPath();
+      ctx.moveTo(0, -30); ctx.lineTo(0, 26);
+      ctx.stroke();
+      // 下颌金线
+      ctx.beginPath();
+      ctx.moveTo(0, 92);
+      ctx.quadraticCurveTo(30, 88, 50, 78);
+      ctx.stroke();
+    });
+    ctx.restore();
+  }
+  ctx.restore();
+}
+
+function z11helmet(p, t) {
+  if (p <= 0) return;
+  const e = easeOut(p);
+  ctx.save();
+  ctx.globalAlpha = e;
+  ctx.translate(Z11_CX, Z11_CY);
+  ctx.scale(Z11_S, Z11_S);
+  // 额子
+  ctx.fillStyle = Z11_GOLD;
+  ctx.fillRect(-96 * e, -122, 192 * e, 18 * e);
+  ctx.strokeStyle = Z11_INK;
+  ctx.lineWidth = 2;
+  ctx.strokeRect(-96 * e, -122, 192 * e, 18 * e);
+  // 回纹
+  ctx.strokeStyle = 'rgba(60,30,16,0.7)';
+  ctx.lineWidth = 1.4;
+  for (let x = -88; x <= 84; x += 22) {
+    ctx.beginPath();
+    ctx.moveTo(x, -118);
+    ctx.lineTo(x + 10, -118);
+    ctx.lineTo(x + 10, -111);
+    ctx.lineTo(x + 4, -111);
+    ctx.stroke();
+  }
+  // 盔顶
+  ctx.fillStyle = Z11_INK;
+  ctx.beginPath();
+  ctx.moveTo(-48, -122);
+  ctx.quadraticCurveTo(0, -166, 48, -122);
+  ctx.closePath();
+  ctx.fill();
+  ctx.strokeStyle = Z11_GOLD;
+  ctx.lineWidth = 1.6;
+  ctx.stroke();
+  // 绒球
+  for (const sx of [-78, 78]) {
+    const wob = Math.sin(t * 2.2 + sx) * 1.6;
+    ctx.save();
+    ctx.translate(sx, -130 + wob);
+    ctx.fillStyle = Z11_RED;
+    ctx.beginPath(); ctx.arc(0, 0, 13, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = Z11_DEEP;
+    ctx.lineWidth = 1.4;
+    ctx.stroke();
+    for (let i = 0; i < 10; i++) {
+      const a = (i / 10) * Math.PI * 2;
+      ctx.strokeStyle = 'rgba(248,180,150,0.35)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(Math.cos(a) * 4, Math.sin(a) * 4);
+      ctx.lineTo(Math.cos(a) * 12, Math.sin(a) * 12);
+      ctx.stroke();
+    }
+    ctx.fillStyle = Z11_GOLD;
+    ctx.beginPath(); ctx.arc(0, 0, 3.2, 0, Math.PI * 2); ctx.fill();
+    ctx.restore();
+  }
+  ctx.restore();
+}
+
+function z11beard(p, t) {
+  if (p <= 0) return;
+  const e = easeOut(p);
+  ctx.save();
+  ctx.translate(Z11_CX, Z11_CY);
+  ctx.scale(Z11_S, Z11_S);
+  ctx.globalAlpha = Math.min(1, e * 1.1);
+  // 满髯：黑幕
+  ctx.fillStyle = Z11_INK;
+  ctx.beginPath();
+  ctx.moveTo(-58, 94);
+  ctx.quadraticCurveTo(-78, 168, -50, 196);
+  ctx.quadraticCurveTo(-18, 208, 0, 198);
+  ctx.quadraticCurveTo(18, 208, 50, 196);
+  ctx.quadraticCurveTo(78, 168, 58, 94);
+  ctx.quadraticCurveTo(0, 112, -58, 94);
+  ctx.closePath();
+  ctx.fill();
+  // 髯丝
+  const r = rng(414);
+  ctx.strokeStyle = 'rgba(90,80,70,0.5)';
+  for (let i = 0; i < 26; i++) {
+    const x = -44 + i * 3.6;
+    const len = 60 + r() * 46;
+    ctx.lineWidth = 0.8 + r() * 0.8;
+    ctx.beginPath();
+    ctx.moveTo(x, 100);
+    ctx.quadraticCurveTo(x + Math.sin(t * 1.4 + i) * 3, 100 + len * 0.6, x + Math.sin(t * 1.4 + i) * 5, 100 + len);
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+function drawScene(t) {
+  ctx.drawImage(Z11_BG, 0, 0);
+
+  // 金框
+  const fp = z11seg(t, 0.05, 0.6);
+  if (fp > 0) {
+    ctx.save();
+    ctx.globalAlpha = easeOut(fp) * 0.9;
+    ctx.strokeStyle = 'rgba(217,164,65,0.55)';
+    ctx.lineWidth = 1.6;
+    ctx.strokeRect(26, 22, 588, 316);
+    ctx.strokeStyle = 'rgba(217,164,65,0.28)';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(33, 29, 574, 302);
+    ctx.restore();
+  }
+
+  // 色块先垫（脸的底色），线后压
+  z11face(z11seg(t, 0.35, 1.2));
+
+  const lp = z11seg(t, 0.6, 1.9);
+  z11lines(lp);
+
+  const pBlack = z11seg(t, 1.5, 2.4);
+  const pWhite = z11seg(t, 2.0, 2.9);
+  const pGold = z11seg(t, 2.6, 3.7);
+  const pRed = z11seg(t, 1.3, 2.2);
+  z11blocks(pRed, pBlack, pWhite, pGold);
+
+  z11helmet(z11seg(t, 3.4, 4.2), t);
+  z11beard(z11seg(t, 4.0, 4.9), t);
+
+  // 题字
+  const tp = z11seg(t, 4.6, 5.2);
+  if (tp > 0) {
+    ctx.save();
+    ctx.globalAlpha = easeOut(tp);
+    ctx.fillStyle = Z11_GOLD;
+    ctx.font = `400 30px ${FONT}`;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('脸', 578, 82);
+    ctx.fillText('谱', 578, 120);
+    ctx.font = `400 14px ${FONT}`;
+    ctx.fillStyle = 'rgba(242,236,224,0.9)';
+    ctx.fillText('红忠黑直', 566, 158);
+    ctx.restore();
+  }
+  const sp = z11seg(t, 5.15, 5.5);
+  if (sp > 0) {
+    ctx.save();
+    ctx.globalAlpha = easeOut(sp);
+    ctx.translate(566, 196);
+    ctx.rotate(-0.04);
+    ctx.fillStyle = Z11_RED;
+    ctx.fillRect(-13, -13, 26, 26);
+    ctx.fillStyle = 'rgba(242,236,224,0.95)';
+    ctx.font = `700 14px ${FONT}`;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('净', 0, 1);
+    ctx.restore();
+  }
+}
+
+  // ===== 共享渲染与署名 =======================================================
+  function watermark() {
+    const text = 'DeepSeek Harness 生成示例';
+    ctx.save();
+    ctx.font = '11px ' + FONT;
+    const w = ctx.measureText(text).width + 14;
+    const x = W - w - 8, y = H - 24;
+    ctx.fillStyle = 'rgba(0,0,0,.46)';
+    ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(x, y, w, 18, 4); else ctx.rect(x, y, w, 18);
+    ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,.82)';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(text, x + 7, y + 9.5);
+    ctx.restore();
+  }
+
+  function paint(t) {
+    ctx.save();
+    ctx.clearRect(0, 0, W, H);
+    try { drawScene(t); } catch (err) { console.error(err); }
+    ctx.restore();
+    watermark();
+  }
+
+  function renderAt(seconds) {
+    const t = ((Number(seconds) % DURATION) + DURATION) % DURATION;
+    paint(t);
+    syncUI(t);
+    return t;
+  }
+  window.renderAt = renderAt;
+
+  // ===== 播放、控制、减少动态 =================================================
+  const playBtn = document.getElementById('play');
+  const timeline = document.getElementById('timeline');
+  const clock = document.getElementById('clock');
+  let playing = false, base = 0, start = 0, current = 0;
+  let animationFrame = 0;
+  const reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function syncUI(t) {
+    if (EXPORT) return;
+    current = t;
+    if (timeline) timeline.value = String(t.toFixed(2));
+    if (clock) clock.textContent = t.toFixed(2) + ' / ' + DURATION.toFixed(2) + 's';
+  }
+  function frame(now) {
+    animationFrame = 0;
+    if (!playing) return;
+    const t = ((now - start) / 1000 + base) % DURATION;
+    paint(t);
+    syncUI(t);
+    animationFrame = requestAnimationFrame(frame);
+  }
+  function play() {
+    if (playing) return;
+    playing = true;
+    start = performance.now();
+    base = current;
+    if (playBtn) playBtn.textContent = '暂停';
+    animationFrame = requestAnimationFrame(frame);
+  }
+  function pause() {
+    playing = false;
+    cancelAnimationFrame(animationFrame);
+    animationFrame = 0;
+    if (playBtn) playBtn.textContent = '播放';
+  }
+  if (playBtn) playBtn.addEventListener('click', () => { playing ? pause() : play(); });
+  document.getElementById('replay')?.addEventListener('click', () => {
+    base = 0; start = performance.now(); paint(0); syncUI(0); play();
+  });
+  timeline?.addEventListener('input', () => {
+    pause(); paint(Number(timeline.value)); syncUI(Number(timeline.value));
+  });
+  window.addEventListener('keydown', e => {
+    if (e.code === 'Space') { e.preventDefault(); playing ? pause() : play(); }
+    if (e.key === 'r' || e.key === 'R') { base = 0; start = performance.now(); paint(0); syncUI(0); play(); }
+  });
+
+  if (EXPORT) {
+    document.body.classList.add('export');
+    renderAt(0);
+  } else if (reduced) {
+    renderAt(2.4);
+    pause();
+  } else {
+    renderAt(0);
+    play();
+  }
+})();
+</script>
+</body>
+</html>

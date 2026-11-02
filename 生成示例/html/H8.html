@@ -1,0 +1,346 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>H8 Cobalt Grid · DeepSeek Harness 生成示例</title>
+<!--
+  Provenance
+  ----------
+  风格来源：code-animation-styles 目录（《来自俯仰观照博主的动画画风整理》整理稿）
+  catalog commit: 01576924a2b316d1f11ae33f75d3c005e8781451
+  style id: H8「Cobalt Grid」
+  license: upstream-custom-noncommercial（俯仰观照整理稿，非商业）
+  本文件：DeepSeek Harness（deepseek-flash）根据该风格提示词新写的候选示例，
+  不是原作者样片，也不是原项目演示；仅用于风格挑选预览。共享的只有时间轴、
+  尺寸、导出接口与页脚署名，画面与动作按本风格重新设计。
+  原文“只输出代码”等语句属于素材的一部分，不覆盖本任务的交付合同。
+-->
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; min-height: 100%; background: #0c0c10; color: #e9e9ee;
+    font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif; }
+  #app { min-height: 100vh; display: flex; flex-direction: column; align-items: center;
+    justify-content: center; gap: 12px; padding: 20px; }
+  #stage { width: min(94vw, 1000px); aspect-ratio: 16 / 9; background: #000;
+    box-shadow: 0 18px 60px rgba(0,0,0,.55); position: relative; overflow: hidden; }
+  canvas { display: block; width: 100%; height: 100%; }
+  #head, #ui { width: min(94vw, 1000px); }
+  #head h1 { margin: 0 0 4px; font-size: 15px; font-weight: 600; letter-spacing: .02em; }
+  #head p { margin: 0; font-size: 12px; line-height: 1.5; color: #9a9aa8; }
+  #ui { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  #ui button { background: #1d1d26; color: #f2f2f6; border: 1px solid #343444;
+    border-radius: 7px; padding: 6px 12px; font-size: 12px; cursor: pointer; }
+  #ui button:hover { background: #272734; }
+  #ui input[type=range] { flex: 1 1 220px; min-width: 150px; accent-color: #7c8cff; }
+  #clock { font-variant-numeric: tabular-nums; font-size: 12px; color: #a9a9ba; min-width: 78px; }
+  #credit { width: min(94vw, 1000px); font-size: 11px; line-height: 1.6; color: #6f6f80; }
+  #credit b { color: #9c9cae; font-weight: 500; }
+  body.export, body.export #app { display: block; width: 640px; height: 360px; min-height: 0;
+    padding: 0; margin: 0; overflow: hidden; background: #000; }
+  body.export #stage { width: 640px; height: 360px; box-shadow: none; }
+  body.export #head, body.export #ui, body.export #credit { display: none; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="head">
+    <h1>H8 · Cobalt Grid</h1>
+    <p>钴蓝方格纸排版：网格从左向右铺开，羊皮纸标题块与钴蓝图版压上，一枚小方块逐格移动。</p>
+  </div>
+  <div id="stage"><canvas id="c" width="640" height="360" aria-label="Cobalt Grid 风格动画示例"></canvas></div>
+  <div id="ui">
+    <button id="play" type="button">暂停</button>
+    <button id="replay" type="button">重播</button>
+    <input id="timeline" type="range" min="0" max="6" step="0.01" value="0" aria-label="时间轴">
+    <span id="clock">0.00 / 6.00s</span>
+  </div>
+  <div id="credit">
+    <b>DeepSeek Harness 生成示例</b>（非原项目样片）· 来源：来自俯仰观照博主的动画画风整理 ·
+    许可：upstream-custom-noncommercial（俯仰观照整理稿，非商业） · 画面与文字均由代码绘制，静音。
+  </div>
+</div>
+<script>
+(() => {
+  'use strict';
+  // ===== 共享脚手架（可改，但导出合同不要破坏）=================================
+  const W = 640, H = 360, DURATION = 6;
+  const EXPORT = new URLSearchParams(location.search).get('export') === '1';
+  const canvas = document.getElementById('c');
+  const ctx = canvas.getContext('2d');
+  const FONT = '"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",sans-serif';
+
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  const lerp = (a, b, t) => a + (b - a) * t;
+  const smooth = t => t * t * (3 - 2 * t);
+  const easeOut = t => 1 - Math.pow(1 - t, 3);
+  const easeIn = t => t * t * t;
+  function rng(seed) { let s = seed >>> 0; return () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; }; }
+
+  // ===== 场景（每个 ID 独立设计；下面的注释区由构建器替换）===================
+  // DESC: 钴蓝方格纸排版：网格从左向右铺开，羊皮纸标题块与钴蓝图版压上，一枚小方块逐格移动。
+// H8 Cobalt Grid · DeepSeek Harness 生成示例
+const H8_PAPER = '#f3ead9', H8_COBALT = '#1f3fae', H8_INK = '#16224a', H8_MUTED = '#6c7690', H8_PALE = '#e3e6f2';
+const H8_SERIF = '"Newsreader","Songti SC","STSong",Georgia,serif';
+
+function h8seg(t, a, b) { return clamp((t - a) / (b - a), 0, 1); }
+function h8ease(t) { return 1 - Math.pow(1 - t, 3); }
+function h8mix(a, b, u) {
+  const pa = parseInt(a.slice(1), 16), pb = parseInt(b.slice(1), 16);
+  return 'rgb(' + Math.round(lerp((pa >> 16) & 255, (pb >> 16) & 255, u)) + ',' +
+    Math.round(lerp((pa >> 8) & 255, (pb >> 8) & 255, u)) + ',' +
+    Math.round(lerp(pa & 255, pb & 255, u)) + ')';
+}
+function h8clip(text, x, y, size, weight, color, p, font) {
+  if (p <= 0) return;
+  const e = h8ease(clamp(p, 0, 1));
+  ctx.save();
+  ctx.font = `${weight} ${size}px ${font || H8_SERIF}`;
+  const tw = ctx.measureText(text).width;
+  ctx.beginPath(); ctx.rect(x - 6, y - size * 1.08, (tw + 12) * e, size * 1.3); ctx.clip();
+  ctx.fillStyle = color; ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+  ctx.fillText(text, x, y);
+  ctx.restore();
+}
+function h8track(text, x, y, gap, size, weight, color, align) {
+  ctx.save(); ctx.font = `${weight} ${size}px ${FONT}`; ctx.fillStyle = color;
+  let total = 0; for (const ch of text) total += ctx.measureText(ch).width + gap;
+  total -= gap;
+  let cx = align === 'right' ? x - total : x;
+  ctx.textAlign = 'left';
+  for (const ch of text) { ctx.fillText(ch, cx, y); cx += ctx.measureText(ch).width + gap; }
+  ctx.restore();
+}
+
+function drawScene(t) {
+  const bu = 0.5 - 0.5 * Math.cos(t * Math.PI * 2 / 6);
+  ctx.fillStyle = h8mix(H8_PAPER, '#ecdfc6', bu * 0.9); ctx.fillRect(0, 0, W, H);
+  ctx.save();
+  ctx.translate(Math.sin(t * 0.7) * 1.8, Math.cos(t * 0.5) * 1.4);
+
+  // 钴蓝网格：先画竖线（从左向右揭示），再画横线
+  const vp = h8ease(h8seg(t, -0.45, 1.05));
+  const hp = h8ease(h8seg(t, -0.25, 0.95));
+  ctx.save();
+  for (let x = 0; x <= W; x += 32) {
+    if (x > W * vp) break;
+    const heavy = x % 128 === 0;
+    ctx.strokeStyle = heavy ? 'rgba(31,63,174,.30)' : 'rgba(31,63,174,.13)';
+    ctx.lineWidth = heavy ? 1.1 : 0.8;
+    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke();
+  }
+  for (let y = 0; y <= H; y += 32) {
+    if (y > H * hp) break;
+    const heavy = y % 128 === 0;
+    ctx.strokeStyle = heavy ? 'rgba(31,63,174,.30)' : 'rgba(31,63,174,.13)';
+    ctx.lineWidth = heavy ? 1.1 : 0.8;
+    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
+  }
+  ctx.restore();
+
+  // 网格交点小十字（左半）
+  ctx.save(); ctx.strokeStyle = 'rgba(31,63,174,.5)'; ctx.lineWidth = 1;
+  for (let i = 0; i < 4; i++) {
+    const x = 64 + i * 128, y = 64 + (i % 2) * 128;
+    const p = h8seg(t, 0.8 + i * 0.15, 1.2 + i * 0.15);
+    if (p <= 0) continue;
+    ctx.globalAlpha = p * 0.8;
+    ctx.beginPath(); ctx.moveTo(x - 4, y); ctx.lineTo(x + 4, y); ctx.moveTo(x, y - 4); ctx.lineTo(x, y + 4); ctx.stroke();
+  }
+  ctx.restore();
+
+  // 羊皮纸标题板：盖住网格，保证文字干净
+  const plateP = h8ease(h8seg(t, -0.3, 0.8));
+  if (plateP > 0) {
+    ctx.save();
+    ctx.fillStyle = H8_PAPER; ctx.fillRect(30, 68, 372, 190 * plateP);
+    ctx.fillStyle = H8_COBALT; ctx.fillRect(30, 68, 5, 190 * plateP);
+    ctx.restore();
+  }
+  // 页眉
+  h8track('COBALT GRID / 08', 40, 50, 2, 10, 700, H8_COBALT);
+  h8track('PARCHMENT · PLATE', 600, 50, 1.8, 9, 600, H8_MUTED, 'right');
+  ctx.save(); ctx.strokeStyle = 'rgba(31,63,174,.45)'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(40, 58); ctx.lineTo(600, 58); ctx.stroke(); ctx.restore();
+
+  // 标题
+  h8clip('网格上的', 46, 132, 42, 700, H8_INK, 0.60 + 0.40 * h8seg(t, -0.2, 0.55));
+  h8clip('一次成形', 46, 184, 42, 700, H8_COBALT, 0.45 + 0.55 * h8seg(t, 0, 0.7));
+  // 小字导语
+  const sp = h8seg(t, 0.9, 1.5);
+  if (sp > 0) {
+    ctx.save(); ctx.globalAlpha = h8ease(sp);
+    ctx.fillStyle = H8_MUTED; ctx.font = `500 13.5px ${FONT}`; ctx.textAlign = 'left';
+    ctx.fillText('把散的念头，放进格子里。', 48, 214);
+    ctx.restore();
+  }
+  // 标题板上的细钴蓝短线
+  ctx.save(); ctx.strokeStyle = H8_COBALT; ctx.lineWidth = 2;
+  const up = h8seg(t, 1.1, 1.6);
+  if (up > 0) { ctx.beginPath(); ctx.moveTo(48, 196); ctx.lineTo(48 + 74 * h8ease(up), 196); ctx.stroke(); }
+  ctx.restore();
+
+  // 右侧钴蓝图版：从下往上揭开
+  const pp = h8ease(h8seg(t, 0.95, 1.75));
+  if (pp > 0) {
+    ctx.save();
+    ctx.beginPath(); ctx.rect(432, 68, 178, 178 * pp); ctx.clip();
+    ctx.fillStyle = H8_COBALT; ctx.fillRect(432, 68, 178, 178);
+    const tp = h8seg(t, 1.5, 2.1);
+    ctx.globalAlpha = h8ease(tp);
+    // 版内白线网格（2×2）
+    ctx.strokeStyle = 'rgba(255,255,255,.28)'; ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(432, 157); ctx.lineTo(610, 157);
+    ctx.moveTo(521, 68); ctx.lineTo(521, 246);
+    ctx.stroke();
+    h8track('PLATE / 08', 448, 88, 1.8, 9, 700, 'rgba(255,255,255,.7)');
+    ctx.fillStyle = '#fff8ec'; ctx.font = `400 58px ${H8_SERIF}`; ctx.textAlign = 'left';
+    ctx.fillText('08', 446, 148);
+    ctx.font = `400 14px ${H8_SERIF}`; ctx.fillStyle = 'rgba(255,255,255,.92)';
+    ctx.fillText('格子不是限制，', 448, 190);
+    ctx.fillText('是让想法有位置。', 448, 210);
+    ctx.fillStyle = 'rgba(255,255,255,.7)'; ctx.font = `500 9px ${FONT}`;
+    ctx.fillText('640 × 360 · 6S LOOP', 448, 234);
+    // 版内进度细线：整段缓慢生长
+    const gp = 0.15 + 0.85 * clamp((t - 1.2) / 4.8, 0, 1);
+    ctx.fillStyle = 'rgba(255,255,255,.22)'; ctx.fillRect(448, 238, 146, 2);
+    ctx.fillStyle = 'rgba(255,255,255,.85)'; ctx.fillRect(448, 238, 146 * gp, 2);
+    ctx.restore();
+  }
+
+  // 底部说明：压在羊皮纸小条上
+  const bp = h8seg(t, 2.3, 2.9);
+  if (bp > 0) {
+    ctx.save(); ctx.globalAlpha = h8ease(bp);
+    ctx.fillStyle = H8_PAPER; ctx.fillRect(30, 282, 292, 38);
+    ctx.strokeStyle = 'rgba(31,63,174,.55)'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(30, 282); ctx.lineTo(30 + 292 * h8ease(bp), 282); ctx.stroke();
+    ctx.fillStyle = H8_INK; ctx.font = `400 14px ${H8_SERIF}`; ctx.textAlign = 'left';
+    ctx.fillText('先画格，再落笔。', 30, 308);
+    ctx.restore();
+  }
+
+  // 页脚
+  h8track('08 / 640 × 360', 600, 330, 1.4, 8, 600, 'rgba(22,34,74,.55)', 'right');
+  h8track('DEEPSEEK HARNESS · 生成示例', 40, 330, 1.2, 8, 600, 'rgba(22,34,74,.45)');
+
+  // 逐格移动的小钴蓝方块 + 当前格框（后半段持续）
+  const hp2 = h8seg(t, 3.1, 3.4);
+  if (hp2 > 0) {
+    const cells = [[448, 272], [480, 272], [512, 272], [544, 272], [512, 272], [480, 272]];
+    const raw = (t - 3.1) / 0.55;
+    const idx = Math.floor(raw) % cells.length;
+    const frac = clamp(raw - Math.floor(raw), 0, 1);
+    const from = cells[idx];
+    const to = cells[(idx + 1) % cells.length];
+    const x = lerp(from[0], to[0], h8ease(frac)) + 16;
+    const y = from[1] + 16;
+    ctx.save();
+    ctx.globalAlpha = hp2 * 0.9;
+    ctx.strokeStyle = H8_COBALT; ctx.lineWidth = 1.2;
+    ctx.strokeRect(x - 12, y - 12, 24, 24);
+    ctx.fillStyle = H8_COBALT; ctx.fillRect(x - 5, y - 5, 10, 10);
+    ctx.restore();
+  }
+
+  ctx.restore();
+}
+
+  // ===== 共享渲染与署名 =======================================================
+  function watermark() {
+    const text = 'DeepSeek Harness 生成示例';
+    ctx.save();
+    ctx.font = '11px ' + FONT;
+    const w = ctx.measureText(text).width + 14;
+    const x = W - w - 8, y = H - 24;
+    ctx.fillStyle = 'rgba(0,0,0,.46)';
+    ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(x, y, w, 18, 4); else ctx.rect(x, y, w, 18);
+    ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,.82)';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(text, x + 7, y + 9.5);
+    ctx.restore();
+  }
+
+  function paint(t) {
+    ctx.save();
+    ctx.clearRect(0, 0, W, H);
+    try { drawScene(t); } catch (err) { console.error(err); }
+    ctx.restore();
+    watermark();
+  }
+
+  function renderAt(seconds) {
+    const t = ((Number(seconds) % DURATION) + DURATION) % DURATION;
+    paint(t);
+    syncUI(t);
+    return t;
+  }
+  window.renderAt = renderAt;
+
+  // ===== 播放、控制、减少动态 =================================================
+  const playBtn = document.getElementById('play');
+  const timeline = document.getElementById('timeline');
+  const clock = document.getElementById('clock');
+  let playing = false, base = 0, start = 0, current = 0;
+  let animationFrame = 0;
+  const reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function syncUI(t) {
+    if (EXPORT) return;
+    current = t;
+    if (timeline) timeline.value = String(t.toFixed(2));
+    if (clock) clock.textContent = t.toFixed(2) + ' / ' + DURATION.toFixed(2) + 's';
+  }
+  function frame(now) {
+    animationFrame = 0;
+    if (!playing) return;
+    const t = ((now - start) / 1000 + base) % DURATION;
+    paint(t);
+    syncUI(t);
+    animationFrame = requestAnimationFrame(frame);
+  }
+  function play() {
+    if (playing) return;
+    playing = true;
+    start = performance.now();
+    base = current;
+    if (playBtn) playBtn.textContent = '暂停';
+    animationFrame = requestAnimationFrame(frame);
+  }
+  function pause() {
+    playing = false;
+    cancelAnimationFrame(animationFrame);
+    animationFrame = 0;
+    if (playBtn) playBtn.textContent = '播放';
+  }
+  if (playBtn) playBtn.addEventListener('click', () => { playing ? pause() : play(); });
+  document.getElementById('replay')?.addEventListener('click', () => {
+    base = 0; start = performance.now(); paint(0); syncUI(0); play();
+  });
+  timeline?.addEventListener('input', () => {
+    pause(); paint(Number(timeline.value)); syncUI(Number(timeline.value));
+  });
+  window.addEventListener('keydown', e => {
+    if (e.code === 'Space') { e.preventDefault(); playing ? pause() : play(); }
+    if (e.key === 'r' || e.key === 'R') { base = 0; start = performance.now(); paint(0); syncUI(0); play(); }
+  });
+
+  if (EXPORT) {
+    document.body.classList.add('export');
+    renderAt(0);
+  } else if (reduced) {
+    renderAt(2.4);
+    pause();
+  } else {
+    renderAt(0);
+    play();
+  }
+})();
+</script>
+</body>
+</html>

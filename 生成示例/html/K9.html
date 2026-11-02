@@ -1,0 +1,427 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>K9 涂鸦 · DeepSeek Harness 生成示例</title>
+<!--
+  Provenance
+  ----------
+  风格来源：code-animation-styles 目录（《来自俯仰观照博主的动画画风整理》整理稿）
+  catalog commit: 01576924a2b316d1f11ae33f75d3c005e8781451
+  style id: K9「涂鸦」
+  license: upstream-custom-noncommercial（俯仰观照整理稿，非商业）
+  本文件：DeepSeek Harness（deepseek-flash）根据该风格提示词新写的候选示例，
+  不是原作者样片，也不是原项目演示；仅用于风格挑选预览。共享的只有时间轴、
+  尺寸、导出接口与页脚署名，画面与动作按本风格重新设计。
+  原文“只输出代码”等语句属于素材的一部分，不覆盖本任务的交付合同。
+-->
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; min-height: 100%; background: #0c0c10; color: #e9e9ee;
+    font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif; }
+  #app { min-height: 100vh; display: flex; flex-direction: column; align-items: center;
+    justify-content: center; gap: 12px; padding: 20px; }
+  #stage { width: min(94vw, 1000px); aspect-ratio: 16 / 9; background: #000;
+    box-shadow: 0 18px 60px rgba(0,0,0,.55); position: relative; overflow: hidden; }
+  canvas { display: block; width: 100%; height: 100%; }
+  #head, #ui { width: min(94vw, 1000px); }
+  #head h1 { margin: 0 0 4px; font-size: 15px; font-weight: 600; letter-spacing: .02em; }
+  #head p { margin: 0; font-size: 12px; line-height: 1.5; color: #9a9aa8; }
+  #ui { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  #ui button { background: #1d1d26; color: #f2f2f6; border: 1px solid #343444;
+    border-radius: 7px; padding: 6px 12px; font-size: 12px; cursor: pointer; }
+  #ui button:hover { background: #272734; }
+  #ui input[type=range] { flex: 1 1 220px; min-width: 150px; accent-color: #7c8cff; }
+  #clock { font-variant-numeric: tabular-nums; font-size: 12px; color: #a9a9ba; min-width: 78px; }
+  #credit { width: min(94vw, 1000px); font-size: 11px; line-height: 1.6; color: #6f6f80; }
+  #credit b { color: #9c9cae; font-weight: 500; }
+  body.export, body.export #app { display: block; width: 640px; height: 360px; min-height: 0;
+    padding: 0; margin: 0; overflow: hidden; background: #000; }
+  body.export #stage { width: 640px; height: 360px; box-shadow: none; }
+  body.export #head, body.export #ui, body.export #credit { display: none; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="head">
+    <h1>K9 · 涂鸦</h1>
+    <p>涂鸦草稿本上，铅笔先打辅助线再描出歪歪扭扭的小人，还留着没擦掉的草稿线。</p>
+  </div>
+  <div id="stage"><canvas id="c" width="640" height="360" aria-label="涂鸦 风格动画示例"></canvas></div>
+  <div id="ui">
+    <button id="play" type="button">暂停</button>
+    <button id="replay" type="button">重播</button>
+    <input id="timeline" type="range" min="0" max="6" step="0.01" value="0" aria-label="时间轴">
+    <span id="clock">0.00 / 6.00s</span>
+  </div>
+  <div id="credit">
+    <b>DeepSeek Harness 生成示例</b>（非原项目样片）· 来源：来自俯仰观照博主的动画画风整理 ·
+    许可：upstream-custom-noncommercial（俯仰观照整理稿，非商业） · 画面与文字均由代码绘制，静音。
+  </div>
+</div>
+<script>
+(() => {
+  'use strict';
+  // ===== 共享脚手架（可改，但导出合同不要破坏）=================================
+  const W = 640, H = 360, DURATION = 6;
+  const EXPORT = new URLSearchParams(location.search).get('export') === '1';
+  const canvas = document.getElementById('c');
+  const ctx = canvas.getContext('2d');
+  const FONT = '"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",sans-serif';
+
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  const lerp = (a, b, t) => a + (b - a) * t;
+  const smooth = t => t * t * (3 - 2 * t);
+  const easeOut = t => 1 - Math.pow(1 - t, 3);
+  const easeIn = t => t * t * t;
+  function rng(seed) { let s = seed >>> 0; return () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; }; }
+
+  // ===== 场景（每个 ID 独立设计；下面的注释区由构建器替换）===================
+  // DESC: 涂鸦草稿本上，铅笔先打辅助线再描出歪歪扭扭的小人，还留着没擦掉的草稿线。
+// K9 涂鸦 · DeepSeek Harness 生成示例
+const K9_PAPER = '#fcfbf6', K9_INK = '#2f2f36', K9_GUIDE = '#9aa9bd', K9_RED = '#d1495b', K9_MARK = '#ffe08a';
+
+function k9seg(t, a, b) { return clamp((t - a) / (b - a), 0, 1); }
+function k9ease(p) { return 1 - Math.pow(1 - p, 3); }
+function k9len(pts) { let s = 0; for (let i = 1; i < pts.length; i++) s += Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]); return s; }
+
+// 抖动 + 逐段揭示：整张画始终有轻微的「呼吸」，像手绘在抖
+function k9line(t, pts, p, color, w, seed, dash) {
+  if (p <= 0) return;
+  const j = pts.map((q, i) => [
+    q[0] + Math.sin(t * 2.4 + seed + i * 1.9) * (dash ? 0.5 : 1.15),
+    q[1] + Math.cos(t * 2.1 + seed * 1.3 + i * 2.3) * (dash ? 0.5 : 1.15),
+  ]);
+  const total = k9len(j);
+  let remain = total * k9ease(clamp(p, 0, 1));
+  ctx.save();
+  ctx.strokeStyle = color; ctx.lineWidth = w; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+  if (dash) ctx.setLineDash(dash);
+  ctx.beginPath(); ctx.moveTo(j[0][0], j[0][1]);
+  for (let i = 1; i < j.length; i++) {
+    const d = Math.hypot(j[i][0] - j[i - 1][0], j[i][1] - j[i - 1][1]);
+    if (remain >= d) { ctx.lineTo(j[i][0], j[i][1]); remain -= d; }
+    else {
+      const f = d ? remain / d : 0;
+      ctx.lineTo(lerp(j[i - 1][0], j[i][0], f), lerp(j[i - 1][1], j[i][1], f));
+      break;
+    }
+  }
+  ctx.stroke(); ctx.restore();
+}
+
+function k9ellipse(t, cx, cy, rx, ry, p, color, w, seed, dash) {
+  const pts = [];
+  const n = 22;
+  const sweep = Math.PI * 2 * clamp(p, 0, 1);
+  for (let i = 0; i <= n; i++) {
+    const a = -Math.PI * 0.6 + (i / n) * sweep;
+    pts.push([cx + Math.cos(a) * rx, cy + Math.sin(a) * ry]);
+  }
+  if (pts.length < 2) return;
+  ctx.save();
+  ctx.strokeStyle = color; ctx.lineWidth = w; ctx.lineCap = 'round';
+  if (dash) ctx.setLineDash(dash);
+  ctx.beginPath();
+  pts.forEach((q, i) => {
+    const x = q[0] + Math.sin(t * 2.4 + seed + i) * 1.1;
+    const y = q[1] + Math.cos(t * 2.1 + seed + i * 1.3) * 1.1;
+    if (i) ctx.lineTo(x, y); else ctx.moveTo(x, y);
+  });
+  ctx.stroke();
+  ctx.restore();
+}
+
+function k9scribble(t, cx, cy, w, h, seed, color, lw, p) {
+  if (p <= 0) return;
+  ctx.save();
+  ctx.strokeStyle = color; ctx.lineWidth = lw; ctx.lineCap = 'round';
+  ctx.beginPath();
+  const n = 16;
+  for (let i = 0; i <= n * clamp(p, 0, 1); i++) {
+    const a = i * 1.9 + seed;
+    const x = cx + Math.cos(a) * (w / 2) * (0.55 + 0.45 * Math.sin(i * 0.7 + t * 2));
+    const y = cy + Math.sin(a * 1.3) * (h / 2);
+    if (i) ctx.lineTo(x, y); else ctx.moveTo(x, y);
+  }
+  ctx.stroke(); ctx.restore();
+}
+
+function drawScene(t) {
+  ctx.fillStyle = K9_PAPER; ctx.fillRect(0, 0, W, H);
+  // 本子的淡横线
+  ctx.save();
+  ctx.strokeStyle = 'rgba(154,169,189,.28)'; ctx.lineWidth = 1;
+  for (let y = 40; y < H; y += 32) {
+    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
+  }
+  ctx.restore();
+
+  const bx = 372, by = 322; // 人物脚底
+  const figY = by - Math.abs(Math.sin(t * 2.6)) * 1.2;
+  const tr = t + 1.55; // 让首帧已经有半张草图
+
+  ctx.save();
+  ctx.translate(bx, by); ctx.scale(0.72, 0.72); ctx.translate(-bx, -by);
+
+  // ---------- 草稿辅助线（一开始就有，后面也不擦掉） ----------
+  const gp = k9seg(tr, 0, 1.1);
+  k9ellipse(t, bx - 6, figY - 268, 42, 46, k9seg(tr, 0, 0.7), K9_GUIDE, 1.4, 1, [5, 6]);
+  k9line(t, [[bx, figY - 320], [bx, figY - 8]], k9seg(tr, 0.15, 0.9), K9_GUIDE, 1.3, 2, [5, 6]);
+  k9line(t, [[bx - 110, figY - 236], [bx + 110, figY - 236]], k9seg(tr, 0.3, 1.0), K9_GUIDE, 1.3, 3, [5, 6]);
+  k9line(t, [[bx - 26, figY - 274], [bx + 26, figY - 274]], k9seg(tr, 0.45, 1.05), K9_GUIDE, 1.3, 4, [5, 6]);
+  k9line(t, [[bx, figY - 300], [bx, figY - 240]], k9seg(tr, 0.6, 1.1), K9_GUIDE, 1.3, 5, [5, 6]);
+  // 画的定位十字
+  k9line(t, [[bx - 34, figY - 300], [bx + 34, figY - 300]], k9seg(tr, 0.7, 1.15), K9_GUIDE, 1.2, 6, [4, 7]);
+  // 反复找形的第二遍轮廓
+  k9ellipse(t, bx - 2, figY - 266, 34, 38, k9seg(tr, 0.85, 1.5), 'rgba(154,169,189,.75)', 1.2, 7);
+  k9ellipse(t, bx + 2, figY - 264, 31, 35, k9seg(tr, 1.1, 1.7), 'rgba(154,169,189,.6)', 1.2, 8);
+
+  // ---------- 墨线：头 ----------
+  const headP = k9seg(tr, 1.0, 1.9);
+  k9ellipse(t, bx, figY - 266, 33, 37, headP, K9_INK, 2.6, 11);
+
+  // 兜帽
+  const hoodP = k9seg(tr, 1.3, 2.1);
+  k9line(t, [
+    [bx - 30, figY - 246], [bx - 48, figY - 230], [bx - 52, figY - 206],
+    [bx - 44, figY - 190], [bx + 44, figY - 190], [bx + 52, figY - 206],
+    [bx + 48, figY - 230], [bx + 30, figY - 246],
+  ], hoodP, K9_INK, 2.6, 12);
+
+  // 身体
+  const bodyP = k9seg(tr, 1.5, 2.4);
+  k9line(t, [
+    [bx - 48, figY - 190], [bx - 56, figY - 150], [bx - 50, figY - 92],
+    [bx - 46, figY - 40], [bx + 46, figY - 40], [bx + 50, figY - 92],
+    [bx + 56, figY - 150], [bx + 48, figY - 190],
+  ], bodyP, K9_INK, 2.6, 13);
+  // 下摆
+  k9line(t, [[bx - 46, figY - 40], [bx - 40, figY - 34], [bx + 40, figY - 34], [bx + 46, figY - 40]], k9seg(tr, 2.0, 2.5), K9_INK, 2.4, 14);
+  // 口袋
+  k9line(t, [[bx - 30, figY - 96], [bx - 4, figY - 90]], k9seg(tr, 2.1, 2.5), K9_INK, 2.2, 15);
+  k9line(t, [[bx + 30, figY - 96], [bx + 4, figY - 90]], k9seg(tr, 2.15, 2.55), K9_INK, 2.2, 16);
+
+  // 腿和鞋
+  const legP = k9seg(tr, 2.1, 2.8);
+  k9line(t, [[bx - 22, figY - 40], [bx - 26, figY - 8], [bx - 34, figY - 2]], legP, K9_INK, 2.4, 17);
+  k9line(t, [[bx + 22, figY - 40], [bx + 26, figY - 8], [bx + 36, figY - 2]], k9seg(tr, 2.2, 2.9), K9_INK, 2.4, 18);
+
+  // 手臂：先画歪了一次，再补一条
+  const armP = k9seg(tr, 2.4, 3.1);
+  k9line(t, [[bx - 48, figY - 182], [bx - 74, figY - 130], [bx - 62, figY - 92]], armP, K9_INK, 2.4, 19);
+  // 画歪的那一版（虚线保留）
+  k9line(t, [[bx - 50, figY - 180], [bx - 84, figY - 146], [bx - 88, figY - 108]], k9seg(tr, 2.6, 3.1), 'rgba(47,47,54,.35)', 1.6, 20, [4, 5]);
+  k9line(t, [[bx + 48, figY - 182], [bx + 74, figY - 132], [bx + 62, figY - 92]], k9seg(tr, 2.7, 3.3), K9_INK, 2.4, 21);
+
+  // 脸
+  const faceP = k9seg(tr, 2.7, 3.4);
+  if (faceP > 0.2) {
+    ctx.save();
+    ctx.fillStyle = K9_INK;
+    const blink = ((t + 0.8) % 3.4) < 0.1 ? 0.2 : 1;
+    ctx.beginPath(); ctx.ellipse(bx - 11, figY - 272, 2.6, 3.4 * blink, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(bx + 11, figY - 270, 2.6, 3.2 * blink, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.restore();
+    // 歪嘴
+    k9line(t, [[bx - 7, figY - 256], [bx + 1, figY - 252], [bx + 8, figY - 255]], k9seg(tr, 3.2, 3.6), K9_INK, 2.2, 22);
+    // 头发乱涂
+    k9scribble(t, bx - 2, figY - 302, 62, 22, 1.2, 'rgba(47,47,54,.8)', 1.8, k9seg(tr, 3.1, 3.9));
+  }
+
+  // 高亮马克笔：给嘴角补一刀
+  // 红笔批注：圈一下头，写「又画大了」
+  const redP = k9seg(tr, 3.8, 4.7);
+  if (redP > 0) {
+    ctx.save();
+    ctx.strokeStyle = K9_RED; ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.ellipse(bx + 2, figY - 268, 46 * k9ease(redP), 50 * k9ease(redP), 0.12, 0.3, Math.PI * 2 - 0.2);
+    ctx.stroke();
+    ctx.restore();
+    // 箭头
+    const arP = k9seg(tr, 4.2, 4.8);
+    k9line(t, [[bx + 96, figY - 316], [bx + 62, figY - 296], [bx + 46, figY - 280]], arP, K9_RED, 1.9, 23);
+    if (arP > 0.9) {
+      ctx.save(); ctx.fillStyle = K9_RED;
+      ctx.beginPath();
+      ctx.moveTo(bx + 44, figY - 277); ctx.lineTo(bx + 58, figY - 279); ctx.lineTo(bx + 50, figY - 290);
+      ctx.closePath(); ctx.fill(); ctx.restore();
+    }
+  }
+
+  // 手写批注
+  const noteP = k9seg(tr, 4.0, 4.8);
+  if (noteP > 0) {
+    ctx.save();
+    ctx.globalAlpha = noteP;
+    ctx.translate(bx + 116, figY - 336);
+    ctx.rotate(-0.06 + Math.sin(t * 1.4) * 0.008);
+    ctx.fillStyle = K9_RED; ctx.font = `700 16px ${FONT}`; ctx.textAlign = 'left';
+    ctx.fillText('头又画大了', 0, 0);
+    ctx.strokeStyle = K9_RED; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(-2, 6); ctx.lineTo(96, 8); ctx.stroke();
+    ctx.restore();
+  }
+
+  // 手写标注：草稿线
+  const note2 = k9seg(tr, 2.0, 2.7);
+  if (note2 > 0) {
+    ctx.save();
+    ctx.globalAlpha = 0.8 * note2;
+    ctx.fillStyle = K9_GUIDE; ctx.font = `600 14px ${FONT}`;
+    ctx.fillText('先打个框', bx - 150, figY - 300);
+    ctx.strokeStyle = K9_GUIDE; ctx.lineWidth = 1.4;
+    ctx.beginPath(); ctx.moveTo(bx - 86, figY - 296); ctx.lineTo(bx - 46, figY - 286); ctx.stroke();
+    ctx.restore();
+  }
+
+  ctx.restore();
+
+  // 角落里的小涂鸦
+  ctx.save();
+  ctx.globalAlpha = 0.5 + 0.3 * Math.sin(t * 2);
+  ctx.strokeStyle = K9_INK; ctx.lineWidth = 1.8; ctx.lineCap = 'round';
+  for (const [x, y, s] of [[96, 268, 1], [130, 288, 0.7]]) {
+    ctx.beginPath();
+    ctx.arc(x, y - 10 * s, 10 * s, -0.4, Math.PI * 1.2);
+    ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(x - 8 * s, y + 2 * s); ctx.lineTo(x + 8 * s, y + 2 * s); ctx.stroke();
+  }
+  ctx.restore();
+
+  // 文字
+  ctx.save();
+  ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+  ctx.fillStyle = K9_INK; ctx.font = `800 32px ${FONT}`;
+  ctx.fillText('画歪了也没事', 40, 74);
+  ctx.fillStyle = 'rgba(47,47,54,.62)'; ctx.font = `600 14px ${FONT}`;
+  ctx.fillText('草稿线就留在纸上', 40, 100);
+  ctx.restore();
+  // 标题下的歪underline
+  const ulP = k9seg(t, 0.6, 1.6);
+  k9line(t, [[40, 88], [90, 90], [150, 87], [210, 91], [268, 88]], ulP, K9_MARK, 9, 30);
+
+  // 黄色马克笔：把结论划出来
+  const hlP = k9seg(t, 4.3, 5.0);
+  if (hlP > 0) {
+    ctx.save();
+    ctx.globalAlpha = 0.6 * k9ease(hlP);
+    ctx.fillStyle = K9_MARK;
+    if (ctx.roundRect) { ctx.beginPath(); ctx.roundRect(34, 312, 150 * k9ease(hlP), 24, 6); } else { ctx.beginPath(); ctx.rect(34, 312, 150 * k9ease(hlP), 24); }
+    ctx.fill();
+    ctx.restore();
+  }
+
+  const capP = k9seg(t, 4.6, 5.3);
+  if (capP > 0) {
+    ctx.save(); ctx.globalAlpha = capP;
+    ctx.fillStyle = K9_INK; ctx.font = `700 17px ${FONT}`;
+    ctx.fillText('反正是草稿', 40, 330);
+    ctx.restore();
+  }
+
+  ctx.save();
+  ctx.globalAlpha = 0.42; ctx.fillStyle = K9_INK; ctx.font = `500 13px ${FONT}`;
+  ctx.fillText('K9 · 涂鸦 / doodle sketch', 40, 28);
+  ctx.restore();
+}
+
+  // ===== 共享渲染与署名 =======================================================
+  function watermark() {
+    const text = 'DeepSeek Harness 生成示例';
+    ctx.save();
+    ctx.font = '11px ' + FONT;
+    const w = ctx.measureText(text).width + 14;
+    const x = W - w - 8, y = H - 24;
+    ctx.fillStyle = 'rgba(0,0,0,.46)';
+    ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(x, y, w, 18, 4); else ctx.rect(x, y, w, 18);
+    ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,.82)';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(text, x + 7, y + 9.5);
+    ctx.restore();
+  }
+
+  function paint(t) {
+    ctx.save();
+    ctx.clearRect(0, 0, W, H);
+    try { drawScene(t); } catch (err) { console.error(err); }
+    ctx.restore();
+    watermark();
+  }
+
+  function renderAt(seconds) {
+    const t = ((Number(seconds) % DURATION) + DURATION) % DURATION;
+    paint(t);
+    syncUI(t);
+    return t;
+  }
+  window.renderAt = renderAt;
+
+  // ===== 播放、控制、减少动态 =================================================
+  const playBtn = document.getElementById('play');
+  const timeline = document.getElementById('timeline');
+  const clock = document.getElementById('clock');
+  let playing = false, base = 0, start = 0, current = 0;
+  let animationFrame = 0;
+  const reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function syncUI(t) {
+    if (EXPORT) return;
+    current = t;
+    if (timeline) timeline.value = String(t.toFixed(2));
+    if (clock) clock.textContent = t.toFixed(2) + ' / ' + DURATION.toFixed(2) + 's';
+  }
+  function frame(now) {
+    animationFrame = 0;
+    if (!playing) return;
+    const t = ((now - start) / 1000 + base) % DURATION;
+    paint(t);
+    syncUI(t);
+    animationFrame = requestAnimationFrame(frame);
+  }
+  function play() {
+    if (playing) return;
+    playing = true;
+    start = performance.now();
+    base = current;
+    if (playBtn) playBtn.textContent = '暂停';
+    animationFrame = requestAnimationFrame(frame);
+  }
+  function pause() {
+    playing = false;
+    cancelAnimationFrame(animationFrame);
+    animationFrame = 0;
+    if (playBtn) playBtn.textContent = '播放';
+  }
+  if (playBtn) playBtn.addEventListener('click', () => { playing ? pause() : play(); });
+  document.getElementById('replay')?.addEventListener('click', () => {
+    base = 0; start = performance.now(); paint(0); syncUI(0); play();
+  });
+  timeline?.addEventListener('input', () => {
+    pause(); paint(Number(timeline.value)); syncUI(Number(timeline.value));
+  });
+  window.addEventListener('keydown', e => {
+    if (e.code === 'Space') { e.preventDefault(); playing ? pause() : play(); }
+    if (e.key === 'r' || e.key === 'R') { base = 0; start = performance.now(); paint(0); syncUI(0); play(); }
+  });
+
+  if (EXPORT) {
+    document.body.classList.add('export');
+    renderAt(0);
+  } else if (reduced) {
+    renderAt(2.4);
+    pause();
+  } else {
+    renderAt(0);
+    play();
+  }
+})();
+</script>
+</body>
+</html>

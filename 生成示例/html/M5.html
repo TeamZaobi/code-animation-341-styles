@@ -1,0 +1,368 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>M5 一镜到底 · DeepSeek Harness 生成示例</title>
+<!--
+  Provenance
+  ----------
+  风格来源：code-animation-styles 目录（《来自俯仰观照博主的动画画风整理》整理稿）
+  catalog commit: 01576924a2b316d1f11ae33f75d3c005e8781451
+  style id: M5「一镜到底」
+  license: upstream-custom-noncommercial（俯仰观照整理稿，非商业）
+  本文件：DeepSeek Harness（deepseek-flash）根据该风格提示词新写的候选示例，
+  不是原作者样片，也不是原项目演示；仅用于风格挑选预览。共享的只有时间轴、
+  尺寸、导出接口与页脚署名，画面与动作按本风格重新设计。
+  原文“只输出代码”等语句属于素材的一部分，不覆盖本任务的交付合同。
+-->
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; min-height: 100%; background: #0c0c10; color: #e9e9ee;
+    font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif; }
+  #app { min-height: 100vh; display: flex; flex-direction: column; align-items: center;
+    justify-content: center; gap: 12px; padding: 20px; }
+  #stage { width: min(94vw, 1000px); aspect-ratio: 16 / 9; background: #000;
+    box-shadow: 0 18px 60px rgba(0,0,0,.55); position: relative; overflow: hidden; }
+  canvas { display: block; width: 100%; height: 100%; }
+  #head, #ui { width: min(94vw, 1000px); }
+  #head h1 { margin: 0 0 4px; font-size: 15px; font-weight: 600; letter-spacing: .02em; }
+  #head p { margin: 0; font-size: 12px; line-height: 1.5; color: #9a9aa8; }
+  #ui { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  #ui button { background: #1d1d26; color: #f2f2f6; border: 1px solid #343444;
+    border-radius: 7px; padding: 6px 12px; font-size: 12px; cursor: pointer; }
+  #ui button:hover { background: #272734; }
+  #ui input[type=range] { flex: 1 1 220px; min-width: 150px; accent-color: #7c8cff; }
+  #clock { font-variant-numeric: tabular-nums; font-size: 12px; color: #a9a9ba; min-width: 78px; }
+  #credit { width: min(94vw, 1000px); font-size: 11px; line-height: 1.6; color: #6f6f80; }
+  #credit b { color: #9c9cae; font-weight: 500; }
+  body.export, body.export #app { display: block; width: 640px; height: 360px; min-height: 0;
+    padding: 0; margin: 0; overflow: hidden; background: #000; }
+  body.export #stage { width: 640px; height: 360px; box-shadow: none; }
+  body.export #head, body.export #ui, body.export #credit { display: none; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="head">
+    <h1>M5 · 一镜到底</h1>
+    <p>一条横线里升起一句话，按钮摊开成一页，松绿铺满画面后它自己往前走——全程一镜不切。</p>
+  </div>
+  <div id="stage"><canvas id="c" width="640" height="360" aria-label="一镜到底 风格动画示例"></canvas></div>
+  <div id="ui">
+    <button id="play" type="button">暂停</button>
+    <button id="replay" type="button">重播</button>
+    <input id="timeline" type="range" min="0" max="6" step="0.01" value="0" aria-label="时间轴">
+    <span id="clock">0.00 / 6.00s</span>
+  </div>
+  <div id="credit">
+    <b>DeepSeek Harness 生成示例</b>（非原项目样片）· 来源：来自俯仰观照博主的动画画风整理 ·
+    许可：upstream-custom-noncommercial（俯仰观照整理稿，非商业） · 画面与文字均由代码绘制，静音。
+  </div>
+</div>
+<script>
+(() => {
+  'use strict';
+  // ===== 共享脚手架（可改，但导出合同不要破坏）=================================
+  const W = 640, H = 360, DURATION = 6;
+  const EXPORT = new URLSearchParams(location.search).get('export') === '1';
+  const canvas = document.getElementById('c');
+  const ctx = canvas.getContext('2d');
+  const FONT = '"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",sans-serif';
+
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  const lerp = (a, b, t) => a + (b - a) * t;
+  const smooth = t => t * t * (3 - 2 * t);
+  const easeOut = t => 1 - Math.pow(1 - t, 3);
+  const easeIn = t => t * t * t;
+  function rng(seed) { let s = seed >>> 0; return () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; }; }
+
+  // ===== 场景（每个 ID 独立设计；下面的注释区由构建器替换）===================
+  // DESC: 一条横线里升起一句话，按钮摊开成一页，松绿铺满画面后它自己往前走——全程一镜不切。
+// M5 一镜到底 · DeepSeek Harness 生成示例
+const M5_CREAM = '#f2ede2', M5_INK = '#14140f', M5_PINE = '#14514a', M5_WHITE = '#fbf8f0';
+
+function m5p(t, a, b) { return clamp((t - a) / (b - a), 0, 1); }
+
+const M5_CAM = [[0, 0], [1.5, 0], [3.0, 540], [4.5, 1010], [6.0, 1060]];
+function m5cam(t) {
+  for (let i = 1; i < M5_CAM.length; i++) {
+    const [t0, x0] = M5_CAM[i - 1], [t1, x1] = M5_CAM[i];
+    if (t <= t1) return lerp(x0, x1, smooth(clamp((t - t0) / (t1 - t0), 0, 1)));
+  }
+  return 1060;
+}
+
+function m5Rise(text, x, y, size, color, p, weight) {
+  if (p <= 0) return;
+  const e = 1 - Math.pow(1 - clamp(p, 0, 1), 3);
+  ctx.save();
+  ctx.font = `${weight || 800} ${size}px ${FONT}`;
+  const tw = ctx.measureText(text).width;
+  // 从左到右擦出，同时微微顶起来：字像是从线上长出来的
+  ctx.beginPath();
+  ctx.rect(x - 14, y - size * 1.24, (tw + 30) * e, size * 1.5);
+  ctx.clip();
+  ctx.fillStyle = color;
+  ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+  ctx.fillText(text, x, y + (1 - e) * size * 0.2);
+  ctx.restore();
+}
+
+function m5label(text, x, y, color, p) {
+  if (p <= 0) return;
+  ctx.save();
+  ctx.globalAlpha = clamp(p * 1.8, 0, 1) * 0.9;
+  ctx.fillStyle = color; ctx.font = `500 14px ${FONT}`;
+  ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+  ctx.fillText(text, x, y);
+  ctx.restore();
+}
+
+function m5mix(a, b, p) {
+  const q = clamp(p, 0, 1);
+  return 'rgb(' + Math.round(lerp(a[0], b[0], q)) + ',' + Math.round(lerp(a[1], b[1], q)) + ',' + Math.round(lerp(a[2], b[2], q)) + ')';
+}
+
+function m5rr(x, y, w, h, r) {
+  ctx.beginPath();
+  if (ctx.roundRect) ctx.roundRect(x, y, w, h, r); else ctx.rect(x, y, w, h);
+}
+
+function drawScene(t) {
+  ctx.fillStyle = M5_CREAM; ctx.fillRect(0, 0, W, H);
+
+  const cam = m5cam(t);
+  const sc = 1 + 0.03 * smooth(t / 6);
+
+  ctx.save();
+  ctx.translate(W / 2, H / 2);
+  ctx.scale(sc, sc);
+  ctx.translate(-W / 2, -H / 2);
+  ctx.translate(-cam, 0);
+
+  // ---------- 第一段：线 → 字 ----------
+  const lp = 1 - Math.pow(1 - m5p(t, -0.4, 0.7), 3);
+  ctx.save();
+  ctx.strokeStyle = M5_INK; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(64, 214); ctx.lineTo(64 + 536 * lp, 214); ctx.stroke();
+  ctx.restore();
+  m5label('一镜到底 · 每个镜头只做一次缓动', 64, 128, 'rgba(20,20,15,.58)', m5p(t, -0.3, 0.4));
+  m5Rise('有个想法', 78, 210, 46, M5_INK, m5p(t, -0.18, 0.95), 800);
+  m5label('先得有一条线', 78, 244, 'rgba(20,20,15,.55)', m5p(t, 0.55, 1.05));
+
+  // 线头继续往右爬，接到按钮
+  const lp2 = 1 - Math.pow(1 - m5p(t, 0.9, 1.7), 3);
+  if (lp2 > 0) {
+    ctx.save();
+    ctx.strokeStyle = M5_INK; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(600, 214); ctx.lineTo(600 + 54 * lp2, 214); ctx.stroke();
+    ctx.fillStyle = M5_PINE;
+    ctx.beginPath(); ctx.arc(600 + 54 * lp2, 214, 4, 0, Math.PI * 2); ctx.fill();
+    ctx.restore();
+  }
+
+  // ---------- 第二段：按钮摊开成页面 ----------
+  const gp = m5p(t, 1.15, 3.0);
+  if (gp > 0) {
+    const e = 1 - Math.pow(1 - clamp(gp, 0, 1), 3);
+    const rx = lerp(650, 600, e), ry = lerp(186, 92, e);
+    const rw = lerp(160, 356, e), rh = lerp(48, 208, e), rr = lerp(24, 14, e);
+    const cf = clamp((e - 0.16) / 0.48, 0, 1);           // 松绿 → 纸白
+    // 投影
+    ctx.save();
+    ctx.translate(7, 8);
+    m5rr(rx, ry, rw, rh, rr);
+    ctx.fillStyle = `rgba(20,20,15,${(0.04 + 0.075 * cf).toFixed(3)})`;
+    ctx.fill();
+    ctx.restore();
+    // 本体（按钮和页面是同一个东西）
+    ctx.save();
+    m5rr(rx, ry, rw, rh, rr);
+    ctx.fillStyle = m5mix([20, 81, 74], [251, 248, 240], cf);
+    ctx.fill();
+    ctx.strokeStyle = m5mix([20, 81, 74], [20, 20, 15], cf);
+    ctx.lineWidth = 2; ctx.stroke();
+    // 按钮上的字
+    if (e < 0.58) {
+      ctx.globalAlpha = 1 - e / 0.58;
+      ctx.fillStyle = M5_CREAM;
+      ctx.font = `700 ${(22 - 2 * e).toFixed(1)}px ${FONT}`;
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText('开始', rx + rw / 2, ry + rh / 2);
+      ctx.globalAlpha = 1;
+    }
+    // 展开后才有内容：标题栏与三行
+    if (e > 0.7) {
+      const cp = clamp((e - 0.7) / 0.3, 0, 1);
+      ctx.save();
+      m5rr(rx, ry, rw, rh, rr); ctx.clip();
+      ctx.fillStyle = M5_PINE;
+      ctx.fillRect(rx, ry, rw, 34 * cp);
+      ctx.fillStyle = M5_CREAM; ctx.font = `700 19px ${FONT}`;
+      ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+      ctx.globalAlpha = clamp((cp - 0.72) / 0.25, 0, 1);
+      ctx.fillText('今天要做的事', rx + 18, ry + 17);
+      ctx.globalAlpha = 1;
+      const rows = ['整理表格', '写周报', '发出去'];
+      rows.forEach((label, i) => {
+        const rp = clamp((cp - i * 0.16) / 0.5, 0, 1);
+        if (rp <= 0) return;
+        const yy = ry + 58 + i * 46;
+        const w = 300 * (1 - Math.pow(1 - rp, 3));
+        ctx.fillStyle = 'rgba(20,20,15,.07)';
+        m5rr(rx + 22, yy, w, 34, 8); ctx.fill();
+        ctx.fillStyle = M5_PINE;
+        m5rr(rx + 22, yy, 4, 34, 2); ctx.fill();
+        ctx.globalAlpha = rp;
+        ctx.fillStyle = M5_INK; ctx.font = `500 15px ${FONT}`;
+        ctx.fillText(label, rx + 38, yy + 17);
+        ctx.globalAlpha = 1;
+      });
+      ctx.restore();
+    }
+    ctx.restore();
+  }
+
+  // ---------- 第三段：颜色铺满画面，切到下一段 ----------
+  ctx.save();
+  ctx.fillStyle = M5_PINE;
+  ctx.fillRect(1000, 0, 820, H);
+  ctx.fillStyle = 'rgba(251,248,240,.85)';
+  ctx.fillRect(1000, 0, 2.5, H);
+  ctx.restore();
+
+  const fp = m5p(t, 4.5, 5.0);
+  if (fp > 0) {
+    m5label('现在，坐进去就行', 1122, 128, 'rgba(242,237,226,.62)', fp);
+    m5Rise('它自己会走', 1122, 200, 44, M5_CREAM, m5p(t, 4.55, 5.35), 800);
+
+    // 轨道
+    const trp = m5p(t, 4.65, 5.25);
+    if (trp > 0) {
+      ctx.save();
+      ctx.strokeStyle = 'rgba(242,237,226,.42)'; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(1122, 246); ctx.lineTo(1122 + 440 * (1 - Math.pow(1 - trp, 3)), 246); ctx.stroke();
+      ctx.restore();
+    }
+    const mp = m5p(t, 4.95, 5.9);
+    if (mp > 0) {
+      const e = smooth(mp);
+      const x = lerp(1132, 1500, e);
+      ctx.save();
+      ctx.fillStyle = M5_CREAM;
+      m5rr(x, 233, 62, 26, 13); ctx.fill();
+      ctx.fillStyle = M5_PINE;
+      ctx.beginPath(); ctx.arc(x + 46, 246, 5, 0, Math.PI * 2); ctx.fill();
+      // 速度线
+      ctx.strokeStyle = 'rgba(242,237,226,.5)'; ctx.lineWidth = 1.6;
+      for (let i = 0; i < 3; i++) {
+        ctx.beginPath();
+        ctx.moveTo(x - 12 - i * 9, 238 + i * 8);
+        ctx.lineTo(x - 30 - i * 9, 238 + i * 8);
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+  }
+
+  ctx.restore();
+}
+
+  // ===== 共享渲染与署名 =======================================================
+  function watermark() {
+    const text = 'DeepSeek Harness 生成示例';
+    ctx.save();
+    ctx.font = '11px ' + FONT;
+    const w = ctx.measureText(text).width + 14;
+    const x = W - w - 8, y = H - 24;
+    ctx.fillStyle = 'rgba(0,0,0,.46)';
+    ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(x, y, w, 18, 4); else ctx.rect(x, y, w, 18);
+    ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,.82)';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(text, x + 7, y + 9.5);
+    ctx.restore();
+  }
+
+  function paint(t) {
+    ctx.save();
+    ctx.clearRect(0, 0, W, H);
+    try { drawScene(t); } catch (err) { console.error(err); }
+    ctx.restore();
+    watermark();
+  }
+
+  function renderAt(seconds) {
+    const t = ((Number(seconds) % DURATION) + DURATION) % DURATION;
+    paint(t);
+    syncUI(t);
+    return t;
+  }
+  window.renderAt = renderAt;
+
+  // ===== 播放、控制、减少动态 =================================================
+  const playBtn = document.getElementById('play');
+  const timeline = document.getElementById('timeline');
+  const clock = document.getElementById('clock');
+  let playing = false, base = 0, start = 0, current = 0;
+  let animationFrame = 0;
+  const reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function syncUI(t) {
+    if (EXPORT) return;
+    current = t;
+    if (timeline) timeline.value = String(t.toFixed(2));
+    if (clock) clock.textContent = t.toFixed(2) + ' / ' + DURATION.toFixed(2) + 's';
+  }
+  function frame(now) {
+    animationFrame = 0;
+    if (!playing) return;
+    const t = ((now - start) / 1000 + base) % DURATION;
+    paint(t);
+    syncUI(t);
+    animationFrame = requestAnimationFrame(frame);
+  }
+  function play() {
+    if (playing) return;
+    playing = true;
+    start = performance.now();
+    base = current;
+    if (playBtn) playBtn.textContent = '暂停';
+    animationFrame = requestAnimationFrame(frame);
+  }
+  function pause() {
+    playing = false;
+    cancelAnimationFrame(animationFrame);
+    animationFrame = 0;
+    if (playBtn) playBtn.textContent = '播放';
+  }
+  if (playBtn) playBtn.addEventListener('click', () => { playing ? pause() : play(); });
+  document.getElementById('replay')?.addEventListener('click', () => {
+    base = 0; start = performance.now(); paint(0); syncUI(0); play();
+  });
+  timeline?.addEventListener('input', () => {
+    pause(); paint(Number(timeline.value)); syncUI(Number(timeline.value));
+  });
+  window.addEventListener('keydown', e => {
+    if (e.code === 'Space') { e.preventDefault(); playing ? pause() : play(); }
+    if (e.key === 'r' || e.key === 'R') { base = 0; start = performance.now(); paint(0); syncUI(0); play(); }
+  });
+
+  if (EXPORT) {
+    document.body.classList.add('export');
+    renderAt(0);
+  } else if (reduced) {
+    renderAt(2.4);
+    pause();
+  } else {
+    renderAt(0);
+    play();
+  }
+})();
+</script>
+</body>
+</html>
