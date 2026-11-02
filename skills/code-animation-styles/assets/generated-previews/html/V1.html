@@ -1,0 +1,446 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>V1 逐帧手绘 / 抖动线条 · DeepSeek Harness 生成示例</title>
+<!--
+  Provenance
+  ----------
+  风格来源：code-animation-styles 目录（《来自俯仰观照博主的动画画风整理》整理稿）
+  catalog commit: 01576924a2b316d1f11ae33f75d3c005e8781451
+  style id: V1「逐帧手绘 / 抖动线条」
+  license: MIT（mg-styles-15，Copyright (c) 2026 Vincentwei1021）
+  本文件：DeepSeek Harness（deepseek-flash）根据该风格提示词新写的候选示例，
+  不是原作者样片，也不是原项目演示；仅用于风格挑选预览。共享的只有时间轴、
+  尺寸、导出接口与页脚署名，画面与动作按本风格重新设计。
+  原文“只输出代码”等语句属于素材的一部分，不覆盖本任务的交付合同。
+-->
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; min-height: 100%; background: #0c0c10; color: #e9e9ee;
+    font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif; }
+  #app { min-height: 100vh; display: flex; flex-direction: column; align-items: center;
+    justify-content: center; gap: 12px; padding: 20px; }
+  #stage { width: min(94vw, 1000px); aspect-ratio: 16 / 9; background: #000;
+    box-shadow: 0 18px 60px rgba(0,0,0,.55); position: relative; overflow: hidden; }
+  canvas { display: block; width: 100%; height: 100%; }
+  #head, #ui { width: min(94vw, 1000px); }
+  #head h1 { margin: 0 0 4px; font-size: 15px; font-weight: 600; letter-spacing: .02em; }
+  #head p { margin: 0; font-size: 12px; line-height: 1.5; color: #9a9aa8; }
+  #ui { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  #ui button { background: #1d1d26; color: #f2f2f6; border: 1px solid #343444;
+    border-radius: 7px; padding: 6px 12px; font-size: 12px; cursor: pointer; }
+  #ui button:hover { background: #272734; }
+  #ui input[type=range] { flex: 1 1 220px; min-width: 150px; accent-color: #7c8cff; }
+  #clock { font-variant-numeric: tabular-nums; font-size: 12px; color: #a9a9ba; min-width: 78px; }
+  #credit { width: min(94vw, 1000px); font-size: 11px; line-height: 1.6; color: #6f6f80; }
+  #credit b { color: #9c9cae; font-weight: 500; }
+  body.export, body.export #app { display: block; width: 640px; height: 360px; min-height: 0;
+    padding: 0; margin: 0; overflow: hidden; background: #000; }
+  body.export #stage { width: 640px; height: 360px; box-shadow: none; }
+  body.export #head, body.export #ui, body.export #credit { display: none; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="head">
+    <h1>V1 · 逐帧手绘 / 抖动线条</h1>
+    <p>纸面手绘逐帧：桌上火柴一划，火苗精灵跳出来跳舞，炸成烟与星火，最后重组成手写字「想法成形」。</p>
+  </div>
+  <div id="stage"><canvas id="c" width="640" height="360" aria-label="逐帧手绘 / 抖动线条 风格动画示例"></canvas></div>
+  <div id="ui">
+    <button id="play" type="button">暂停</button>
+    <button id="replay" type="button">重播</button>
+    <input id="timeline" type="range" min="0" max="6" step="0.01" value="0" aria-label="时间轴">
+    <span id="clock">0.00 / 6.00s</span>
+  </div>
+  <div id="credit">
+    <b>DeepSeek Harness 生成示例</b>（非原项目样片）· 来源：来自俯仰观照博主的动画画风整理 ·
+    许可：MIT（mg-styles-15，Copyright (c) 2026 Vincentwei1021） · 画面与文字均由代码绘制，静音。
+  </div>
+</div>
+<script>
+(() => {
+  'use strict';
+  // ===== 共享脚手架（可改，但导出合同不要破坏）=================================
+  const W = 640, H = 360, DURATION = 6;
+  const EXPORT = new URLSearchParams(location.search).get('export') === '1';
+  const canvas = document.getElementById('c');
+  const ctx = canvas.getContext('2d');
+  const FONT = '"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",sans-serif';
+
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  const lerp = (a, b, t) => a + (b - a) * t;
+  const smooth = t => t * t * (3 - 2 * t);
+  const easeOut = t => 1 - Math.pow(1 - t, 3);
+  const easeIn = t => t * t * t;
+  function rng(seed) { let s = seed >>> 0; return () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; }; }
+
+  // ===== 场景（每个 ID 独立设计；下面的注释区由构建器替换）===================
+  // DESC: 纸面手绘逐帧：桌上火柴一划，火苗精灵跳出来跳舞，炸成烟与星火，最后重组成手写字「想法成形」。
+// V1 逐帧手绘 / 线条沸腾 · DeepSeek Harness 生成示例
+const V1_PAPER = '#f2e4c8', V1_INK = '#201a16', V1_RED = '#e2492f', V1_YELLOW = '#f6b73c', V1_CREAM = '#fff8e8';
+
+const V1_GRAIN = (() => {
+  const r = rng(2404);
+  return Array.from({ length: 620 }, () => ({ x: r() * W, y: r() * H, a: 0.02 + r() * 0.06, s: 0.5 + r() * 1.2 }));
+})();
+
+let V1_V = 0; // 当前 boil 变体（每 2 帧换一次）
+function v1seg(t, a, b) { return clamp((t - a) / (b - a), 0, 1); }
+function v1ease(t) { return 1 - Math.pow(1 - t, 3); }
+function v1jit(seed, amp) { return Math.sin(seed * 12.9898 + V1_V * 78.233) * amp; }
+
+function v1Paper() {
+  ctx.fillStyle = V1_PAPER; ctx.fillRect(0, 0, W, H);
+  ctx.save();
+  for (const g of V1_GRAIN) {
+    ctx.fillStyle = `rgba(90,70,44,${g.a})`;
+    ctx.fillRect(g.x, g.y, g.s, g.s);
+  }
+  const vg = ctx.createRadialGradient(W / 2, H / 2, 120, W / 2, H / 2, 430);
+  vg.addColorStop(0, 'rgba(255,255,255,0)');
+  vg.addColorStop(1, 'rgba(120,86,44,.14)');
+  ctx.fillStyle = vg; ctx.fillRect(0, 0, W, H);
+  ctx.restore();
+}
+
+// 沸腾的手绘线：每个变体重新抖动
+function v1line(pts, width, color, seed, closed) {
+  ctx.save();
+  ctx.strokeStyle = color; ctx.lineWidth = width; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+  ctx.beginPath();
+  pts.forEach((p, i) => {
+    const x = p[0] + v1jit(i + seed, 1.15);
+    const y = p[1] + v1jit(i * 1.7 + seed + 4, 1.15);
+    if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+  });
+  if (closed) ctx.closePath();
+  ctx.stroke(); ctx.restore();
+}
+
+function v1Blob(cx, cy, r, color, lineColor, seed, squash, lw) {
+  const sq = squash === undefined ? 1 : squash;
+  ctx.save();
+  ctx.beginPath();
+  const n = 9;
+  for (let i = 0; i <= n; i++) {
+    const a = (i / n) * Math.PI * 2;
+    const rr = r * (1 + v1jit(seed + i * 3.3, 0.07));
+    const x = cx + Math.cos(a) * rr + v1jit(seed + i, 1.2);
+    const y = cy + Math.sin(a) * rr * sq;
+    if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+  }
+  ctx.closePath();
+  ctx.translate(1.5, 1.2);
+  ctx.fillStyle = color; ctx.fill();
+  ctx.translate(-1.5, -1.2);
+  ctx.strokeStyle = lineColor; ctx.lineWidth = lw || 2.6; ctx.stroke();
+  ctx.restore();
+}
+
+function v1FlamePath(x, y, s) {
+  ctx.beginPath();
+  ctx.moveTo(x - 13 * s, y + 20 * s);
+  ctx.bezierCurveTo(x - 30 * s, y + 2 * s, x - 16 * s, y - 22 * s, x + v1jit(3, 3) * s, y - 42 * s);
+  ctx.bezierCurveTo(x + 8 * s, y - 26 * s, x + 27 * s, y - 8 * s, x + 14 * s, y + 20 * s);
+  ctx.quadraticCurveTo(x, y + 27 * s, x - 13 * s, y + 20 * s);
+  ctx.closePath();
+}
+
+function v1DrawFlame(x, y, s) {
+  ctx.save();
+  ctx.translate(2.6, 1.8);
+  v1FlamePath(x, y, s);
+  ctx.fillStyle = V1_RED; ctx.fill();
+  ctx.translate(-2.6, -1.8);
+  v1FlamePath(x, y, s);
+  ctx.fillStyle = V1_YELLOW; ctx.fill();
+  ctx.strokeStyle = V1_INK; ctx.lineWidth = 3.2 * Math.max(0.7, s); ctx.lineJoin = 'round'; ctx.stroke();
+  ctx.save();
+  ctx.translate(x, y + 5 * s);
+  ctx.scale(0.46, 0.56);
+  v1FlamePath(0, 0, s);
+  ctx.fillStyle = V1_CREAM; ctx.fill();
+  ctx.restore();
+  ctx.restore();
+}
+
+function v1Spirit(x, y, s, bounce, face) {
+  ctx.save();
+  ctx.translate(x, y + bounce);
+  ctx.rotate(v1jit(9, 0.04));
+  ctx.scale(s, s * (1 - Math.abs(bounce) * 0.006));
+  v1DrawFlame(0, 0, 1);
+  if (face !== false) {
+    ctx.fillStyle = V1_INK;
+    ctx.beginPath(); ctx.ellipse(-6.5, -6, 2.2, 3, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(6.5, -6, 2.2, 3, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = V1_INK; ctx.lineWidth = 2; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.arc(0, -1, 5, 0.2, Math.PI - 0.2); ctx.stroke();
+    // 小手：贴着身体往外伸
+    const arm = Math.sin(V1_V * 1.2 + 1.1) * 3;
+    v1line([[-10, 3], [-19, -3 + arm], [-22, -7 + arm]], 2.6, V1_INK, 21);
+    v1line([[10, 3], [19, -5 - arm], [22, -9 - arm]], 2.6, V1_INK, 22);
+  }
+  ctx.restore();
+}
+
+function v1Spark(x, y, len, ang, p, seed) {
+  if (p <= 0) return;
+  const L = len * v1ease(p);
+  ctx.save();
+  ctx.strokeStyle = V1_RED; ctx.lineWidth = 2.6; ctx.lineCap = 'round';
+  ctx.beginPath();
+  ctx.moveTo(x, y);
+  ctx.lineTo(x + Math.cos(ang) * L + v1jit(seed, 2), y + Math.sin(ang) * L + v1jit(seed + 1, 2));
+  ctx.stroke(); ctx.restore();
+}
+
+function v1Smoke(x, y, r, p, seed) {
+  if (p <= 0 || p >= 1) return;
+  const grow = v1ease(p);
+  ctx.save();
+  ctx.globalAlpha = 0.92 * (1 - p * 0.72);
+  for (let k = 0; k < 3; k++) {
+    const rr = r * grow * (0.7 + k * 0.22);
+    const ox = Math.sin(seed + k * 2.1 + p * 2) * 8;
+    const oy = -p * 26 - k * 7;
+    v1Blob(x + ox + k * 6, y + oy, rr, V1_CREAM, 'rgba(32,26,22,.82)', seed + k * 4, 0.85, 2.2);
+  }
+  ctx.restore();
+}
+
+function v1Sun(x, y, r, t) {
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(t * 0.12);
+  v1Blob(0, 0, r, V1_YELLOW, V1_INK, 7, 1, 2.8);
+  for (let i = 0; i < 9; i++) {
+    const a = i * Math.PI * 2 / 9;
+    v1line([[Math.cos(a) * (r + 7), Math.sin(a) * (r + 7)],
+            [Math.cos(a) * (r + 7 + 9 + v1jit(i, 3)), Math.sin(a) * (r + 7 + 9 + v1jit(i, 3))]], 2.4, V1_INK, 30 + i);
+  }
+  ctx.restore();
+}
+
+function v1Title(p, y) {
+  if (p <= 0) return;
+  const chars = ['想', '法', '成', '形'];
+  ctx.save();
+  ctx.font = `800 46px ${FONT}`;
+  ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
+  const gap = 64;
+  let x = W / 2 - (chars.length - 1) * gap / 2;
+  chars.forEach((ch, i) => {
+    const cp = v1ease(clamp(p * 1.6 - i * 0.17, 0, 1));
+    if (cp <= 0) return;
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(v1jit(i * 5 + 2, 0.03));
+    ctx.scale(1 + (1 - cp) * 0.4, 1 + (1 - cp) * 0.4);
+    ctx.globalAlpha = cp;
+    ctx.fillStyle = V1_RED; ctx.fillText(ch, 2.6, 2);
+    ctx.fillStyle = V1_INK; ctx.fillText(ch, 0, 0);
+    ctx.restore();
+    x += gap;
+  });
+  ctx.restore();
+}
+
+function drawScene(t) {
+  V1_V = Math.floor(t * 6) % 4;
+  v1Paper();
+
+  // 手绘外框 + 胶带角，像一张贴在工作台上的纸
+  v1line([[12, 14], [626, 11], [624, 347], [15, 344]], 1.6, 'rgba(32,26,22,.34)', 90, true);
+  ctx.save();
+  ctx.fillStyle = 'rgba(255,250,235,.55)';
+  ctx.translate(64, 8); ctx.rotate(-0.06); ctx.fillRect(-26, -8, 52, 18);
+  ctx.translate(506, -4); ctx.rotate(0.07); ctx.fillRect(-26, -8, 52, 18);
+  ctx.restore();
+
+  // 角落小太阳 + 顶部标记
+  v1Sun(548, 78, 24, t);
+  ctx.save();
+  ctx.fillStyle = 'rgba(32,26,22,.6)'; ctx.font = `600 10px ${FONT}`;
+  ctx.fillText('HAND MADE  ·  一拍二  ·  LINE BOIL', 26, 30);
+  ctx.restore();
+
+  const bounce = Math.sin(t * 9) * 4;
+  const strikeP = v1seg(t, 0.16, 0.36);
+
+  // 桌上的阴影
+  ctx.save();
+  ctx.fillStyle = 'rgba(32,26,22,.10)';
+  ctx.beginPath(); ctx.ellipse(290, 330, 120, 12, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.restore();
+
+  // 火柴
+  if (t < 1.3) {
+    const mx = 120 + 118 * v1ease(strikeP);
+    const my = 300 - 18 * v1ease(strikeP);
+    v1line([[mx - 52, my + 12], [mx, my]], 6, V1_INK, 31);
+    v1line([[mx - 50, my + 13], [mx - 2, my + 1]], 2.6, V1_RED, 32);
+    ctx.save();
+    ctx.translate(mx + 3, my - 1); ctx.rotate(0.32);
+    v1Blob(0, 0, 5.8, V1_RED, V1_INK, 33, 1, 2.2);
+    ctx.restore();
+    if (strikeP > 0.6) {
+      for (let i = 0; i < 6; i++) v1Spark(mx + 8, my, 15, -0.6 + i * 0.2, v1seg(t, 0.3, 0.6), 40 + i);
+    }
+  }
+
+  // 点火：smear 帧
+  if (t >= 0.34 && t < 0.5) {
+    ctx.save();
+    ctx.translate(262, 258); ctx.scale(1.15, 2.4);
+    v1FlamePath(0, 0, 0.55);
+    ctx.fillStyle = V1_YELLOW; ctx.fill();
+    ctx.strokeStyle = V1_INK; ctx.lineWidth = 1.4; ctx.stroke();
+    ctx.restore();
+  }
+
+  // 火苗精灵：出现 → 跳舞
+  if (t >= 0.42 && t < 3.75) {
+    const appear = v1ease(v1seg(t, 0.42, 0.95));
+    const x = 320 + Math.sin(t * 3.1) * 14;
+    const y = 208 - Math.abs(Math.sin(t * 4.4)) * 12 - (1 - appear) * 44;
+    const s = 0.45 + 1.0 * appear;
+    v1Spirit(x, y, s, bounce);
+    if (t > 1.2) {
+      const lp = v1ease(v1seg(t, 1.2, 1.6));
+      v1line([[x - 50, y - 30], [x - 70, y - 44]], 2.2, V1_INK, 51 * lp);
+      v1line([[x + 48, y - 36], [x + 70, y - 50]], 2.2, V1_INK, 52 * lp);
+    }
+  }
+
+  // 爆发：烟 + 星火
+  const burst = v1seg(t, 3.5, 4.35);
+  if (burst > 0) {
+    for (let i = 0; i < 14; i++) {
+      const ang = -Math.PI * 0.92 + i * Math.PI * 0.14;
+      v1Spark(320, 204, 34 + (i % 4) * 14, ang, v1seg(t, 3.5 + i * 0.012, 3.95 + i * 0.012), 60 + i);
+    }
+    v1Smoke(320, 198, 24, v1seg(t, 3.58, 4.5), 3);
+    v1Smoke(282, 214, 15, v1seg(t, 3.7, 4.6), 8);
+  }
+
+  // 标题
+  const tp = v1seg(t, 4.25, 4.95);
+  v1Title(tp, 252);
+  if (tp > 0.45) {
+    const lp = v1ease(v1seg(t, 4.7, 5.15));
+    ctx.save();
+    ctx.strokeStyle = V1_RED; ctx.lineWidth = 7; ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(226, 270); ctx.quadraticCurveTo(320, 278, 414, 268);
+    ctx.stroke(); ctx.restore();
+  }
+  // 小精灵落在标题右上角
+  if (t > 4.85) {
+    const sp = v1ease(v1seg(t, 4.85, 5.25));
+    v1Spirit(432, 220 - (1 - sp) * 28, 0.34 * sp, Math.sin(t * 6) * 1.5);
+  }
+
+  // 结尾：纸张轻闪，接回开头
+  const endP = v1seg(t, 5.82, 6.0);
+  if (endP > 0) {
+    ctx.save(); ctx.globalAlpha = endP * 0.5; ctx.fillStyle = V1_CREAM; ctx.fillRect(0, 0, W, H); ctx.restore();
+  }
+}
+
+  // ===== 共享渲染与署名 =======================================================
+  function watermark() {
+    const text = 'DeepSeek Harness 生成示例';
+    ctx.save();
+    ctx.font = '11px ' + FONT;
+    const w = ctx.measureText(text).width + 14;
+    const x = W - w - 8, y = H - 24;
+    ctx.fillStyle = 'rgba(0,0,0,.46)';
+    ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(x, y, w, 18, 4); else ctx.rect(x, y, w, 18);
+    ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,.82)';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(text, x + 7, y + 9.5);
+    ctx.restore();
+  }
+
+  function paint(t) {
+    ctx.save();
+    ctx.clearRect(0, 0, W, H);
+    try { drawScene(t); } catch (err) { console.error(err); }
+    ctx.restore();
+    watermark();
+  }
+
+  function renderAt(seconds) {
+    const t = ((Number(seconds) % DURATION) + DURATION) % DURATION;
+    paint(t);
+    syncUI(t);
+    return t;
+  }
+  window.renderAt = renderAt;
+
+  // ===== 播放、控制、减少动态 =================================================
+  const playBtn = document.getElementById('play');
+  const timeline = document.getElementById('timeline');
+  const clock = document.getElementById('clock');
+  let playing = false, base = 0, start = 0, current = 0;
+  const reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function syncUI(t) {
+    if (EXPORT) return;
+    current = t;
+    if (timeline) timeline.value = String(t.toFixed(2));
+    if (clock) clock.textContent = t.toFixed(2) + ' / ' + DURATION.toFixed(2) + 's';
+  }
+  function frame(now) {
+    if (!playing) return;
+    const t = ((now - start) / 1000 + base) % DURATION;
+    paint(t);
+    syncUI(t);
+    requestAnimationFrame(frame);
+  }
+  function play() {
+    if (playing) return;
+    playing = true;
+    start = performance.now();
+    base = current;
+    if (playBtn) playBtn.textContent = '暂停';
+    requestAnimationFrame(frame);
+  }
+  function pause() {
+    playing = false;
+    if (playBtn) playBtn.textContent = '播放';
+  }
+  if (playBtn) playBtn.addEventListener('click', () => { playing ? pause() : play(); });
+  document.getElementById('replay')?.addEventListener('click', () => {
+    base = 0; start = performance.now(); paint(0); syncUI(0); play();
+  });
+  timeline?.addEventListener('input', () => {
+    pause(); paint(Number(timeline.value)); syncUI(Number(timeline.value));
+  });
+  window.addEventListener('keydown', e => {
+    if (e.code === 'Space') { e.preventDefault(); playing ? pause() : play(); }
+    if (e.key === 'r' || e.key === 'R') { base = 0; start = performance.now(); paint(0); syncUI(0); play(); }
+  });
+
+  if (EXPORT) {
+    document.body.classList.add('export');
+    renderAt(0);
+  } else if (reduced) {
+    renderAt(2.4);
+    pause();
+  } else {
+    renderAt(0);
+    play();
+  }
+})();
+</script>
+</body>
+</html>

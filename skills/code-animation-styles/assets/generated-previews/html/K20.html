@@ -1,0 +1,469 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>K20 剪纸 · DeepSeek Harness 生成示例</title>
+<!--
+  Provenance
+  ----------
+  风格来源：code-animation-styles 目录（《来自俯仰观照博主的动画画风整理》整理稿）
+  catalog commit: 01576924a2b316d1f11ae33f75d3c005e8781451
+  style id: K20「剪纸」
+  license: upstream-custom-noncommercial（俯仰观照整理稿，非商业）
+  本文件：DeepSeek Harness（deepseek-flash）根据该风格提示词新写的候选示例，
+  不是原作者样片，也不是原项目演示；仅用于风格挑选预览。共享的只有时间轴、
+  尺寸、导出接口与页脚署名，画面与动作按本风格重新设计。
+  原文“只输出代码”等语句属于素材的一部分，不覆盖本任务的交付合同。
+-->
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; min-height: 100%; background: #0c0c10; color: #e9e9ee;
+    font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif; }
+  #app { min-height: 100vh; display: flex; flex-direction: column; align-items: center;
+    justify-content: center; gap: 12px; padding: 20px; }
+  #stage { width: min(94vw, 1000px); aspect-ratio: 16 / 9; background: #000;
+    box-shadow: 0 18px 60px rgba(0,0,0,.55); position: relative; overflow: hidden; }
+  canvas { display: block; width: 100%; height: 100%; }
+  #head, #ui { width: min(94vw, 1000px); }
+  #head h1 { margin: 0 0 4px; font-size: 15px; font-weight: 600; letter-spacing: .02em; }
+  #head p { margin: 0; font-size: 12px; line-height: 1.5; color: #9a9aa8; }
+  #ui { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  #ui button { background: #1d1d26; color: #f2f2f6; border: 1px solid #343444;
+    border-radius: 7px; padding: 6px 12px; font-size: 12px; cursor: pointer; }
+  #ui button:hover { background: #272734; }
+  #ui input[type=range] { flex: 1 1 220px; min-width: 150px; accent-color: #7c8cff; }
+  #clock { font-variant-numeric: tabular-nums; font-size: 12px; color: #a9a9ba; min-width: 78px; }
+  #credit { width: min(94vw, 1000px); font-size: 11px; line-height: 1.6; color: #6f6f80; }
+  #credit b { color: #9c9cae; font-weight: 500; }
+  body.export, body.export #app { display: block; width: 640px; height: 360px; min-height: 0;
+    padding: 0; margin: 0; overflow: hidden; background: #000; }
+  body.export #stage { width: 640px; height: 360px; box-shadow: none; }
+  body.export #head, body.export #ui, body.export #credit { display: none; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="head">
+    <h1>K20 · 剪纸</h1>
+    <p>剪纸分层景：远山、松林、草坡一层层错位落位，纸片小孩牵起红风筝，边缘带纸厚与投影。</p>
+  </div>
+  <div id="stage"><canvas id="c" width="640" height="360" aria-label="剪纸 风格动画示例"></canvas></div>
+  <div id="ui">
+    <button id="play" type="button">暂停</button>
+    <button id="replay" type="button">重播</button>
+    <input id="timeline" type="range" min="0" max="6" step="0.01" value="0" aria-label="时间轴">
+    <span id="clock">0.00 / 6.00s</span>
+  </div>
+  <div id="credit">
+    <b>DeepSeek Harness 生成示例</b>（非原项目样片）· 来源：来自俯仰观照博主的动画画风整理 ·
+    许可：upstream-custom-noncommercial（俯仰观照整理稿，非商业） · 画面与文字均由代码绘制，静音。
+  </div>
+</div>
+<script>
+(() => {
+  'use strict';
+  // ===== 共享脚手架（可改，但导出合同不要破坏）=================================
+  const W = 640, H = 360, DURATION = 6;
+  const EXPORT = new URLSearchParams(location.search).get('export') === '1';
+  const canvas = document.getElementById('c');
+  const ctx = canvas.getContext('2d');
+  const FONT = '"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",sans-serif';
+
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  const lerp = (a, b, t) => a + (b - a) * t;
+  const smooth = t => t * t * (3 - 2 * t);
+  const easeOut = t => 1 - Math.pow(1 - t, 3);
+  const easeIn = t => t * t * t;
+  function rng(seed) { let s = seed >>> 0; return () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; }; }
+
+  // ===== 场景（每个 ID 独立设计；下面的注释区由构建器替换）===================
+  // DESC: 剪纸分层景：远山、松林、草坡一层层错位落位，纸片小孩牵起红风筝，边缘带纸厚与投影。
+const K20_PAPER = '#f0e6d2';
+const K20_SKY = '#b3cbd0';
+const K20_SKY_HI = '#c8dadd';
+const K20_FAR = '#93a99d';
+const K20_MID = '#6f8d80';
+const K20_FRONT = '#4d6d5c';
+const K20_DARK = '#33493f';
+const K20_SUN = '#e2a94e';
+const K20_RED = '#bd5340';
+const K20_CREAM = '#f7efdd';
+const K20_SKIN = '#f0c9a4';
+const K20_HAIR = '#3a332c';
+
+const K20_GRAIN = (() => {
+  const c = document.createElement('canvas'); c.width = W; c.height = H;
+  const g = c.getContext('2d');
+  const r = rng(2020);
+  for (let i = 0; i < 900; i++) {
+    g.fillStyle = `rgba(90,72,48,${0.02 + r() * 0.05})`;
+    g.fillRect(r() * W, r() * H, 0.6 + r() * 1.6, 0.6 + r() * 1.6);
+  }
+  for (let i = 0; i < 90; i++) {
+    const x = r() * W, y = r() * H, a = (r() - 0.5) * 1.2, l = 3 + r() * 18;
+    g.strokeStyle = `rgba(110,90,60,${0.02 + r() * 0.03})`; g.lineWidth = 0.7;
+    g.beginPath(); g.moveTo(x, y); g.lineTo(x + Math.cos(a) * l, y + Math.sin(a) * l); g.stroke();
+  }
+  return c;
+})();
+
+function k20seg(t, a, b) { return clamp((t - a) / (b - a), 0, 1); }
+function k20ease(p) { return 1 - Math.pow(1 - p, 3); }
+function k20pop(p) {
+  p = clamp(p, 0, 1);
+  const c1 = 1.5, c3 = c1 + 1;
+  return 1 + c3 * Math.pow(p - 1, 3) + c1 * Math.pow(p - 1, 2);
+}
+function k20Ridge(base, amp, seed, n) {
+  const r = rng(seed);
+  const pts = [];
+  for (let i = 0; i <= n; i++) {
+    const x = (i / n) * (W + 40) - 20;
+    const y = base + (r() - 0.5) * 2 * amp + Math.sin(i * 1.7) * amp * 0.35;
+    pts.push([x, y]);
+  }
+  return pts;
+}
+const K20_FAR_PTS = k20Ridge(226, 26, 301, 9);
+const K20_MID_PTS = k20Ridge(272, 20, 302, 8);
+const K20_FRONT_PTS = (() => {
+  const r = rng(303);
+  const pts = [[-20, 360], [-20, 322]];
+  for (let i = 0; i <= 3; i++) pts.push([60 + i * 70, 296 + (r() - 0.5) * 8]);
+  pts.push([330, 306], [430, 300], [540, 310], [660, 296], [660, 360]);
+  return pts;
+})();
+
+function k20Piece(draw, fill, edge, shadow, ox, oy) {
+  ox = ox || 0; oy = oy || 0;
+  ctx.save(); ctx.translate(ox, oy + 5); ctx.beginPath(); draw(); ctx.fillStyle = shadow || 'rgba(46,52,40,.20)'; ctx.fill(); ctx.restore();
+  ctx.save(); ctx.translate(ox + 1.8, oy + 2.6); ctx.beginPath(); draw(); ctx.fillStyle = edge || 'rgba(38,44,34,.35)'; ctx.fill(); ctx.restore();
+  ctx.save(); ctx.translate(ox, oy); ctx.beginPath(); draw(); ctx.fillStyle = fill; ctx.fill(); ctx.restore();
+}
+function k20Cloud(x, y, s) {
+  ctx.beginPath();
+  ctx.arc(x, y, 20 * s, Math.PI, Math.PI * 2);
+  ctx.arc(x + 26 * s, y - 8 * s, 25 * s, Math.PI, Math.PI * 2);
+  ctx.arc(x + 56 * s, y, 19 * s, Math.PI, Math.PI * 2);
+  ctx.lineTo(x + 75 * s, y + 16 * s);
+  ctx.lineTo(x - 20 * s, y + 16 * s);
+  ctx.closePath();
+}
+function k20Pine(x, y, s) {
+  ctx.beginPath();
+  ctx.moveTo(x, y - 34 * s);
+  ctx.lineTo(x + 15 * s, y - 10 * s);
+  ctx.lineTo(x + 8 * s, y - 10 * s);
+  ctx.lineTo(x + 20 * s, y + 8 * s);
+  ctx.lineTo(x - 20 * s, y + 8 * s);
+  ctx.lineTo(x - 8 * s, y - 10 * s);
+  ctx.lineTo(x - 15 * s, y - 10 * s);
+  ctx.closePath();
+}
+
+function k20Child(t, ox, oy) {
+  const p = k20pop(k20seg(t, 1.75, 2.35));
+  if (p <= 0.001) return;
+  ctx.save();
+  ctx.translate(226 + ox, 300 + oy + (1 - p) * 46 + Math.sin(t * 2.2) * 1.2);
+  ctx.scale(p, p);
+  // 腿与靴
+  k20Piece(() => { ctx.rect(-11, -52, 8, 50); }, '#5d4a3a', '#3c3026', 'rgba(46,52,40,.18)');
+  k20Piece(() => { ctx.rect(4, -52, 8, 50); }, '#5d4a3a', '#3c3026', 'rgba(46,52,40,.18)');
+  k20Piece(() => { ctx.ellipse(-8, 0, 12, 6, 0, 0, Math.PI * 2); }, K20_HAIR);
+  k20Piece(() => { ctx.ellipse(9, 0, 12, 6, 0, 0, Math.PI * 2); }, K20_HAIR);
+  // 外套
+  k20Piece(() => {
+    ctx.beginPath();
+    ctx.moveTo(-23, -126);
+    ctx.lineTo(23, -126);
+    ctx.quadraticCurveTo(34, -92, 32, -50);
+    ctx.lineTo(-32, -50);
+    ctx.quadraticCurveTo(-34, -92, -23, -126);
+    ctx.closePath();
+  }, K20_RED, '#8f3c2f', 'rgba(46,52,40,.22)');
+  // 手臂：一只抬起牵线
+  k20Piece(() => { ctx.roundRect(-37, -124, 12, 46, 5); }, K20_RED, '#8f3c2f');
+  k20Piece(() => {
+    ctx.save(); ctx.translate(17, -123); ctx.rotate(-0.85); ctx.roundRect(0, 0, 11, 47, 5); ctx.restore();
+  }, K20_RED, '#8f3c2f');
+  k20Piece(() => { ctx.arc(-37, -79, 6, 0, Math.PI * 2); }, K20_SKIN);
+  k20Piece(() => { ctx.arc(47, -157, 6, 0, Math.PI * 2); }, K20_SKIN);
+  // 围巾
+  k20Piece(() => { ctx.roundRect(-20, -134, 40, 12, 5); }, K20_SUN, '#b57f2f');
+  // 头
+  k20Piece(() => { ctx.arc(0, -158, 27, 0, Math.PI * 2); }, K20_SKIN, '#c79c74', 'rgba(46,52,40,.2)');
+  // 头发：锯齿剪纸边
+  k20Piece(() => {
+    ctx.beginPath();
+    ctx.arc(0, -162, 29, Math.PI * 0.98, Math.PI * 2.02);
+    ctx.lineTo(26, -166);
+    ctx.lineTo(18, -174);
+    ctx.lineTo(22, -184);
+    ctx.lineTo(8, -180);
+    ctx.lineTo(4, -194);
+    ctx.lineTo(-4, -182);
+    ctx.lineTo(-12, -190);
+    ctx.lineTo(-16, -178);
+    ctx.lineTo(-26, -172);
+    ctx.closePath();
+  }, K20_HAIR, '#26211c');
+  // 眼睛与腮红
+  ctx.save();
+  ctx.fillStyle = 'rgba(58,51,44,.9)';
+  ctx.beginPath(); ctx.arc(9, -157, 2.2, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = 'rgba(189,83,64,.4)';
+  ctx.beginPath(); ctx.arc(16, -149, 5, 0, Math.PI * 2); ctx.fill();
+  ctx.restore();
+  // 剪纸白点
+  ctx.save();
+  ctx.fillStyle = 'rgba(247,239,221,.75)';
+  ctx.beginPath(); ctx.arc(-2, -126, 1.8, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.arc(-8, -96, 1.5, 0, Math.PI * 2); ctx.fill();
+  ctx.restore();
+  ctx.restore();
+}
+
+function drawScene(t) {
+  // 纸底天空
+  ctx.fillStyle = K20_SKY; ctx.fillRect(0, 0, W, H);
+  ctx.fillStyle = K20_SKY_HI; ctx.fillRect(0, 0, W, 150);
+
+  // 太阳（从山后升起）
+  const sunY = lerp(300, 84, k20ease(k20seg(t, 0.15, 1.35)));
+  ctx.save();
+  ctx.globalAlpha = k20ease(k20seg(t, 0.1, 0.7));
+  k20Piece(() => { ctx.arc(520, sunY, 44, 0, Math.PI * 2); }, K20_SUN, '#b57f2f', 'rgba(46,52,40,.18)');
+  k20Piece(() => { ctx.arc(520, sunY, 30, 0, Math.PI * 2); }, '#ecc270', '#c08f36', 'rgba(46,52,40,.0)');
+  ctx.restore();
+
+  // 云
+  const cf = k20ease(k20seg(t, 0.1, 1.5));
+  k20Piece(() => k20Cloud(70 - (1 - cf) * 40, 74, 1.05), K20_CREAM, '#d8ccb2', 'rgba(46,52,40,.12)');
+  k20Piece(() => k20Cloud(380 + (1 - cf) * 40, 52, 0.8), K20_CREAM, '#d8ccb2', 'rgba(46,52,40,.12)');
+
+  // 远山
+  const farP = k20ease(k20seg(t, 0.15, 1.0));
+  k20Piece(() => {
+    ctx.beginPath(); ctx.moveTo(-20, 330);
+    for (const p of K20_FAR_PTS) ctx.lineTo(p[0], p[1]);
+    ctx.lineTo(660, 330); ctx.closePath();
+  }, K20_FAR, '#71877d', 'rgba(46,52,40,.22)', (1 - farP) * -70, 0);
+
+  // 中山
+  const midP = k20ease(k20seg(t, 0.35, 1.25));
+  k20Piece(() => {
+    ctx.beginPath(); ctx.moveTo(-20, 330);
+    for (const p of K20_MID_PTS) ctx.lineTo(p[0], p[1]);
+    ctx.lineTo(660, 330); ctx.closePath();
+  }, K20_MID, '#526c60', 'rgba(46,52,40,.24)', (1 - midP) * 80, 0);
+
+  // 松树
+  const trees = [352, 388, 418, 566, 596];
+  trees.forEach((x, i) => {
+    const q = k20ease(k20seg(t, 0.6 + i * 0.08, 1.3 + i * 0.08));
+    k20Piece(() => k20Pine(x, 288, 1 + (i % 3) * 0.12), K20_DARK, '#22332a', 'rgba(46,52,40,.22)', 0, (1 - q) * 22);
+  });
+
+  // 前景草坡
+  const frontP = k20ease(k20seg(t, 0.65, 1.55));
+  k20Piece(() => {
+    ctx.beginPath();
+    ctx.moveTo(-20, 360);
+    ctx.lineTo(-20, 322);
+    for (const p of K20_FRONT_PTS) ctx.lineTo(p[0], p[1]);
+    ctx.lineTo(660, 360);
+    ctx.closePath();
+  }, K20_FRONT, '#3c574a', 'rgba(40,46,34,.32)', (1 - frontP) * -90, 0);
+
+  // 草叶剪纸缺口
+  ctx.save();
+  ctx.fillStyle = '#3f5c4d';
+  for (let i = 0; i < 16; i++) {
+    const x = 20 + i * 38, y = 356 - (i % 3) * 6;
+    ctx.beginPath();
+    ctx.moveTo(x, y); ctx.lineTo(x + 3, y - 16 - (i % 4) * 4); ctx.lineTo(x + 7, y); ctx.closePath(); ctx.fill();
+  }
+  ctx.restore();
+
+  // 小孩
+  k20Child(t, 0, 0);
+
+  // 风筝
+  const kp = k20ease(k20seg(t, 2.25, 3.5));
+  if (kp > 0) {
+    const kx = 506 + Math.sin(t * 1.4 + 1) * 8;
+    const ky = lerp(368, 112, kp) + Math.sin(t * 2.1) * 4;
+    // 线
+    ctx.save();
+    ctx.strokeStyle = 'rgba(58,51,44,.55)'; ctx.lineWidth = 1.4;
+    ctx.beginPath(); ctx.moveTo(273, 143);
+    ctx.quadraticCurveTo(400, 210, kx, ky + 18); ctx.stroke();
+    ctx.restore();
+    // 风筝纸片
+    k20Piece(() => {
+      ctx.beginPath();
+      ctx.moveTo(kx, ky - 30);
+      ctx.lineTo(kx + 24, ky);
+      ctx.lineTo(kx, ky + 30);
+      ctx.lineTo(kx - 24, ky);
+      ctx.closePath();
+    }, K20_RED, '#8f3c2f', 'rgba(46,52,40,.22)');
+    // 骨架
+    ctx.save();
+    ctx.strokeStyle = 'rgba(247,239,221,.75)'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(kx, ky - 28); ctx.lineTo(kx, ky + 28); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(kx - 22, ky); ctx.lineTo(kx + 22, ky); ctx.stroke();
+    ctx.restore();
+    // 尾巴
+    ctx.save();
+    ctx.strokeStyle = K20_SUN; ctx.lineWidth = 4; ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(kx, ky + 30);
+    for (let i = 0; i < 5; i++) {
+      ctx.quadraticCurveTo(kx + (i % 2 ? -18 : 18), ky + 44 + i * 14, kx, ky + 54 + i * 14);
+    }
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  // 纸张纹理与暗角
+  ctx.drawImage(K20_GRAIN, 0, 0);
+  const vg = ctx.createRadialGradient(W / 2, H / 2, 170, W / 2, H / 2, 430);
+  vg.addColorStop(0, 'rgba(80,64,40,0)');
+  vg.addColorStop(1, 'rgba(80,64,40,.14)');
+  ctx.fillStyle = vg; ctx.fillRect(0, 0, W, H);
+
+  // 标题：贴在纸片上的字条
+  ctx.save();
+  ctx.translate(30, 22); ctx.rotate(-0.018);
+  ctx.fillStyle = 'rgba(46,52,40,.22)';
+  ctx.fillRect(4, 6, 244, 76);
+  ctx.fillStyle = K20_CREAM;
+  ctx.fillRect(0, 0, 244, 76);
+  ctx.fillStyle = 'rgba(38,44,34,.10)';
+  ctx.fillRect(0, 70, 244, 6);
+  ctx.fillStyle = K20_DARK;
+  ctx.font = `800 32px ${FONT}`; ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+  ctx.fillText('一层一层', 18, 40);
+  ctx.fillStyle = 'rgba(51,73,63,.72)';
+  ctx.font = `600 13px ${FONT}`;
+  ctx.fillText('剪纸 · 纸片有厚度', 18, 61);
+  ctx.restore();
+
+  // 字幕
+  const cp = k20ease(k20seg(t, 3.6, 4.3));
+  if (cp > 0) {
+    ctx.save();
+    ctx.globalAlpha = cp;
+    ctx.fillStyle = 'rgba(46,52,40,.22)';
+    ctx.fillRect(38, 321, 238, 26);
+    ctx.fillStyle = 'rgba(247,239,221,.94)';
+    ctx.fillRect(34, 316, 238, 26);
+    ctx.fillStyle = K20_DARK;
+    ctx.font = `600 15px ${FONT}`; ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+    ctx.fillText('剪下来，一层层贴上去。', 42, 334);
+    ctx.restore();
+  }
+
+  // 收口
+  const fp = k20seg(t, 5.75, 6.0);
+  if (fp > 0) {
+    ctx.save(); ctx.globalAlpha = fp * 0.4; ctx.fillStyle = K20_CREAM; ctx.fillRect(0, 0, W, H); ctx.restore();
+  }
+}
+
+  // ===== 共享渲染与署名 =======================================================
+  function watermark() {
+    const text = 'DeepSeek Harness 生成示例';
+    ctx.save();
+    ctx.font = '11px ' + FONT;
+    const w = ctx.measureText(text).width + 14;
+    const x = W - w - 8, y = H - 24;
+    ctx.fillStyle = 'rgba(0,0,0,.46)';
+    ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(x, y, w, 18, 4); else ctx.rect(x, y, w, 18);
+    ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,.82)';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(text, x + 7, y + 9.5);
+    ctx.restore();
+  }
+
+  function paint(t) {
+    ctx.save();
+    ctx.clearRect(0, 0, W, H);
+    try { drawScene(t); } catch (err) { console.error(err); }
+    ctx.restore();
+    watermark();
+  }
+
+  function renderAt(seconds) {
+    const t = ((Number(seconds) % DURATION) + DURATION) % DURATION;
+    paint(t);
+    syncUI(t);
+    return t;
+  }
+  window.renderAt = renderAt;
+
+  // ===== 播放、控制、减少动态 =================================================
+  const playBtn = document.getElementById('play');
+  const timeline = document.getElementById('timeline');
+  const clock = document.getElementById('clock');
+  let playing = false, base = 0, start = 0, current = 0;
+  const reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function syncUI(t) {
+    if (EXPORT) return;
+    current = t;
+    if (timeline) timeline.value = String(t.toFixed(2));
+    if (clock) clock.textContent = t.toFixed(2) + ' / ' + DURATION.toFixed(2) + 's';
+  }
+  function frame(now) {
+    if (!playing) return;
+    const t = ((now - start) / 1000 + base) % DURATION;
+    paint(t);
+    syncUI(t);
+    requestAnimationFrame(frame);
+  }
+  function play() {
+    if (playing) return;
+    playing = true;
+    start = performance.now();
+    base = current;
+    if (playBtn) playBtn.textContent = '暂停';
+    requestAnimationFrame(frame);
+  }
+  function pause() {
+    playing = false;
+    if (playBtn) playBtn.textContent = '播放';
+  }
+  if (playBtn) playBtn.addEventListener('click', () => { playing ? pause() : play(); });
+  document.getElementById('replay')?.addEventListener('click', () => {
+    base = 0; start = performance.now(); paint(0); syncUI(0); play();
+  });
+  timeline?.addEventListener('input', () => {
+    pause(); paint(Number(timeline.value)); syncUI(Number(timeline.value));
+  });
+  window.addEventListener('keydown', e => {
+    if (e.code === 'Space') { e.preventDefault(); playing ? pause() : play(); }
+    if (e.key === 'r' || e.key === 'R') { base = 0; start = performance.now(); paint(0); syncUI(0); play(); }
+  });
+
+  if (EXPORT) {
+    document.body.classList.add('export');
+    renderAt(0);
+  } else if (reduced) {
+    renderAt(2.4);
+    pause();
+  } else {
+    renderAt(0);
+    play();
+  }
+})();
+</script>
+</body>
+</html>

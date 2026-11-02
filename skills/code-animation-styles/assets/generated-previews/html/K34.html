@@ -1,0 +1,587 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>K34 赛博霓虹 · DeepSeek Harness 生成示例</title>
+<!--
+  Provenance
+  ----------
+  风格来源：code-animation-styles 目录（《来自俯仰观照博主的动画画风整理》整理稿）
+  catalog commit: 01576924a2b316d1f11ae33f75d3c005e8781451
+  style id: K34「赛博霓虹」
+  license: upstream-custom-noncommercial（俯仰观照整理稿，非商业）
+  本文件：DeepSeek Harness（deepseek-flash）根据该风格提示词新写的候选示例，
+  不是原作者样片，也不是原项目演示；仅用于风格挑选预览。共享的只有时间轴、
+  尺寸、导出接口与页脚署名，画面与动作按本风格重新设计。
+  原文“只输出代码”等语句属于素材的一部分，不覆盖本任务的交付合同。
+-->
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; min-height: 100%; background: #0c0c10; color: #e9e9ee;
+    font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif; }
+  #app { min-height: 100vh; display: flex; flex-direction: column; align-items: center;
+    justify-content: center; gap: 12px; padding: 20px; }
+  #stage { width: min(94vw, 1000px); aspect-ratio: 16 / 9; background: #000;
+    box-shadow: 0 18px 60px rgba(0,0,0,.55); position: relative; overflow: hidden; }
+  canvas { display: block; width: 100%; height: 100%; }
+  #head, #ui { width: min(94vw, 1000px); }
+  #head h1 { margin: 0 0 4px; font-size: 15px; font-weight: 600; letter-spacing: .02em; }
+  #head p { margin: 0; font-size: 12px; line-height: 1.5; color: #9a9aa8; }
+  #ui { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  #ui button { background: #1d1d26; color: #f2f2f6; border: 1px solid #343444;
+    border-radius: 7px; padding: 6px 12px; font-size: 12px; cursor: pointer; }
+  #ui button:hover { background: #272734; }
+  #ui input[type=range] { flex: 1 1 220px; min-width: 150px; accent-color: #7c8cff; }
+  #clock { font-variant-numeric: tabular-nums; font-size: 12px; color: #a9a9ba; min-width: 78px; }
+  #credit { width: min(94vw, 1000px); font-size: 11px; line-height: 1.6; color: #6f6f80; }
+  #credit b { color: #9c9cae; font-weight: 500; }
+  body.export, body.export #app { display: block; width: 640px; height: 360px; min-height: 0;
+    padding: 0; margin: 0; overflow: hidden; background: #000; }
+  body.export #stage { width: 640px; height: 360px; box-shadow: none; }
+  body.export #head, body.export #ui, body.export #credit { display: none; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="head">
+    <h1>K34 · 赛博霓虹</h1>
+    <p>深色雨夜，霓虹勾出一个戴面罩的赛博角色，他抬起手，一枚全息念头在掌心拼合、亮起。</p>
+  </div>
+  <div id="stage"><canvas id="c" width="640" height="360" aria-label="赛博霓虹 风格动画示例"></canvas></div>
+  <div id="ui">
+    <button id="play" type="button">暂停</button>
+    <button id="replay" type="button">重播</button>
+    <input id="timeline" type="range" min="0" max="6" step="0.01" value="0" aria-label="时间轴">
+    <span id="clock">0.00 / 6.00s</span>
+  </div>
+  <div id="credit">
+    <b>DeepSeek Harness 生成示例</b>（非原项目样片）· 来源：来自俯仰观照博主的动画画风整理 ·
+    许可：upstream-custom-noncommercial（俯仰观照整理稿，非商业） · 画面与文字均由代码绘制，静音。
+  </div>
+</div>
+<script>
+(() => {
+  'use strict';
+  // ===== 共享脚手架（可改，但导出合同不要破坏）=================================
+  const W = 640, H = 360, DURATION = 6;
+  const EXPORT = new URLSearchParams(location.search).get('export') === '1';
+  const canvas = document.getElementById('c');
+  const ctx = canvas.getContext('2d');
+  const FONT = '"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",sans-serif';
+
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  const lerp = (a, b, t) => a + (b - a) * t;
+  const smooth = t => t * t * (3 - 2 * t);
+  const easeOut = t => 1 - Math.pow(1 - t, 3);
+  const easeIn = t => t * t * t;
+  function rng(seed) { let s = seed >>> 0; return () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; }; }
+
+  // ===== 场景（每个 ID 独立设计；下面的注释区由构建器替换）===================
+  // DESC: 深色雨夜，霓虹勾出一个戴面罩的赛博角色，他抬起手，一枚全息念头在掌心拼合、亮起。
+// K34 赛博霓虹 · DeepSeek Harness 生成示例
+const K34 = {
+  bg0: '#04030c', bg1: '#0c0722', bg2: '#170a2e',
+  cyan: '#25e6ff', magenta: '#ff2f9e', violet: '#8a5cff', amber: '#ffb347',
+  coat: '#080614', skin: '#171126',
+};
+const k34seg = (t, a, b) => clamp((t - a) / (b - a), 0, 1);
+const k34ease = p => 1 - Math.pow(1 - p, 3);
+const k34pulse = (t, f, ph) => 0.5 + 0.5 * Math.sin(t * f + (ph || 0));
+
+// 远景楼群（加载时预计算）
+const K34_CITY = (() => {
+  const r = rng(3401);
+  const out = [];
+  let x = -20;
+  while (x < 660) {
+    const w = 26 + r() * 46;
+    const h = 40 + r() * 96;
+    const wins = [];
+    for (let i = 0; i < Math.floor(w / 8); i++) {
+      for (let j = 0; j < Math.floor(h / 11); j++) {
+        if (r() > 0.62) wins.push([x + 4 + i * 8, 300 - h + 5 + j * 11, r() > 0.5 ? '#25e6ff' : '#ff2f9e']);
+      }
+    }
+    out.push({ x, w, h, wins });
+    x += w + 4 + r() * 10;
+  }
+  return out;
+})();
+const K34_RAIN = (() => {
+  const r = rng(3422);
+  return Array.from({ length: 74 }, () => ({ x: r() * W, y: r() * H, len: 8 + r() * 16, sp: 130 + r() * 220, a: 0.06 + r() * 0.14 }));
+})();
+const K34_HOLO_DUST = (() => {
+  const r = rng(3441);
+  return Array.from({ length: 26 }, () => ({ a: r() * Math.PI * 2, rad: 20 + r() * 56, sp: 0.5 + r() * 1.4, s: 1 + r() * 2.2, ph: r() * 6 }));
+})();
+
+function k34NeonText(txt, x, y, size, color, blur, align) {
+  ctx.save();
+  ctx.font = `800 ${size}px ${FONT}`;
+  ctx.textAlign = align || 'left'; ctx.textBaseline = 'alphabetic';
+  ctx.shadowColor = color; ctx.shadowBlur = blur;
+  ctx.fillStyle = color;
+  ctx.fillText(txt, x, y);
+  ctx.shadowBlur = blur * 0.4;
+  ctx.fillText(txt, x, y);
+  ctx.restore();
+}
+
+function k34Backdrop(t) {
+  const g = ctx.createLinearGradient(0, 0, 0, H);
+  g.addColorStop(0, K34.bg0);
+  g.addColorStop(0.55, K34.bg1);
+  g.addColorStop(1, K34.bg2);
+  ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  // 城市剪影
+  ctx.save();
+  for (const b of K34_CITY) {
+    ctx.fillStyle = '#0a0820';
+    ctx.fillRect(b.x, 300 - b.h, b.w, b.h);
+    ctx.fillStyle = 'rgba(37,230,255,.10)';
+    ctx.fillRect(b.x, 300 - b.h, b.w, 1);
+  }
+  for (const b of K34_CITY) {
+    for (const w of b.wins) {
+      const fl = 0.55 + 0.45 * Math.sin(t * 1.7 + w[0] * 0.3 + w[1]);
+      ctx.globalAlpha = 0.28 + fl * 0.4;
+      ctx.fillStyle = w[2];
+      ctx.fillRect(w[0], w[1], 2, 3);
+    }
+  }
+  ctx.restore();
+  // 地平线雾
+  const fog = ctx.createLinearGradient(0, 250, 0, 320);
+  fog.addColorStop(0, 'rgba(255,47,158,.00)');
+  fog.addColorStop(0.5, 'rgba(255,47,158,.14)');
+  fog.addColorStop(1, 'rgba(20,8,40,.0)');
+  ctx.fillStyle = fog; ctx.fillRect(0, 250, W, 70);
+}
+
+function k34Floor(t) {
+  const horizon = 286, vpx = 330;
+  ctx.save();
+  ctx.lineWidth = 1;
+  // 纵向汇聚线
+  for (let i = -12; i <= 12; i++) {
+    const x = vpx + i * 62;
+    const grd = ctx.createLinearGradient(vpx, horizon, x, H);
+    grd.addColorStop(0, 'rgba(37,230,255,0)');
+    grd.addColorStop(0.35, 'rgba(37,230,255,.20)');
+    grd.addColorStop(1, 'rgba(255,47,158,.30)');
+    ctx.strokeStyle = grd;
+    ctx.beginPath(); ctx.moveTo(vpx, horizon); ctx.lineTo(x, H); ctx.stroke();
+  }
+  // 横向滚动线
+  for (let i = 0; i < 9; i++) {
+    const k = ((i / 9) + (t * 0.12) % (1 / 9)) % 1;
+    const y = horizon + Math.pow(k, 2.1) * (H - horizon);
+    const a = 0.05 + k * 0.32;
+    ctx.strokeStyle = `rgba(255,47,158,${a})`;
+    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
+  }
+  ctx.restore();
+}
+
+function k34Rain(t) {
+  ctx.save();
+  ctx.lineCap = 'round';
+  for (const d of K34_RAIN) {
+    const y = (d.y + t * d.sp) % (H + 40) - 20;
+    ctx.strokeStyle = `rgba(150,220,255,${d.a})`;
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(d.x, y); ctx.lineTo(d.x - 2.4, y + d.len); ctx.stroke();
+  }
+  ctx.restore();
+}
+
+function k34Sign(t) {
+  // 右侧竖排霓虹招牌
+  const x = 592;
+  const flick = (k34pulse(t, 13, 1) > 0.94 || k34pulse(t, 7, 4) > 0.97) ? 0.55 : 1;
+  ctx.save();
+  ctx.globalAlpha = flick;
+  ctx.strokeStyle = 'rgba(37,230,255,.55)'; ctx.lineWidth = 1.4;
+  ctx.shadowColor = K34.cyan; ctx.shadowBlur = 10;
+  ctx.beginPath(); ctx.roundRect(x - 26, 62, 52, 128, 8); ctx.stroke();
+  ctx.restore();
+  ctx.save();
+  ctx.globalAlpha = flick;
+  k34NeonText('霓', x, 108, 34, K34.cyan, 16, 'center');
+  k34NeonText('虹', x, 152, 34, K34.magenta, 16, 'center');
+  ctx.fillStyle = 'rgba(255,255,255,.5)';
+  ctx.font = `500 11px ${FONT}`; ctx.textAlign = 'center';
+  ctx.fillText('NIGHT', x, 176);
+  ctx.restore();
+  // 远处小招牌
+  ctx.save();
+  ctx.globalAlpha = 0.75 * flick;
+  k34NeonText('24H', 520, 214, 15, K34.amber, 8, 'center');
+  ctx.restore();
+}
+
+// 赛博角色：半身、面罩、霓虹轮廓光
+function k34Figure(t) {
+  const breathe = Math.sin(t * 1.4) * 2;
+  ctx.save();
+  ctx.translate(0, breathe);
+  // 大衣
+  ctx.beginPath();
+  ctx.moveTo(28, 360);
+  ctx.lineTo(56, 316);
+  ctx.lineTo(92, 288);
+  ctx.lineTo(118, 268);
+  ctx.lineTo(150, 254);
+  ctx.lineTo(212, 250);
+  ctx.lineTo(252, 262);
+  ctx.lineTo(278, 286);
+  ctx.lineTo(302, 322);
+  ctx.lineTo(316, 360);
+  ctx.closePath();
+  const coatG = ctx.createLinearGradient(120, 250, 300, 360);
+  coatG.addColorStop(0, '#100c22');
+  coatG.addColorStop(0.5, '#0a0716');
+  coatG.addColorStop(1, '#120a24');
+  ctx.fillStyle = coatG; ctx.fill();
+  // 大衣内衬
+  ctx.beginPath();
+  ctx.moveTo(150, 254); ctx.lineTo(212, 250); ctx.lineTo(238, 300);
+  ctx.lineTo(226, 360); ctx.lineTo(126, 360); ctx.lineTo(132, 300); ctx.closePath();
+  ctx.fillStyle = '#0d0a1c'; ctx.fill();
+  // 衣领
+  ctx.beginPath();
+  ctx.moveTo(150, 254); ctx.lineTo(168, 224); ctx.lineTo(196, 244); ctx.lineTo(178, 264); ctx.closePath();
+  ctx.fillStyle = '#120d24'; ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(212, 250); ctx.lineTo(196, 220); ctx.lineTo(172, 240); ctx.lineTo(190, 258); ctx.closePath();
+  ctx.fillStyle = '#150f2a'; ctx.fill();
+  // 脖子
+  ctx.fillStyle = '#0e0a1b';
+  ctx.beginPath(); ctx.roundRect(172, 214, 42, 40, 10); ctx.fill();
+
+  // 头
+  const head = [[152, 186], [158, 158], [176, 140], [204, 134], [230, 146], [242, 172], [240, 196], [228, 214], [206, 224], [182, 218], [162, 204]];
+  ctx.beginPath();
+  head.forEach((p, i) => i ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1]));
+  ctx.closePath();
+  ctx.fillStyle = K34.skin; ctx.fill();
+  // 头发 / 兜帽
+  ctx.beginPath();
+  ctx.moveTo(150, 190);
+  ctx.quadraticCurveTo(142, 146, 180, 130);
+  ctx.quadraticCurveTo(214, 118, 238, 140);
+  ctx.lineTo(246, 168);
+  ctx.quadraticCurveTo(226, 150, 208, 148);
+  ctx.quadraticCurveTo(178, 146, 164, 168);
+  ctx.closePath();
+  ctx.fillStyle = '#0b0818'; ctx.fill();
+  // 面罩
+  ctx.save();
+  const vg = ctx.createLinearGradient(158, 180, 244, 168);
+  vg.addColorStop(0, '#0d5f7a');
+  vg.addColorStop(0.45, K34.cyan);
+  vg.addColorStop(0.7, '#a86bff');
+  vg.addColorStop(1, K34.magenta);
+  ctx.globalAlpha = 0.88;
+  ctx.fillStyle = vg;
+  ctx.beginPath();
+  ctx.moveTo(158, 178); ctx.lineTo(240, 166); ctx.lineTo(238, 184); ctx.lineTo(160, 194); ctx.closePath();
+  ctx.fill();
+  ctx.globalAlpha = 1;
+  // 面罩高光
+  ctx.fillStyle = 'rgba(255,255,255,.65)';
+  ctx.beginPath();
+  ctx.moveTo(166, 180); ctx.lineTo(206, 174); ctx.lineTo(204, 178); ctx.lineTo(166, 184); ctx.closePath();
+  ctx.fill();
+  ctx.restore();
+  // 面罩发光
+  ctx.save();
+  ctx.shadowColor = K34.cyan; ctx.shadowBlur = 18;
+  ctx.strokeStyle = 'rgba(180,245,255,.85)'; ctx.lineWidth = 1.6;
+  ctx.beginPath(); ctx.moveTo(158, 178); ctx.lineTo(240, 166); ctx.stroke();
+  ctx.restore();
+  // 耳朵上的植入体
+  ctx.fillStyle = K34.magenta;
+  ctx.beginPath(); ctx.arc(240, 190, 3.2, 0, Math.PI * 2); ctx.fill();
+  ctx.save();
+  ctx.shadowColor = K34.magenta; ctx.shadowBlur = 10;
+  ctx.fillStyle = '#ffd6ee';
+  ctx.beginPath(); ctx.arc(240, 190, 1.6, 0, Math.PI * 2); ctx.fill();
+  ctx.restore();
+  // 下巴与鼻
+  ctx.strokeStyle = 'rgba(37,230,255,.35)'; ctx.lineWidth = 1.2;
+  ctx.beginPath(); ctx.moveTo(206, 200); ctx.lineTo(206, 212); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(192, 218); ctx.lineTo(216, 214); ctx.stroke();
+
+  // 轮廓光：左青右洋红
+  ctx.save();
+  ctx.lineCap = 'round';
+  ctx.shadowColor = K34.cyan; ctx.shadowBlur = 14;
+  ctx.strokeStyle = K34.cyan; ctx.lineWidth = 2.2;
+  ctx.beginPath();
+  ctx.moveTo(152, 186); ctx.lineTo(158, 158); ctx.lineTo(176, 140);
+  ctx.moveTo(162, 204); ctx.lineTo(150, 254); ctx.lineTo(118, 268); ctx.lineTo(92, 288);
+  ctx.stroke();
+  ctx.shadowColor = K34.magenta;
+  ctx.strokeStyle = K34.magenta;
+  ctx.beginPath();
+  ctx.moveTo(230, 146); ctx.lineTo(242, 172); ctx.lineTo(240, 196); ctx.lineTo(228, 214);
+  ctx.moveTo(252, 262); ctx.lineTo(278, 286); ctx.lineTo(302, 322);
+  ctx.stroke();
+  ctx.restore();
+
+  // 胸口的霓虹接缝
+  ctx.save();
+  ctx.strokeStyle = 'rgba(255,47,158,.75)'; ctx.lineWidth = 1.4;
+  ctx.shadowColor = K34.magenta; ctx.shadowBlur = 9;
+  ctx.beginPath();
+  ctx.moveTo(196, 260); ctx.lineTo(196, 300); ctx.lineTo(206, 318); ctx.lineTo(206, 360);
+  ctx.stroke();
+  ctx.strokeStyle = 'rgba(37,230,255,.55)';
+  ctx.beginPath(); ctx.moveTo(160, 300); ctx.lineTo(186, 292); ctx.stroke();
+  ctx.restore();
+
+  // 抬起的手
+  const hx = 316, hy = 268;
+  ctx.save();
+  ctx.fillStyle = '#0b0818';
+  ctx.beginPath();
+  ctx.roundRect(hx - 14, hy - 6, 46, 26, 9);
+  ctx.fill();
+  // 手指
+  ctx.strokeStyle = '#0b0818'; ctx.lineWidth = 7; ctx.lineCap = 'round';
+  for (let i = 0; i < 4; i++) {
+    ctx.beginPath();
+    ctx.moveTo(hx + i * 9 - 2, hy);
+    ctx.lineTo(hx + i * 9 + 2, hy - 13 - (i === 0 ? 5 : 0) + (i === 3 ? 4 : 0));
+    ctx.stroke();
+  }
+  ctx.strokeStyle = 'rgba(37,230,255,.6)'; ctx.lineWidth = 1.4;
+  ctx.shadowColor = K34.cyan; ctx.shadowBlur = 8;
+  ctx.beginPath(); ctx.moveTo(hx - 12, hy - 4); ctx.lineTo(hx - 12, hy + 14); ctx.stroke();
+  ctx.restore();
+  ctx.restore();
+}
+
+function k34Holo(cx, cy, t) {
+  const build = k34ease(k34seg(t, 0.5, 2.6));
+  if (build <= 0.01) return;
+  const R = 44;
+  ctx.save();
+  // 投影锥
+  ctx.globalAlpha = 0.16 * build;
+  const cone = ctx.createLinearGradient(316, 282, cx, cy);
+  cone.addColorStop(0, 'rgba(37,230,255,.8)');
+  cone.addColorStop(1, 'rgba(37,230,255,0)');
+  ctx.fillStyle = cone;
+  ctx.beginPath();
+  ctx.moveTo(310, 282); ctx.lineTo(346, 282); ctx.lineTo(cx + 34, cy + 12); ctx.lineTo(cx - 34, cy + 12);
+  ctx.closePath(); ctx.fill();
+  ctx.globalAlpha = 1;
+
+  // 球体
+  ctx.save();
+  ctx.shadowColor = K34.cyan; ctx.shadowBlur = 22;
+  const rg = ctx.createRadialGradient(cx - 10, cy - 12, 4, cx, cy, R);
+  rg.addColorStop(0, 'rgba(190,250,255,.85)');
+  rg.addColorStop(0.45, 'rgba(37,230,255,.30)');
+  rg.addColorStop(1, 'rgba(37,230,255,0)');
+  ctx.fillStyle = rg;
+  ctx.beginPath(); ctx.arc(cx, cy, R * (0.6 + 0.4 * build), 0, Math.PI * 2); ctx.fill();
+  ctx.strokeStyle = `rgba(150,245,255,${0.85 * build})`;
+  ctx.lineWidth = 1.4;
+  ctx.beginPath(); ctx.arc(cx, cy, R * (0.6 + 0.4 * build), 0, Math.PI * 2); ctx.stroke();
+  ctx.fillStyle = `rgba(225,255,255,${0.5 * build})`;
+  ctx.beginPath(); ctx.arc(cx, cy, 4 + 4 * build, 0, Math.PI * 2); ctx.fill();
+  ctx.restore();
+
+  // 纬线扫过
+  ctx.save();
+  ctx.beginPath(); ctx.arc(cx, cy, R * build, 0, Math.PI * 2); ctx.clip();
+  for (let i = 0; i < 9; i++) {
+    const y = cy - R + ((i * 12 + t * 26) % (R * 2));
+    ctx.strokeStyle = `rgba(160,250,255,${0.10 + 0.08 * Math.sin(i + t * 2)})`;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    const hw = Math.sqrt(Math.max(0, R * R - (y - cy) * (y - cy))) * 0.94;
+    ctx.moveTo(cx - hw, y); ctx.lineTo(cx + hw, y); ctx.stroke();
+  }
+  ctx.restore();
+
+  // 环
+  const ring = k34seg(t, 1.6, 3.0);
+  if (ring > 0) {
+    ctx.save();
+    ctx.shadowColor = K34.cyan; ctx.shadowBlur = 12;
+    ctx.strokeStyle = `rgba(140,245,255,${0.7 * ring})`;
+    ctx.lineWidth = 1.6;
+    for (let i = 0; i < 2; i++) {
+      const a = t * (0.9 + i * 0.5) + i * 1.6;
+      ctx.beginPath();
+      ctx.ellipse(cx, cy, R * 1.16, R * 0.32, a, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  // 粉末
+  ctx.save();
+  for (const d of K34_HOLO_DUST) {
+    const a = d.a + t * d.sp * 0.6;
+    const rr = d.rad * (0.5 + 0.5 * build);
+    const x = cx + Math.cos(a) * rr;
+    const y = cy + Math.sin(a) * rr * 0.7 + Math.sin(t * 1.6 + d.ph) * 3;
+    ctx.globalAlpha = (0.25 + 0.5 * k34pulse(t, 1.3, d.ph)) * build;
+    ctx.fillStyle = d.s > 2 ? K34.cyan : '#c8f7ff';
+    ctx.fillRect(x, y, d.s, d.s);
+  }
+  ctx.restore();
+
+  // 文字
+  const txt = k34seg(t, 2.9, 3.7);
+  if (txt > 0) {
+    ctx.save();
+    ctx.globalAlpha = txt;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.font = `700 24px ${FONT}`;
+    ctx.shadowColor = K34.cyan; ctx.shadowBlur = 16;
+    ctx.fillStyle = 'rgba(225,255,255,.95)';
+    ctx.fillText('念头', cx, cy + 2);
+    ctx.restore();
+  }
+  // 扫描亮线
+  const scan = (t * 0.9) % 1;
+  ctx.save();
+  ctx.globalAlpha = 0.25 * build;
+  ctx.fillStyle = K34.cyan;
+  const sy = cy - R + scan * R * 2;
+  ctx.fillRect(cx - R, sy, R * 2, 1.6);
+  ctx.restore();
+  ctx.restore();
+}
+
+function drawScene(t) {
+  k34Backdrop(t);
+  k34Floor(t);
+  k34Rain(t);
+  k34Sign(t);
+  k34Figure(t);
+  k34Holo(432, 160, t);
+  // 前景雨（更粗）
+  ctx.save();
+  for (let i = 0; i < 12; i++) {
+    const x = (i * 97 + t * 40) % 660 - 10;
+    const y = ((i * 53) + t * 240) % 400 - 20;
+    ctx.strokeStyle = 'rgba(180,230,255,.10)';
+    ctx.lineWidth = 1.6;
+    ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x - 4, y + 22); ctx.stroke();
+  }
+  ctx.restore();
+
+  // 标题
+  ctx.save();
+  ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+  k34NeonText('赛博霓虹', 26, 46, 27, '#dffbff', 18);
+  ctx.fillStyle = 'rgba(255,47,158,.9)';
+  ctx.font = `600 13px ${FONT}`;
+  ctx.fillText('CYBER NEON · 深色底，霓虹光', 27, 66);
+  ctx.strokeStyle = 'rgba(37,230,255,.5)'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(26, 76); ctx.lineTo(236, 76); ctx.stroke();
+  ctx.restore();
+}
+
+  // ===== 共享渲染与署名 =======================================================
+  function watermark() {
+    const text = 'DeepSeek Harness 生成示例';
+    ctx.save();
+    ctx.font = '11px ' + FONT;
+    const w = ctx.measureText(text).width + 14;
+    const x = W - w - 8, y = H - 24;
+    ctx.fillStyle = 'rgba(0,0,0,.46)';
+    ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(x, y, w, 18, 4); else ctx.rect(x, y, w, 18);
+    ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,.82)';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(text, x + 7, y + 9.5);
+    ctx.restore();
+  }
+
+  function paint(t) {
+    ctx.save();
+    ctx.clearRect(0, 0, W, H);
+    try { drawScene(t); } catch (err) { console.error(err); }
+    ctx.restore();
+    watermark();
+  }
+
+  function renderAt(seconds) {
+    const t = ((Number(seconds) % DURATION) + DURATION) % DURATION;
+    paint(t);
+    syncUI(t);
+    return t;
+  }
+  window.renderAt = renderAt;
+
+  // ===== 播放、控制、减少动态 =================================================
+  const playBtn = document.getElementById('play');
+  const timeline = document.getElementById('timeline');
+  const clock = document.getElementById('clock');
+  let playing = false, base = 0, start = 0, current = 0;
+  const reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function syncUI(t) {
+    if (EXPORT) return;
+    current = t;
+    if (timeline) timeline.value = String(t.toFixed(2));
+    if (clock) clock.textContent = t.toFixed(2) + ' / ' + DURATION.toFixed(2) + 's';
+  }
+  function frame(now) {
+    if (!playing) return;
+    const t = ((now - start) / 1000 + base) % DURATION;
+    paint(t);
+    syncUI(t);
+    requestAnimationFrame(frame);
+  }
+  function play() {
+    if (playing) return;
+    playing = true;
+    start = performance.now();
+    base = current;
+    if (playBtn) playBtn.textContent = '暂停';
+    requestAnimationFrame(frame);
+  }
+  function pause() {
+    playing = false;
+    if (playBtn) playBtn.textContent = '播放';
+  }
+  if (playBtn) playBtn.addEventListener('click', () => { playing ? pause() : play(); });
+  document.getElementById('replay')?.addEventListener('click', () => {
+    base = 0; start = performance.now(); paint(0); syncUI(0); play();
+  });
+  timeline?.addEventListener('input', () => {
+    pause(); paint(Number(timeline.value)); syncUI(Number(timeline.value));
+  });
+  window.addEventListener('keydown', e => {
+    if (e.code === 'Space') { e.preventDefault(); playing ? pause() : play(); }
+    if (e.key === 'r' || e.key === 'R') { base = 0; start = performance.now(); paint(0); syncUI(0); play(); }
+  });
+
+  if (EXPORT) {
+    document.body.classList.add('export');
+    renderAt(0);
+  } else if (reduced) {
+    renderAt(2.4);
+    pause();
+  } else {
+    renderAt(0);
+    play();
+  }
+})();
+</script>
+</body>
+</html>

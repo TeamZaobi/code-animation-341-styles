@@ -1,0 +1,378 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>H5 Broadside · DeepSeek Harness 生成示例</title>
+<!--
+  Provenance
+  ----------
+  风格来源：code-animation-styles 目录（《来自俯仰观照博主的动画画风整理》整理稿）
+  catalog commit: 01576924a2b316d1f11ae33f75d3c005e8781451
+  style id: H5「Broadside」
+  license: upstream-custom-noncommercial（俯仰观照整理稿，非商业）
+  本文件：DeepSeek Harness（deepseek-flash）根据该风格提示词新写的候选示例，
+  不是原作者样片，也不是原项目演示；仅用于风格挑选预览。共享的只有时间轴、
+  尺寸、导出接口与页脚署名，画面与动作按本风格重新设计。
+  原文“只输出代码”等语句属于素材的一部分，不覆盖本任务的交付合同。
+-->
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; min-height: 100%; background: #0c0c10; color: #e9e9ee;
+    font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif; }
+  #app { min-height: 100vh; display: flex; flex-direction: column; align-items: center;
+    justify-content: center; gap: 12px; padding: 20px; }
+  #stage { width: min(94vw, 1000px); aspect-ratio: 16 / 9; background: #000;
+    box-shadow: 0 18px 60px rgba(0,0,0,.55); position: relative; overflow: hidden; }
+  canvas { display: block; width: 100%; height: 100%; }
+  #head, #ui { width: min(94vw, 1000px); }
+  #head h1 { margin: 0 0 4px; font-size: 15px; font-weight: 600; letter-spacing: .02em; }
+  #head p { margin: 0; font-size: 12px; line-height: 1.5; color: #9a9aa8; }
+  #ui { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  #ui button { background: #1d1d26; color: #f2f2f6; border: 1px solid #343444;
+    border-radius: 7px; padding: 6px 12px; font-size: 12px; cursor: pointer; }
+  #ui button:hover { background: #272734; }
+  #ui input[type=range] { flex: 1 1 220px; min-width: 150px; accent-color: #7c8cff; }
+  #clock { font-variant-numeric: tabular-nums; font-size: 12px; color: #a9a9ba; min-width: 78px; }
+  #credit { width: min(94vw, 1000px); font-size: 11px; line-height: 1.6; color: #6f6f80; }
+  #credit b { color: #9c9cae; font-weight: 500; }
+  body.export, body.export #app { display: block; width: 640px; height: 360px; min-height: 0;
+    padding: 0; margin: 0; overflow: hidden; background: #000; }
+  body.export #stage { width: 640px; height: 360px; box-shadow: none; }
+  body.export #head, body.export #ui, body.export #credit { display: none; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="head">
+    <h1>H5 · Broadside</h1>
+    <p>工业感报纸头版：奶油纸配墨色双线，火橙号外与三栏短新闻，印刷线条逐行落下。</p>
+  </div>
+  <div id="stage"><canvas id="c" width="640" height="360" aria-label="Broadside 风格动画示例"></canvas></div>
+  <div id="ui">
+    <button id="play" type="button">暂停</button>
+    <button id="replay" type="button">重播</button>
+    <input id="timeline" type="range" min="0" max="6" step="0.01" value="0" aria-label="时间轴">
+    <span id="clock">0.00 / 6.00s</span>
+  </div>
+  <div id="credit">
+    <b>DeepSeek Harness 生成示例</b>（非原项目样片）· 来源：来自俯仰观照博主的动画画风整理 ·
+    许可：upstream-custom-noncommercial（俯仰观照整理稿，非商业） · 画面与文字均由代码绘制，静音。
+  </div>
+</div>
+<script>
+(() => {
+  'use strict';
+  // ===== 共享脚手架（可改，但导出合同不要破坏）=================================
+  const W = 640, H = 360, DURATION = 6;
+  const EXPORT = new URLSearchParams(location.search).get('export') === '1';
+  const canvas = document.getElementById('c');
+  const ctx = canvas.getContext('2d');
+  const FONT = '"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",sans-serif';
+
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  const lerp = (a, b, t) => a + (b - a) * t;
+  const smooth = t => t * t * (3 - 2 * t);
+  const easeOut = t => 1 - Math.pow(1 - t, 3);
+  const easeIn = t => t * t * t;
+  function rng(seed) { let s = seed >>> 0; return () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; }; }
+
+  // ===== 场景（每个 ID 独立设计；下面的注释区由构建器替换）===================
+  // DESC: 工业感报纸头版：奶油纸配墨色双线，火橙号外与三栏短新闻，印刷线条逐行落下。
+// H5 Broadside · DeepSeek Harness 生成示例
+const H5_PAPER = '#efe2c4', H5_INK = '#1c1712', H5_ORANGE = '#e0571c';
+const H5_BROWN = '#6b5b46', H5_CREAM = '#f8efd9';
+const H5_GRAIN = (() => {
+  const r = rng(505);
+  return Array.from({ length: 520 }, () => ({ x: r() * W, y: r() * H, a: 0.015 + r() * 0.05, s: 0.5 + r() * 1.2 }));
+})();
+const H5_BARS = (() => {
+  const r = rng(77);
+  return Array.from({ length: 26 }, () => ({ w: 1 + Math.round(r() * 2), gap: 1 + Math.round(r() * 2), h: 16 + r() * 8 }));
+})();
+
+function h5seg(t, a, b) { return clamp((t - a) / (b - a), 0, 1); }
+function h5ease(t) { return 1 - Math.pow(1 - t, 3); }
+function h5line(x1, y1, x2, y2, color, w, p) {
+  if (p <= 0) return;
+  ctx.save(); ctx.strokeStyle = color; ctx.lineWidth = w || 1;
+  ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(lerp(x1, x2, h5ease(p)), lerp(y1, y2, h5ease(p))); ctx.stroke();
+  ctx.restore();
+}
+function h5clip(text, x, y, size, weight, color, p, font) {
+  if (p <= 0) return;
+  const e = h5ease(clamp(p, 0, 1));
+  ctx.save();
+  ctx.font = `${weight} ${size}px ${font || FONT}`;
+  const tw = ctx.measureText(text).width;
+  ctx.beginPath(); ctx.rect(x - 4, y - size * 1.05, (tw + 8) * e, size * 1.3); ctx.clip();
+  ctx.fillStyle = color; ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+  ctx.fillText(text, x, y);
+  ctx.restore();
+}
+function h5para(lines, x, y, size, lh, color, p, weight) {
+  lines.forEach((s, i) => {
+    const lp = h5seg(p, i * 0.13, i * 0.13 + 0.45);
+    if (lp <= 0) return;
+    ctx.save(); ctx.globalAlpha = h5ease(lp);
+    ctx.fillStyle = color; ctx.font = `${weight || 400} ${size}px ${FONT}`; ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+    ctx.fillText(s, x - (1 - h5ease(lp)) * 4, y + i * lh);
+    ctx.restore();
+  });
+}
+function h5track(text, x, y, gap, size, weight, color, align) {
+  ctx.save(); ctx.font = `${weight} ${size}px ${FONT}`; ctx.fillStyle = color;
+  let total = 0; for (const ch of text) total += ctx.measureText(ch).width + gap;
+  total -= gap;
+  let cx = align === 'right' ? x - total : align === 'center' ? x - total / 2 : x;
+  ctx.textAlign = 'left';
+  for (const ch of text) { ctx.fillText(ch, cx, y); cx += ctx.measureText(ch).width + gap; }
+  ctx.restore();
+}
+
+function drawScene(t) {
+  // 纸张
+  ctx.fillStyle = H5_PAPER; ctx.fillRect(0, 0, W, H);
+  ctx.save(); for (const g of H5_GRAIN) { ctx.fillStyle = `rgba(90,70,40,${g.a})`; ctx.fillRect(g.x, g.y, g.s, g.s); } ctx.restore();
+  // 边缘压深
+  const vg = ctx.createRadialGradient(W / 2, H / 2, 150, W / 2, H / 2, 420);
+  vg.addColorStop(0, 'rgba(255,250,235,0)'); vg.addColorStop(1, 'rgba(90,64,30,.12)');
+  ctx.fillStyle = vg; ctx.fillRect(0, 0, W, H);
+
+  // 裁切标记
+  ctx.save(); ctx.strokeStyle = 'rgba(28,23,18,.4)'; ctx.lineWidth = 1;
+  [[18, 18], [622, 18], [18, 316], [622, 316]].forEach(([x, y]) => {
+    ctx.beginPath();
+    ctx.moveTo(x - 8, y); ctx.lineTo(x + 8, y);
+    ctx.moveTo(x, y - 8); ctx.lineTo(x, y + 8);
+    ctx.stroke();
+  });
+  ctx.restore();
+
+  // 报头横线
+  h5line(28, 22, 612, 22, H5_INK, 1, h5seg(t, -0.1, 0.45));
+  h5track('第 07 期', 30, 17, 1.4, 9, 600, H5_BROWN);
+  h5track('免费取阅', 610, 17, 1.4, 9, 600, H5_BROWN, 'right');
+  // 橙色小方块
+  const op = h5seg(t, 0.1, 0.5);
+  if (op > 0) { ctx.save(); ctx.fillStyle = H5_ORANGE; ctx.fillRect(30, 27, 30 * h5ease(op), 5); ctx.restore(); }
+
+  // 报头大字
+  h5clip('成形日报', 244, 56, 38, 900, H5_INK, 0.06 + h5seg(t, -0.25, 0.6));
+  h5track('CHENGXING DAILY', 320, 70, 2.4, 8, 700, H5_BROWN, 'center');
+  h5line(28, 76, 612, 76, H5_INK, 2.2, h5seg(t, 0.2, 0.7));
+  h5line(28, 80, 612, 80, H5_INK, 0.8, h5seg(t, 0.32, 0.82));
+  // 报头小星
+  const stp = h5ease(h5seg(t, 0.5, 0.9));
+  if (stp > 0) {
+    ctx.save(); ctx.translate(424, 52); ctx.rotate(stp * 0.5);
+    ctx.fillStyle = H5_ORANGE;
+    ctx.beginPath();
+    for (let i = 0; i < 10; i++) {
+      const a = -Math.PI / 2 + i * Math.PI / 5, rr = i % 2 ? 5 : 12;
+      ctx.lineTo(Math.cos(a) * rr * stp, Math.sin(a) * rr * stp);
+    }
+    ctx.closePath(); ctx.fill(); ctx.restore();
+  }
+
+  // 栏线
+  h5line(204, 92, 204, 310, 'rgba(28,23,18,.32)', 1, h5seg(t, 0.5, 1.0));
+  h5line(392, 92, 392, 310, 'rgba(28,23,18,.32)', 1, h5seg(t, 0.62, 1.12));
+
+  // 左栏：头条
+  h5track('头条', 32, 98, 1.6, 9, 700, H5_ORANGE);
+  h5clip('先做', 30, 140, 43, 900, H5_INK, 0.04 + h5seg(t, -0.2, 0.55));
+  const p2 = 0.02 + h5seg(t, -0.1, 0.62);
+  h5clip('出来', 30, 184, 43, 900, H5_INK, p2);
+  // 头条下横线 + 橙色下划线
+  h5line(30, 196, 186, 196, 'rgba(28,23,18,.55)', 1, h5seg(t, 0.3, 0.85));
+  const up = h5seg(t, 0.75, 1.25);
+  if (up > 0) { ctx.save(); ctx.fillStyle = H5_ORANGE; ctx.fillRect(30, 191, 72 * h5ease(up), 4); ctx.restore(); }
+  h5para(['草稿不必体面。', '把第一版交出去，', '比在脑子里改十遍', '更接近成形。'],
+    30, 220, 13.5, 18, H5_INK, h5seg(t, 0.95, 2.15));
+  // 左栏小图：网点圆
+  const hp = h5seg(t, 1.7, 2.2);
+  if (hp > 0) {
+    ctx.save(); ctx.globalAlpha = h5ease(hp);
+    ctx.translate(152, 296);
+    ctx.fillStyle = H5_ORANGE; ctx.beginPath(); ctx.arc(0, 0, 18 * h5ease(hp), 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = H5_PAPER;
+    for (let y = -18; y <= 18; y += 5) for (let x = -18; x <= 18; x += 5) {
+      if (Math.hypot(x, y) < 15 * h5ease(hp)) ctx.fillRect(x, y, 1.6, 1.6);
+    }
+    ctx.restore();
+  }
+
+  // 中栏：次级头条
+  h5track('现场', 218, 98, 1.6, 9, 700, H5_ORANGE);
+  h5clip('一张', 218, 126, 23, 800, H5_INK, 0.1 + h5seg(t, 0.25, 0.95));
+  // 橙色块衬底 + 反白「草图」
+  const bp = h5ease(h5seg(t, 1.35, 1.75));
+  if (bp > 0) {
+    ctx.save(); ctx.globalAlpha = bp;
+    ctx.fillStyle = H5_ORANGE; ctx.fillRect(218, 132, 66 * bp, 25);
+    ctx.fillStyle = H5_CREAM; ctx.font = `800 22px ${FONT}`; ctx.textAlign = 'left';
+    ctx.fillText('草图', 223, 152);
+    ctx.restore();
+  }
+  h5line(218, 166, 372, 166, 'rgba(28,23,18,.4)', 1, h5seg(t, 1.5, 2.0));
+  h5para(['它不负责好看，', '只负责把模糊的念头', '固定成可以讨论的', '东西。改十次，', '就有了方向。'],
+    218, 188, 13.5, 18, H5_INK, h5seg(t, 1.7, 2.9));
+  // 中栏小标题
+  h5line(218, 286, 372, 286, 'rgba(28,23,18,.4)', 1, h5seg(t, 2.9, 3.3));
+  ctx.save();
+  ctx.fillStyle = H5_BROWN; ctx.font = `700 12.5px ${FONT}`; ctx.textAlign = 'left';
+  ctx.fillText('□ 今日完成一件小事', 218, 305);
+  ctx.restore();
+
+  // 右栏：号外
+  const ep = h5ease(h5seg(t, 1.55, 2.05));
+  if (ep > 0) {
+    ctx.save();
+    ctx.translate(410, 98); ctx.rotate(-0.035);
+    ctx.globalAlpha = ep;
+    ctx.fillStyle = H5_ORANGE; ctx.fillRect(0, 0, 196, 32);
+    ctx.fillStyle = H5_PAPER; ctx.font = `900 22px ${FONT}`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('E X T R A', 98, 17);
+    ctx.restore();
+  }
+  // 引语框
+  const qp = h5seg(t, 2.15, 2.7);
+  if (qp > 0) {
+    ctx.save();
+    ctx.globalAlpha = h5ease(qp);
+    ctx.strokeStyle = H5_INK; ctx.lineWidth = 1.4;
+    ctx.strokeRect(410, 144, 192, 86);
+    ctx.fillStyle = H5_INK; ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+    ctx.font = `800 24px ${FONT}`; ctx.fillText('草稿比完美', 426, 180);
+    ctx.font = `800 24px ${FONT}`; ctx.fillStyle = H5_ORANGE; ctx.fillText('更接近成形', 426, 210);
+    ctx.restore();
+  }
+  // 右栏要点
+  h5para(['留一条能走的路，', '比画满整张地图重要。'], 410, 258, 13.5, 18, H5_INK, h5seg(t, 2.75, 3.6));
+  // 条形码
+  const barP = h5seg(t, 3.2, 3.8);
+  if (barP > 0) {
+    ctx.save(); ctx.globalAlpha = h5ease(barP);
+    let bx = 560;
+    for (const b of H5_BARS) {
+      if (bx > 616) break;
+      ctx.fillStyle = H5_INK; ctx.fillRect(bx, 300, b.w, b.h);
+      bx += b.w + b.gap;
+    }
+    ctx.font = `500 7px ${FONT}`; ctx.fillStyle = H5_BROWN; ctx.textAlign = 'left';
+    ctx.fillText('07 · 640×360', 560, 328);
+    ctx.restore();
+  }
+  // 印刷章
+  const stampP = h5ease(h5seg(t, 4.15, 4.65));
+  if (stampP > 0) {
+    ctx.save();
+    ctx.translate(300, 277); ctx.rotate(-0.1);
+    ctx.globalAlpha = stampP * 0.9;
+    ctx.strokeStyle = H5_ORANGE; ctx.lineWidth = 2;
+    ctx.strokeRect(-44, -15, 88, 30);
+    ctx.fillStyle = H5_ORANGE; ctx.font = `800 14px ${FONT}`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('已 付 印', 0, 1);
+    ctx.restore();
+  }
+
+  // 页脚
+  h5line(28, 316, 612, 316, 'rgba(28,23,18,.5)', 1, h5seg(t, 0.7, 1.2));
+  h5track('成形日报 · 号外', 30, 331, 1.2, 8, 600, H5_BROWN);
+  h5track('第 07 期 / 共一版', 320, 331, 1.2, 8, 600, H5_BROWN, 'center');
+}
+
+  // ===== 共享渲染与署名 =======================================================
+  function watermark() {
+    const text = 'DeepSeek Harness 生成示例';
+    ctx.save();
+    ctx.font = '11px ' + FONT;
+    const w = ctx.measureText(text).width + 14;
+    const x = W - w - 8, y = H - 24;
+    ctx.fillStyle = 'rgba(0,0,0,.46)';
+    ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(x, y, w, 18, 4); else ctx.rect(x, y, w, 18);
+    ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,.82)';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(text, x + 7, y + 9.5);
+    ctx.restore();
+  }
+
+  function paint(t) {
+    ctx.save();
+    ctx.clearRect(0, 0, W, H);
+    try { drawScene(t); } catch (err) { console.error(err); }
+    ctx.restore();
+    watermark();
+  }
+
+  function renderAt(seconds) {
+    const t = ((Number(seconds) % DURATION) + DURATION) % DURATION;
+    paint(t);
+    syncUI(t);
+    return t;
+  }
+  window.renderAt = renderAt;
+
+  // ===== 播放、控制、减少动态 =================================================
+  const playBtn = document.getElementById('play');
+  const timeline = document.getElementById('timeline');
+  const clock = document.getElementById('clock');
+  let playing = false, base = 0, start = 0, current = 0;
+  const reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function syncUI(t) {
+    if (EXPORT) return;
+    current = t;
+    if (timeline) timeline.value = String(t.toFixed(2));
+    if (clock) clock.textContent = t.toFixed(2) + ' / ' + DURATION.toFixed(2) + 's';
+  }
+  function frame(now) {
+    if (!playing) return;
+    const t = ((now - start) / 1000 + base) % DURATION;
+    paint(t);
+    syncUI(t);
+    requestAnimationFrame(frame);
+  }
+  function play() {
+    if (playing) return;
+    playing = true;
+    start = performance.now();
+    base = current;
+    if (playBtn) playBtn.textContent = '暂停';
+    requestAnimationFrame(frame);
+  }
+  function pause() {
+    playing = false;
+    if (playBtn) playBtn.textContent = '播放';
+  }
+  if (playBtn) playBtn.addEventListener('click', () => { playing ? pause() : play(); });
+  document.getElementById('replay')?.addEventListener('click', () => {
+    base = 0; start = performance.now(); paint(0); syncUI(0); play();
+  });
+  timeline?.addEventListener('input', () => {
+    pause(); paint(Number(timeline.value)); syncUI(Number(timeline.value));
+  });
+  window.addEventListener('keydown', e => {
+    if (e.code === 'Space') { e.preventDefault(); playing ? pause() : play(); }
+    if (e.key === 'r' || e.key === 'R') { base = 0; start = performance.now(); paint(0); syncUI(0); play(); }
+  });
+
+  if (EXPORT) {
+    document.body.classList.add('export');
+    renderAt(0);
+  } else if (reduced) {
+    renderAt(2.4);
+    pause();
+  } else {
+    renderAt(0);
+    play();
+  }
+})();
+</script>
+</body>
+</html>

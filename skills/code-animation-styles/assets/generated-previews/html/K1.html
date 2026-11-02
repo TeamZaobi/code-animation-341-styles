@@ -1,0 +1,341 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>K1 扁平矢量 · DeepSeek Harness 生成示例</title>
+<!--
+  Provenance
+  ----------
+  风格来源：code-animation-styles 目录（《来自俯仰观照博主的动画画风整理》整理稿）
+  catalog commit: 01576924a2b316d1f11ae33f75d3c005e8781451
+  style id: K1「扁平矢量」
+  license: upstream-custom-noncommercial（俯仰观照整理稿，非商业）
+  本文件：DeepSeek Harness（deepseek-flash）根据该风格提示词新写的候选示例，
+  不是原作者样片，也不是原项目演示；仅用于风格挑选预览。共享的只有时间轴、
+  尺寸、导出接口与页脚署名，画面与动作按本风格重新设计。
+  原文“只输出代码”等语句属于素材的一部分，不覆盖本任务的交付合同。
+-->
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; min-height: 100%; background: #0c0c10; color: #e9e9ee;
+    font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif; }
+  #app { min-height: 100vh; display: flex; flex-direction: column; align-items: center;
+    justify-content: center; gap: 12px; padding: 20px; }
+  #stage { width: min(94vw, 1000px); aspect-ratio: 16 / 9; background: #000;
+    box-shadow: 0 18px 60px rgba(0,0,0,.55); position: relative; overflow: hidden; }
+  canvas { display: block; width: 100%; height: 100%; }
+  #head, #ui { width: min(94vw, 1000px); }
+  #head h1 { margin: 0 0 4px; font-size: 15px; font-weight: 600; letter-spacing: .02em; }
+  #head p { margin: 0; font-size: 12px; line-height: 1.5; color: #9a9aa8; }
+  #ui { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  #ui button { background: #1d1d26; color: #f2f2f6; border: 1px solid #343444;
+    border-radius: 7px; padding: 6px 12px; font-size: 12px; cursor: pointer; }
+  #ui button:hover { background: #272734; }
+  #ui input[type=range] { flex: 1 1 220px; min-width: 150px; accent-color: #7c8cff; }
+  #clock { font-variant-numeric: tabular-nums; font-size: 12px; color: #a9a9ba; min-width: 78px; }
+  #credit { width: min(94vw, 1000px); font-size: 11px; line-height: 1.6; color: #6f6f80; }
+  #credit b { color: #9c9cae; font-weight: 500; }
+  body.export, body.export #app { display: block; width: 640px; height: 360px; min-height: 0;
+    padding: 0; margin: 0; overflow: hidden; background: #000; }
+  body.export #stage { width: 640px; height: 360px; box-shadow: none; }
+  body.export #head, body.export #ui, body.export #credit { display: none; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="head">
+    <h1>K1 · 扁平矢量</h1>
+    <p>平涂无阴影的扁平矢量小场景：小人抬头，灯泡亮起，想法从头顶冒出来。</p>
+  </div>
+  <div id="stage"><canvas id="c" width="640" height="360" aria-label="扁平矢量 风格动画示例"></canvas></div>
+  <div id="ui">
+    <button id="play" type="button">暂停</button>
+    <button id="replay" type="button">重播</button>
+    <input id="timeline" type="range" min="0" max="6" step="0.01" value="0" aria-label="时间轴">
+    <span id="clock">0.00 / 6.00s</span>
+  </div>
+  <div id="credit">
+    <b>DeepSeek Harness 生成示例</b>（非原项目样片）· 来源：来自俯仰观照博主的动画画风整理 ·
+    许可：upstream-custom-noncommercial（俯仰观照整理稿，非商业） · 画面与文字均由代码绘制，静音。
+  </div>
+</div>
+<script>
+(() => {
+  'use strict';
+  // ===== 共享脚手架（可改，但导出合同不要破坏）=================================
+  const W = 640, H = 360, DURATION = 6;
+  const EXPORT = new URLSearchParams(location.search).get('export') === '1';
+  const canvas = document.getElementById('c');
+  const ctx = canvas.getContext('2d');
+  const FONT = '"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",sans-serif';
+
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  const lerp = (a, b, t) => a + (b - a) * t;
+  const smooth = t => t * t * (3 - 2 * t);
+  const easeOut = t => 1 - Math.pow(1 - t, 3);
+  const easeIn = t => t * t * t;
+  function rng(seed) { let s = seed >>> 0; return () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; }; }
+
+  // ===== 场景（每个 ID 独立设计；下面的注释区由构建器替换）===================
+  // DESC: 平涂无阴影的扁平矢量小场景：小人抬头，灯泡亮起，想法从头顶冒出来。
+// K1 扁平矢量 · DeepSeek Harness 生成示例
+const K1_BG = '#cdeffd', K1_INK = '#0b3954', K1_YELLOW = '#ffd93d', K1_PINK = '#ef476f';
+const K1_MINT = '#06d6a0', K1_BLUE = '#118ab2', K1_CREAM = '#fff6e5', K1_SKIN = '#ffb4a2';
+
+function k1seg(t, a, b) { return clamp((t - a) / (b - a), 0, 1); }
+function k1pop(p) { // 弹性出现
+  if (p <= 0) return 0;
+  if (p >= 1) return 1;
+  return 1 + 1.7 * Math.sin(p * Math.PI) * (1 - p) * 0.9 - 0.9 * (1 - p);
+}
+function k1ease(t) { return 1 - Math.pow(1 - t, 3); }
+function k1Line(w) { ctx.lineWidth = w || 4; ctx.strokeStyle = K1_INK; ctx.lineCap = 'round'; ctx.lineJoin = 'round'; }
+function k1RR(x, y, w, h, r, fill, stroke) {
+  ctx.beginPath();
+  if (ctx.roundRect) ctx.roundRect(x, y, w, h, r); else ctx.rect(x, y, w, h);
+  if (fill) { ctx.fillStyle = fill; ctx.fill(); }
+  if (stroke !== false) { k1Line(4); ctx.stroke(); }
+}
+function k1Circle(x, y, r, fill, stroke) {
+  ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2);
+  if (fill) { ctx.fillStyle = fill; ctx.fill(); }
+  if (stroke !== false) { k1Line(4); ctx.stroke(); }
+}
+
+function drawScene(t) {
+  ctx.fillStyle = K1_BG; ctx.fillRect(0, 0, W, H);
+
+  // 背景：太阳、云、远山（平涂，统一线宽）
+  k1Circle(556, 66, 34, K1_YELLOW);
+  ctx.save(); ctx.strokeStyle = K1_INK; ctx.lineWidth = 4; ctx.lineCap = 'round';
+  for (let i = 0; i < 8; i++) {
+    const a = i * Math.PI / 4 + t * 0.22;
+    ctx.beginPath();
+    ctx.moveTo(556 + Math.cos(a) * 44, 66 + Math.sin(a) * 44);
+    ctx.lineTo(556 + Math.cos(a) * 52, 66 + Math.sin(a) * 52);
+    ctx.stroke();
+  }
+  ctx.restore();
+
+  // 云：两团，缓慢平移
+  const cx = 96 + Math.sin(t * 0.5) * 8;
+  k1RR(cx, 52, 96, 30, 15, '#ffffff');
+  k1Circle(cx + 30, 46, 20, '#ffffff');
+  k1Circle(cx + 66, 48, 15, '#ffffff');
+
+  // 远山
+  ctx.save(); k1Line(4); ctx.fillStyle = '#9be3c7';
+  ctx.beginPath(); ctx.moveTo(0, 250); ctx.lineTo(112, 148); ctx.lineTo(232, 250); ctx.closePath(); ctx.fill(); ctx.stroke();
+  ctx.fillStyle = '#7ed6b3';
+  ctx.beginPath(); ctx.moveTo(160, 250); ctx.lineTo(292, 166); ctx.lineTo(420, 250); ctx.closePath(); ctx.fill(); ctx.stroke();
+  ctx.restore();
+
+  // 地面
+  ctx.fillStyle = K1_MINT; ctx.fillRect(0, 250, W, 110);
+  k1Line(4); ctx.beginPath(); ctx.moveTo(0, 250); ctx.lineTo(W, 250); ctx.stroke();
+  // 地面小草
+  ctx.save(); ctx.strokeStyle = K1_INK; ctx.lineWidth = 3; ctx.lineCap = 'round';
+  for (let i = 0; i < 9; i++) {
+    const x = 40 + i * 68, h = 12 + (i % 3) * 5;
+    ctx.beginPath(); ctx.moveTo(x, 268); ctx.quadraticCurveTo(x + 5, 268 - h, x + 2, 268 - h - 4); ctx.stroke();
+  }
+  ctx.restore();
+
+  // 桌子
+  k1RR(70, 246, 250, 12, 6, K1_CREAM);
+  k1RR(88, 258, 12, 62, 4, '#e8d9bd');
+  k1RR(290, 258, 12, 62, 4, '#e8d9bd');
+
+  // 桌上的杯子与植物
+  k1RR(280, 210, 34, 38, 6, K1_PINK);
+  ctx.save(); k1Line(4); ctx.beginPath(); ctx.arc(316, 226, 11, -1.2, 1.2); ctx.stroke(); ctx.restore();
+  k1RR(102, 222, 26, 24, 4, '#c98b5e');
+  ctx.save(); ctx.strokeStyle = K1_INK; ctx.lineWidth = 3.4; ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.moveTo(115, 222); ctx.lineTo(115, 204); ctx.stroke();
+  k1Circle(108, 198, 9, K1_MINT);
+  k1Circle(124, 194, 7, '#7ed6b3');
+  ctx.restore();
+
+  // 小人
+  const bob = Math.sin(t * 2.4) * 2;
+  const armUp = k1seg(t, 1.4, 2.0);
+  // 腿
+  ctx.save(); k1Line(7);
+  ctx.beginPath(); ctx.moveTo(196, 292); ctx.lineTo(196, 320); ctx.moveTo(216, 292); ctx.lineTo(216, 320); ctx.stroke();
+  ctx.restore();
+  // 身体
+  k1RR(178, 232 + bob, 56, 64, 16, K1_PINK);
+  // 手臂：左手抬起指灯泡
+  ctx.save(); k1Line(7);
+  ctx.beginPath(); ctx.moveTo(182, 252 + bob); ctx.lineTo(160, 270 + bob); ctx.stroke();
+  ctx.beginPath();
+  const ax = lerp(230, 246, armUp), ay = lerp(270, 226, armUp);
+  ctx.moveTo(230, 254 + bob); ctx.lineTo(ax, ay + bob); ctx.stroke();
+  ctx.restore();
+  // 头
+  k1Circle(206, 212 + bob, 32, K1_SKIN);
+  // 头发
+  ctx.save(); ctx.fillStyle = K1_INK;
+  ctx.beginPath(); ctx.arc(206, 208 + bob, 32, Math.PI * 1.04, Math.PI * 1.96); ctx.fill(); ctx.restore();
+  // 眼睛：眨眼
+  const blink = (t % 3.1) < 0.14 ? 0.15 : 1;
+  ctx.save(); ctx.fillStyle = K1_INK;
+  ctx.beginPath(); ctx.ellipse(196, 214 + bob, 3.4, 4.4 * blink, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(218, 214 + bob, 3.4, 4.4 * blink, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.restore();
+  // 笑
+  ctx.save(); k1Line(2.6); ctx.beginPath(); ctx.arc(207, 224 + bob, 8, 0.25, Math.PI - 0.25); ctx.stroke(); ctx.restore();
+
+  // 灯泡：从头顶弹出
+  const bp = k1pop(k1seg(t, 0.9, 1.7));
+  if (bp > 0.01) {
+    ctx.save();
+    ctx.translate(206, 128);
+    ctx.scale(bp, bp);
+    // 光晕（平涂色块，不用阴影）
+    ctx.globalAlpha = 0.35 * k1seg(t, 1.7, 2.2);
+    ctx.fillStyle = K1_YELLOW;
+    ctx.beginPath(); ctx.arc(0, 0, 44 + Math.sin(t * 3) * 3, 0, Math.PI * 2); ctx.fill();
+    ctx.globalAlpha = 1;
+    // 灯泡玻璃
+    ctx.beginPath(); ctx.arc(0, -4, 23, Math.PI * 0.92, Math.PI * 2.08); ctx.lineTo(9, 22); ctx.lineTo(-9, 22); ctx.closePath();
+    ctx.fillStyle = K1_YELLOW; ctx.fill(); k1Line(4); ctx.stroke();
+    // 灯座
+    k1RR(-9, 20, 18, 10, 3, K1_CREAM);
+    // 灯丝
+    ctx.save(); ctx.strokeStyle = K1_INK; ctx.lineWidth = 2.4; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(-6, 12); ctx.lineTo(-3, 0); ctx.lineTo(0, 10); ctx.lineTo(3, 0); ctx.lineTo(6, 12); ctx.stroke();
+    ctx.restore();
+    ctx.restore();
+    // 光芒线
+    const rp = k1seg(t, 1.9, 2.5);
+    if (rp > 0) {
+      ctx.save(); k1Line(4);
+      for (let i = 0; i < 6; i++) {
+        const a = -Math.PI * 0.85 + i * Math.PI * 0.28;
+        const r0 = 34, r1 = 34 + 13 * k1ease(rp);
+        ctx.beginPath();
+        ctx.moveTo(206 + Math.cos(a) * r0, 128 + Math.sin(a) * r0);
+        ctx.lineTo(206 + Math.cos(a) * r1, 128 + Math.sin(a) * r1);
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+  }
+
+  // 想法文字气泡
+  const tp = k1seg(t, 2.4, 3.0);
+  if (tp > 0) {
+    ctx.save();
+    ctx.globalAlpha = tp;
+    k1RR(330, 92, 172, 64, 16, '#ffffff');
+    // 小尾巴
+    ctx.beginPath(); ctx.moveTo(348, 152); ctx.lineTo(332, 170); ctx.lineTo(366, 156); ctx.closePath();
+    ctx.fillStyle = '#ffffff'; ctx.fill(); k1Line(4); ctx.stroke();
+    ctx.fillStyle = K1_INK; ctx.font = `700 24px ${FONT}`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('有想法了！', 416, 124);
+    ctx.restore();
+  }
+
+  // 小标题放左上，避开署名区
+  ctx.save();
+  ctx.fillStyle = 'rgba(11,57,84,.62)';
+  ctx.font = `600 12px ${FONT}`; ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+  ctx.fillText('K1 · 扁平矢量 / flat vector', 22, 28);
+  ctx.restore();
+}
+
+  // ===== 共享渲染与署名 =======================================================
+  function watermark() {
+    const text = 'DeepSeek Harness 生成示例';
+    ctx.save();
+    ctx.font = '11px ' + FONT;
+    const w = ctx.measureText(text).width + 14;
+    const x = W - w - 8, y = H - 24;
+    ctx.fillStyle = 'rgba(0,0,0,.46)';
+    ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(x, y, w, 18, 4); else ctx.rect(x, y, w, 18);
+    ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,.82)';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(text, x + 7, y + 9.5);
+    ctx.restore();
+  }
+
+  function paint(t) {
+    ctx.save();
+    ctx.clearRect(0, 0, W, H);
+    try { drawScene(t); } catch (err) { console.error(err); }
+    ctx.restore();
+    watermark();
+  }
+
+  function renderAt(seconds) {
+    const t = ((Number(seconds) % DURATION) + DURATION) % DURATION;
+    paint(t);
+    syncUI(t);
+    return t;
+  }
+  window.renderAt = renderAt;
+
+  // ===== 播放、控制、减少动态 =================================================
+  const playBtn = document.getElementById('play');
+  const timeline = document.getElementById('timeline');
+  const clock = document.getElementById('clock');
+  let playing = false, base = 0, start = 0, current = 0;
+  const reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function syncUI(t) {
+    if (EXPORT) return;
+    current = t;
+    if (timeline) timeline.value = String(t.toFixed(2));
+    if (clock) clock.textContent = t.toFixed(2) + ' / ' + DURATION.toFixed(2) + 's';
+  }
+  function frame(now) {
+    if (!playing) return;
+    const t = ((now - start) / 1000 + base) % DURATION;
+    paint(t);
+    syncUI(t);
+    requestAnimationFrame(frame);
+  }
+  function play() {
+    if (playing) return;
+    playing = true;
+    start = performance.now();
+    base = current;
+    if (playBtn) playBtn.textContent = '暂停';
+    requestAnimationFrame(frame);
+  }
+  function pause() {
+    playing = false;
+    if (playBtn) playBtn.textContent = '播放';
+  }
+  if (playBtn) playBtn.addEventListener('click', () => { playing ? pause() : play(); });
+  document.getElementById('replay')?.addEventListener('click', () => {
+    base = 0; start = performance.now(); paint(0); syncUI(0); play();
+  });
+  timeline?.addEventListener('input', () => {
+    pause(); paint(Number(timeline.value)); syncUI(Number(timeline.value));
+  });
+  window.addEventListener('keydown', e => {
+    if (e.code === 'Space') { e.preventDefault(); playing ? pause() : play(); }
+    if (e.key === 'r' || e.key === 'R') { base = 0; start = performance.now(); paint(0); syncUI(0); play(); }
+  });
+
+  if (EXPORT) {
+    document.body.classList.add('export');
+    renderAt(0);
+  } else if (reduced) {
+    renderAt(2.4);
+    pause();
+  } else {
+    renderAt(0);
+    play();
+  }
+})();
+</script>
+</body>
+</html>

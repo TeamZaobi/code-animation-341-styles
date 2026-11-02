@@ -1,0 +1,457 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>K14 波普 · DeepSeek Harness 生成示例</title>
+<!--
+  Provenance
+  ----------
+  风格来源：code-animation-styles 目录（《来自俯仰观照博主的动画画风整理》整理稿）
+  catalog commit: 01576924a2b316d1f11ae33f75d3c005e8781451
+  style id: K14「波普」
+  license: upstream-custom-noncommercial（俯仰观照整理稿，非商业）
+  本文件：DeepSeek Harness（deepseek-flash）根据该风格提示词新写的候选示例，
+  不是原作者样片，也不是原项目演示；仅用于风格挑选预览。共享的只有时间轴、
+  尺寸、导出接口与页脚署名，画面与动作按本风格重新设计。
+  原文“只输出代码”等语句属于素材的一部分，不覆盖本任务的交付合同。
+-->
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; min-height: 100%; background: #0c0c10; color: #e9e9ee;
+    font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif; }
+  #app { min-height: 100vh; display: flex; flex-direction: column; align-items: center;
+    justify-content: center; gap: 12px; padding: 20px; }
+  #stage { width: min(94vw, 1000px); aspect-ratio: 16 / 9; background: #000;
+    box-shadow: 0 18px 60px rgba(0,0,0,.55); position: relative; overflow: hidden; }
+  canvas { display: block; width: 100%; height: 100%; }
+  #head, #ui { width: min(94vw, 1000px); }
+  #head h1 { margin: 0 0 4px; font-size: 15px; font-weight: 600; letter-spacing: .02em; }
+  #head p { margin: 0; font-size: 12px; line-height: 1.5; color: #9a9aa8; }
+  #ui { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  #ui button { background: #1d1d26; color: #f2f2f6; border: 1px solid #343444;
+    border-radius: 7px; padding: 6px 12px; font-size: 12px; cursor: pointer; }
+  #ui button:hover { background: #272734; }
+  #ui input[type=range] { flex: 1 1 220px; min-width: 150px; accent-color: #7c8cff; }
+  #clock { font-variant-numeric: tabular-nums; font-size: 12px; color: #a9a9ba; min-width: 78px; }
+  #credit { width: min(94vw, 1000px); font-size: 11px; line-height: 1.6; color: #6f6f80; }
+  #credit b { color: #9c9cae; font-weight: 500; }
+  body.export, body.export #app { display: block; width: 640px; height: 360px; min-height: 0;
+    padding: 0; margin: 0; overflow: hidden; background: #000; }
+  body.export #stage { width: 640px; height: 360px; box-shadow: none; }
+  body.export #head, body.export #ui, body.export #credit { display: none; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="head">
+    <h1>K14 · 波普</h1>
+    <p>波普漫画一格：粗黑描边与网点底，黄发女郎弹出「灵感来了！」对话框，爆炸星与闪光收尾。</p>
+  </div>
+  <div id="stage"><canvas id="c" width="640" height="360" aria-label="波普 风格动画示例"></canvas></div>
+  <div id="ui">
+    <button id="play" type="button">暂停</button>
+    <button id="replay" type="button">重播</button>
+    <input id="timeline" type="range" min="0" max="6" step="0.01" value="0" aria-label="时间轴">
+    <span id="clock">0.00 / 6.00s</span>
+  </div>
+  <div id="credit">
+    <b>DeepSeek Harness 生成示例</b>（非原项目样片）· 来源：来自俯仰观照博主的动画画风整理 ·
+    许可：upstream-custom-noncommercial（俯仰观照整理稿，非商业） · 画面与文字均由代码绘制，静音。
+  </div>
+</div>
+<script>
+(() => {
+  'use strict';
+  // ===== 共享脚手架（可改，但导出合同不要破坏）=================================
+  const W = 640, H = 360, DURATION = 6;
+  const EXPORT = new URLSearchParams(location.search).get('export') === '1';
+  const canvas = document.getElementById('c');
+  const ctx = canvas.getContext('2d');
+  const FONT = '"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",sans-serif';
+
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  const lerp = (a, b, t) => a + (b - a) * t;
+  const smooth = t => t * t * (3 - 2 * t);
+  const easeOut = t => 1 - Math.pow(1 - t, 3);
+  const easeIn = t => t * t * t;
+  function rng(seed) { let s = seed >>> 0; return () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; }; }
+
+  // ===== 场景（每个 ID 独立设计；下面的注释区由构建器替换）===================
+  // DESC: 波普漫画一格：粗黑描边与网点底，黄发女郎弹出「灵感来了！」对话框，爆炸星与闪光收尾。
+const K14_INK = '#141414';
+const K14_CREAM = '#f8eed8';
+const K14_RED = '#e63b4e';
+const K14_YELLOW = '#ffd23f';
+const K14_BLUE = '#2b6cb0';
+const K14_SKIN = '#ffcaa8';
+const K14_LIP = '#e8324c';
+
+function k14DotPattern(color, alpha, spacing, radius) {
+  const c = document.createElement('canvas');
+  c.width = c.height = spacing;
+  const g = c.getContext('2d');
+  g.globalAlpha = alpha;
+  g.fillStyle = color;
+  g.beginPath(); g.arc(spacing / 2, spacing / 2, radius, 0, Math.PI * 2); g.fill();
+  return ctx.createPattern(c, 'repeat');
+}
+const K14_DOTS_RED = k14DotPattern(K14_RED, 0.5, 12, 2.9);
+const K14_DOTS_BLUE = k14DotPattern(K14_BLUE, 0.45, 10, 2.2);
+
+function k14seg(t, a, b) { return clamp((t - a) / (b - a), 0, 1); }
+function k14ease(p) { return 1 - Math.pow(1 - p, 3); }
+function k14pop(p) {
+  p = clamp(p, 0, 1);
+  const c1 = 1.70158, c3 = c1 + 1;
+  return 1 + c3 * Math.pow(p - 1, 3) + c1 * Math.pow(p - 1, 2);
+}
+function k14Star(x, y, r1, r2, n, rot) {
+  ctx.beginPath();
+  for (let i = 0; i < n * 2; i++) {
+    const a = rot + (i * Math.PI) / n;
+    const r = i % 2 ? r2 : r1;
+    const px = x + Math.cos(a) * r, py = y + Math.sin(a) * r;
+    if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+  }
+  ctx.closePath();
+}
+
+function k14Woman(t) {
+  const bob = Math.sin(t * 2.4) * 2;
+  ctx.save();
+  ctx.translate(208, 306 + bob);
+  // 地面阴影
+  ctx.fillStyle = 'rgba(20,20,20,.12)';
+  ctx.beginPath(); ctx.ellipse(0, 2, 84, 11, 0, 0, Math.PI * 2); ctx.fill();
+
+  ctx.lineWidth = 6; ctx.strokeStyle = K14_INK; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+  // 腿
+  ctx.fillStyle = K14_SKIN;
+  ctx.beginPath(); ctx.roundRect(-28, -48, 20, 46, 9); ctx.fill(); ctx.stroke();
+  ctx.beginPath(); ctx.roundRect(10, -48, 20, 46, 9); ctx.fill(); ctx.stroke();
+  // 鞋
+  ctx.fillStyle = K14_BLUE;
+  ctx.beginPath(); ctx.ellipse(-16, -4, 21, 9, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+  ctx.beginPath(); ctx.ellipse(22, -4, 21, 9, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+
+  // 裙子
+  ctx.beginPath();
+  ctx.moveTo(-33, -152);
+  ctx.lineTo(33, -152);
+  ctx.quadraticCurveTo(48, -100, 58, -42);
+  ctx.quadraticCurveTo(0, -30, -58, -42);
+  ctx.quadraticCurveTo(-48, -100, -33, -152);
+  ctx.closePath();
+  ctx.fillStyle = K14_RED; ctx.fill(); ctx.lineWidth = 7; ctx.stroke();
+  // 裙上蓝白半圆点
+  ctx.save();
+  ctx.clip();
+  ctx.fillStyle = K14_CREAM;
+  for (let i = 0; i < 6; i++) {
+    const x = -42 + i * 18, y = -120 + (i % 2) * 26;
+    ctx.beginPath(); ctx.arc(x, y, 5.5, 0, Math.PI * 2); ctx.fill();
+  }
+  ctx.restore();
+  // 腰带
+  ctx.beginPath(); ctx.roundRect(-36, -126, 72, 14, 4);
+  ctx.fillStyle = K14_BLUE; ctx.fill(); ctx.lineWidth = 5; ctx.stroke();
+  // 白领子
+  ctx.beginPath();
+  ctx.moveTo(-22, -154); ctx.lineTo(-2, -136); ctx.lineTo(-24, -128); ctx.closePath();
+  ctx.moveTo(22, -154); ctx.lineTo(2, -136); ctx.lineTo(24, -128); ctx.closePath();
+  ctx.fillStyle = K14_CREAM; ctx.fill(); ctx.lineWidth = 5; ctx.stroke();
+
+  // 手臂：左垂、右抬手指上方
+  ctx.lineCap = 'round';
+  ctx.strokeStyle = K14_INK; ctx.lineWidth = 17;
+  ctx.beginPath(); ctx.moveTo(-34, -148); ctx.quadraticCurveTo(-58, -124, -64, -102); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(34, -148); ctx.quadraticCurveTo(62, -152, 76, -184); ctx.stroke();
+  ctx.strokeStyle = K14_SKIN; ctx.lineWidth = 10;
+  ctx.beginPath(); ctx.moveTo(-34, -148); ctx.quadraticCurveTo(-58, -124, -64, -102); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(34, -148); ctx.quadraticCurveTo(62, -152, 76, -184); ctx.stroke();
+  // 手
+  ctx.fillStyle = K14_SKIN; ctx.strokeStyle = K14_INK; ctx.lineWidth = 5;
+  ctx.beginPath(); ctx.arc(-65, -99, 11, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+  ctx.beginPath(); ctx.arc(78, -188, 11, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+
+  // 头发（后层）
+  ctx.beginPath(); ctx.arc(0, -208, 63, 0, Math.PI * 2);
+  ctx.fillStyle = K14_YELLOW; ctx.fill(); ctx.lineWidth = 7; ctx.stroke();
+  // 侧发
+  ctx.beginPath(); ctx.ellipse(-58, -172, 16, 34, 0.18, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+  ctx.beginPath(); ctx.ellipse(58, -172, 16, 34, -0.18, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+
+  // 脸
+  ctx.beginPath(); ctx.arc(0, -202, 50, 0, Math.PI * 2);
+  ctx.fillStyle = K14_SKIN; ctx.fill(); ctx.lineWidth = 6; ctx.stroke();
+
+  // 刘海（一片式波浪）
+  ctx.beginPath();
+  ctx.moveTo(-62, -206);
+  ctx.quadraticCurveTo(-64, -252, -26, -256);
+  ctx.lineTo(28, -256);
+  ctx.quadraticCurveTo(64, -252, 62, -206);
+  ctx.quadraticCurveTo(54, -218, 42, -228);
+  ctx.quadraticCurveTo(30, -240, 16, -228);
+  ctx.quadraticCurveTo(2, -214, -10, -228);
+  ctx.quadraticCurveTo(-24, -242, -36, -228);
+  ctx.quadraticCurveTo(-50, -216, -62, -206);
+  ctx.closePath();
+  ctx.fillStyle = K14_YELLOW; ctx.fill(); ctx.lineWidth = 6; ctx.stroke();
+
+  // 腮红网点
+  ctx.save();
+  ctx.beginPath(); ctx.arc(-38, -186, 17, 0, Math.PI * 2); ctx.clip();
+  ctx.fillStyle = K14_DOTS_RED; ctx.fillRect(-60, -205, 45, 45);
+  ctx.restore();
+
+  // 眼影 + 眼睛
+  ctx.fillStyle = K14_BLUE;
+  ctx.beginPath(); ctx.ellipse(-22, -216, 17, 9, -0.1, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(22, -216, 17, 9, 0.1, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = '#ffffff'; ctx.strokeStyle = K14_INK; ctx.lineWidth = 4;
+  ctx.beginPath(); ctx.ellipse(-22, -207, 13, 15, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+  ctx.beginPath(); ctx.ellipse(22, -207, 13, 15, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+  ctx.fillStyle = K14_INK;
+  ctx.beginPath(); ctx.arc(-20, -204, 5.4, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.arc(24, -204, 5.4, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = '#ffffff';
+  ctx.beginPath(); ctx.arc(-22, -206, 1.8, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.arc(22, -206, 1.8, 0, Math.PI * 2); ctx.fill();
+  // 睫毛
+  ctx.strokeStyle = K14_INK; ctx.lineWidth = 3.4; ctx.lineCap = 'round';
+  for (const [ex, sx] of [[-34, -1], [34, 1]]) {
+    ctx.beginPath();
+    ctx.moveTo(ex, -210); ctx.lineTo(ex + sx * 9, -218);
+    ctx.moveTo(ex + sx * 2, -206); ctx.lineTo(ex + sx * 11, -210);
+    ctx.stroke();
+  }
+  // 眉毛
+  ctx.lineWidth = 4;
+  ctx.beginPath(); ctx.moveTo(-36, -228); ctx.quadraticCurveTo(-22, -234, -9, -229); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(9, -229); ctx.quadraticCurveTo(22, -234, 36, -228); ctx.stroke();
+  // 鼻子
+  ctx.lineWidth = 3.6;
+  ctx.beginPath(); ctx.moveTo(0, -196); ctx.quadraticCurveTo(4, -189, 0, -187); ctx.stroke();
+  // 红唇
+  ctx.fillStyle = K14_LIP; ctx.strokeStyle = K14_INK; ctx.lineWidth = 3.6;
+  ctx.beginPath();
+  ctx.moveTo(-17, -178);
+  ctx.quadraticCurveTo(-8, -186, 0, -180);
+  ctx.quadraticCurveTo(8, -186, 17, -178);
+  ctx.quadraticCurveTo(8, -166, 0, -166);
+  ctx.quadraticCurveTo(-8, -166, -17, -178);
+  ctx.closePath(); ctx.fill(); ctx.stroke();
+  ctx.restore();
+}
+
+function k14Bubble(t) {
+  const p = k14pop(k14seg(t, 0.8, 1.45));
+  if (p <= 0.001) return;
+  const cx = 484, cy = 118;
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.scale(p, p);
+  ctx.translate(-cx, -cy);
+  // 尾巴
+  ctx.beginPath();
+  ctx.moveTo(392, 166);
+  ctx.lineTo(356, 198);
+  ctx.lineTo(430, 180);
+  ctx.closePath();
+  ctx.fillStyle = '#ffffff'; ctx.fill();
+  ctx.lineWidth = 7; ctx.strokeStyle = K14_INK; ctx.lineJoin = 'round'; ctx.stroke();
+  // 对话框
+  ctx.beginPath();
+  ctx.roundRect(344, 54, 262, 118, 12);
+  ctx.fillStyle = '#ffffff'; ctx.fill(); ctx.stroke();
+  // 字
+  ctx.fillStyle = K14_INK;
+  ctx.font = `900 34px ${FONT}`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText('灵感来了！', cx, 104);
+  ctx.fillStyle = K14_RED;
+  ctx.font = `800 15px ${FONT}`;
+  ctx.fillText('先记下来', cx, 146);
+  ctx.restore();
+}
+
+function drawScene(t) {
+  // 背景与网点
+  ctx.fillStyle = K14_CREAM; ctx.fillRect(0, 0, W, H);
+  ctx.save();
+  ctx.globalAlpha = 0.28;
+  ctx.fillStyle = K14_DOTS_RED; ctx.fillRect(0, 0, W, H);
+  ctx.restore();
+  // 右上蓝点三角
+  ctx.save();
+  ctx.beginPath(); ctx.moveTo(640, 0); ctx.lineTo(640, 250); ctx.lineTo(392, 0); ctx.closePath(); ctx.clip();
+  ctx.globalAlpha = 0.5; ctx.fillStyle = K14_DOTS_BLUE; ctx.fillRect(380, 0, 260, 260);
+  ctx.restore();
+
+  // 爆炸星（角色背后）
+  const burstRot = t * 0.18;
+  const pulse = 1 + Math.sin(t * 2.1) * 0.03;
+  ctx.save();
+  ctx.translate(206, 148);
+  ctx.rotate(burstRot); ctx.scale(pulse, pulse);
+  k14Star(0, 0, 118, 70, 12, 0);
+  ctx.fillStyle = K14_BLUE; ctx.fill();
+  ctx.lineWidth = 6; ctx.strokeStyle = K14_INK; ctx.stroke();
+  ctx.restore();
+
+  // 角色
+  k14Woman(t);
+
+  // 对话框
+  k14Bubble(t);
+
+  // 闪光星星
+  const sp = k14seg(t, 1.7, 2.3);
+  if (sp > 0) {
+    const pts = [[402, 206, 1, K14_BLUE], [580, 208, 0.8, K14_RED], [620, 120, 0.6, K14_BLUE], [388, 44, 0.7, K14_RED]];
+    pts.forEach((s, i) => {
+      const q = k14ease(k14seg(t, 1.7 + i * 0.08, 2.1 + i * 0.08));
+      if (q <= 0) return;
+      ctx.save();
+      ctx.globalAlpha = q;
+      ctx.translate(s[0], s[1]);
+      ctx.rotate(q * 0.8 + i);
+      ctx.scale(s[2] * q, s[2] * q);
+      k14Star(0, 0, 15, 5, 4, 0);
+      ctx.fillStyle = s[3]; ctx.fill();
+      ctx.lineWidth = 3; ctx.strokeStyle = K14_INK; ctx.stroke();
+      ctx.restore();
+    });
+  }
+
+  // 顶部标题（首帧即有）
+  ctx.save();
+  ctx.fillStyle = K14_YELLOW;
+  ctx.fillRect(24, 20, 138, 40);
+  ctx.lineWidth = 5; ctx.strokeStyle = K14_INK; ctx.strokeRect(24, 20, 138, 40);
+  ctx.fillStyle = K14_INK;
+  ctx.font = `900 28px ${FONT}`; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+  ctx.fillText('波普', 40, 41);
+  ctx.font = `800 14px ${FONT}`;
+  ctx.fillText('POP', 104, 42);
+  ctx.restore();
+
+  // 左下漫画旁白条
+  ctx.save();
+  ctx.fillStyle = K14_INK;
+  ctx.fillRect(24, 316, 300, 32);
+  ctx.fillStyle = K14_YELLOW;
+  ctx.font = `700 16px ${FONT}`; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+  ctx.fillText('一格漫画：念头突然出现', 40, 332);
+  ctx.restore();
+
+  // 循环收口：白闪
+  const fp = k14seg(t, 5.65, 5.98);
+  if (fp > 0) {
+    ctx.save();
+    ctx.globalAlpha = Math.sin(fp * Math.PI) * 0.55;
+    ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, W, H);
+    ctx.restore();
+  }
+
+  // 漫画粗边框
+  ctx.save();
+  ctx.lineWidth = 10; ctx.strokeStyle = K14_INK;
+  ctx.strokeRect(5, 5, W - 10, H - 10);
+  ctx.restore();
+}
+
+  // ===== 共享渲染与署名 =======================================================
+  function watermark() {
+    const text = 'DeepSeek Harness 生成示例';
+    ctx.save();
+    ctx.font = '11px ' + FONT;
+    const w = ctx.measureText(text).width + 14;
+    const x = W - w - 8, y = H - 24;
+    ctx.fillStyle = 'rgba(0,0,0,.46)';
+    ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(x, y, w, 18, 4); else ctx.rect(x, y, w, 18);
+    ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,.82)';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(text, x + 7, y + 9.5);
+    ctx.restore();
+  }
+
+  function paint(t) {
+    ctx.save();
+    ctx.clearRect(0, 0, W, H);
+    try { drawScene(t); } catch (err) { console.error(err); }
+    ctx.restore();
+    watermark();
+  }
+
+  function renderAt(seconds) {
+    const t = ((Number(seconds) % DURATION) + DURATION) % DURATION;
+    paint(t);
+    syncUI(t);
+    return t;
+  }
+  window.renderAt = renderAt;
+
+  // ===== 播放、控制、减少动态 =================================================
+  const playBtn = document.getElementById('play');
+  const timeline = document.getElementById('timeline');
+  const clock = document.getElementById('clock');
+  let playing = false, base = 0, start = 0, current = 0;
+  const reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function syncUI(t) {
+    if (EXPORT) return;
+    current = t;
+    if (timeline) timeline.value = String(t.toFixed(2));
+    if (clock) clock.textContent = t.toFixed(2) + ' / ' + DURATION.toFixed(2) + 's';
+  }
+  function frame(now) {
+    if (!playing) return;
+    const t = ((now - start) / 1000 + base) % DURATION;
+    paint(t);
+    syncUI(t);
+    requestAnimationFrame(frame);
+  }
+  function play() {
+    if (playing) return;
+    playing = true;
+    start = performance.now();
+    base = current;
+    if (playBtn) playBtn.textContent = '暂停';
+    requestAnimationFrame(frame);
+  }
+  function pause() {
+    playing = false;
+    if (playBtn) playBtn.textContent = '播放';
+  }
+  if (playBtn) playBtn.addEventListener('click', () => { playing ? pause() : play(); });
+  document.getElementById('replay')?.addEventListener('click', () => {
+    base = 0; start = performance.now(); paint(0); syncUI(0); play();
+  });
+  timeline?.addEventListener('input', () => {
+    pause(); paint(Number(timeline.value)); syncUI(Number(timeline.value));
+  });
+  window.addEventListener('keydown', e => {
+    if (e.code === 'Space') { e.preventDefault(); playing ? pause() : play(); }
+    if (e.key === 'r' || e.key === 'R') { base = 0; start = performance.now(); paint(0); syncUI(0); play(); }
+  });
+
+  if (EXPORT) {
+    document.body.classList.add('export');
+    renderAt(0);
+  } else if (reduced) {
+    renderAt(2.4);
+    pause();
+  } else {
+    renderAt(0);
+    play();
+  }
+})();
+</script>
+</body>
+</html>

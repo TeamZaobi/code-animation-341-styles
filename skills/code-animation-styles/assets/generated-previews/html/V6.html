@@ -1,0 +1,455 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>V6 形变 · DeepSeek Harness 生成示例</title>
+<!--
+  Provenance
+  ----------
+  风格来源：code-animation-styles 目录（《来自俯仰观照博主的动画画风整理》整理稿）
+  catalog commit: 01576924a2b316d1f11ae33f75d3c005e8781451
+  style id: V6「形变」
+  license: MIT（mg-styles-15，Copyright (c) 2026 Vincentwei1021）
+  本文件：DeepSeek Harness（deepseek-flash）根据该风格提示词新写的候选示例，
+  不是原作者样片，也不是原项目演示；仅用于风格挑选预览。共享的只有时间轴、
+  尺寸、导出接口与页脚署名，画面与动作按本风格重新设计。
+  原文“只输出代码”等语句属于素材的一部分，不覆盖本任务的交付合同。
+-->
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; min-height: 100%; background: #0c0c10; color: #e9e9ee;
+    font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif; }
+  #app { min-height: 100vh; display: flex; flex-direction: column; align-items: center;
+    justify-content: center; gap: 12px; padding: 20px; }
+  #stage { width: min(94vw, 1000px); aspect-ratio: 16 / 9; background: #000;
+    box-shadow: 0 18px 60px rgba(0,0,0,.55); position: relative; overflow: hidden; }
+  canvas { display: block; width: 100%; height: 100%; }
+  #head, #ui { width: min(94vw, 1000px); }
+  #head h1 { margin: 0 0 4px; font-size: 15px; font-weight: 600; letter-spacing: .02em; }
+  #head p { margin: 0; font-size: 12px; line-height: 1.5; color: #9a9aa8; }
+  #ui { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  #ui button { background: #1d1d26; color: #f2f2f6; border: 1px solid #343444;
+    border-radius: 7px; padding: 6px 12px; font-size: 12px; cursor: pointer; }
+  #ui button:hover { background: #272734; }
+  #ui input[type=range] { flex: 1 1 220px; min-width: 150px; accent-color: #7c8cff; }
+  #clock { font-variant-numeric: tabular-nums; font-size: 12px; color: #a9a9ba; min-width: 78px; }
+  #credit { width: min(94vw, 1000px); font-size: 11px; line-height: 1.6; color: #6f6f80; }
+  #credit b { color: #9c9cae; font-weight: 500; }
+  body.export, body.export #app { display: block; width: 640px; height: 360px; min-height: 0;
+    padding: 0; margin: 0; overflow: hidden; background: #000; }
+  body.export #stage { width: 640px; height: 360px; box-shadow: none; }
+  body.export #head, body.export #ui, body.export #credit { display: none; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="head">
+    <h1>V6 · 形变</h1>
+    <p>一个形状连续变成六个图形：咖啡杯→太阳→日落→海鸥→纸飞机→心，中间收敛成圆再展开，全程带挤压旋转与色场推移。</p>
+  </div>
+  <div id="stage"><canvas id="c" width="640" height="360" aria-label="形变 风格动画示例"></canvas></div>
+  <div id="ui">
+    <button id="play" type="button">暂停</button>
+    <button id="replay" type="button">重播</button>
+    <input id="timeline" type="range" min="0" max="6" step="0.01" value="0" aria-label="时间轴">
+    <span id="clock">0.00 / 6.00s</span>
+  </div>
+  <div id="credit">
+    <b>DeepSeek Harness 生成示例</b>（非原项目样片）· 来源：来自俯仰观照博主的动画画风整理 ·
+    许可：MIT（mg-styles-15，Copyright (c) 2026 Vincentwei1021） · 画面与文字均由代码绘制，静音。
+  </div>
+</div>
+<script>
+(() => {
+  'use strict';
+  // ===== 共享脚手架（可改，但导出合同不要破坏）=================================
+  const W = 640, H = 360, DURATION = 6;
+  const EXPORT = new URLSearchParams(location.search).get('export') === '1';
+  const canvas = document.getElementById('c');
+  const ctx = canvas.getContext('2d');
+  const FONT = '"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",sans-serif';
+
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  const lerp = (a, b, t) => a + (b - a) * t;
+  const smooth = t => t * t * (3 - 2 * t);
+  const easeOut = t => 1 - Math.pow(1 - t, 3);
+  const easeIn = t => t * t * t;
+  function rng(seed) { let s = seed >>> 0; return () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; }; }
+
+  // ===== 场景（每个 ID 独立设计；下面的注释区由构建器替换）===================
+  // DESC: 一个形状连续变成六个图形：咖啡杯→太阳→日落→海鸥→纸飞机→心，中间收敛成圆再展开，全程带挤压旋转与色场推移。
+// V6 形变 · DeepSeek Harness 生成示例
+const V6_N = 72;
+const V6_C = { x: 320, y: 172, s: 70 };
+
+function v6seg(t, a, b) { return clamp((t - a) / (b - a), 0, 1); }
+function v6ease(p) { return p * p * p * (p * (p * 6 - 15) + 10); }   // smootherstep
+function v6fast(p) { return p < 0.5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2; }
+
+function v6hex(h) {
+  return [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)];
+}
+function v6mix(a, b, p) {
+  return `rgb(${Math.round(lerp(a[0], b[0], p))},${Math.round(lerp(a[1], b[1], p))},${Math.round(lerp(a[2], b[2], p))})`;
+}
+
+function v6resample(pts) {
+  const n = pts.length, seg = [];
+  let total = 0;
+  for (let i = 0; i < n; i++) {
+    const a = pts[i], b = pts[(i + 1) % n];
+    const d = Math.hypot(b[0] - a[0], b[1] - a[1]);
+    seg.push(d); total += d;
+  }
+  const out = []; let idx = 0, acc = 0;
+  for (let k = 0; k < V6_N; k++) {
+    const target = total * k / V6_N;
+    while (acc + seg[idx] < target) { acc += seg[idx]; idx = (idx + 1) % n; }
+    const f = seg[idx] ? (target - acc) / seg[idx] : 0;
+    const a = pts[idx], b = pts[(idx + 1) % n];
+    out.push([lerp(a[0], b[0], f), lerp(a[1], b[1], f)]);
+  }
+  // 起点对齐到最高点，避免形变时顶点错位打结
+  let m = 0;
+  for (let i = 1; i < out.length; i++) if (out[i][1] < out[m][1]) m = i;
+  return out.slice(m).concat(out.slice(0, m));
+}
+
+/* ---------- 六个图形的轮廓（单位坐标，闭合多边形） ---------- */
+function v6cup() {
+  // 按周长顺序：杯口 → 右侧 → 把手绕出去 → 杯身 → 杯底 → 左侧
+  return [
+    [-0.58, -0.74], [0.46, -0.74],
+    [0.44, -0.40], [0.72, -0.34], [0.84, -0.06], [0.72, 0.20], [0.42, 0.16],
+    [0.34, 0.56], [-0.38, 0.62], [-0.50, 0.04],
+  ];
+}
+function v6sun() {
+  const p = [];
+  for (let i = 0; i < 96; i++) {
+    const a = i / 96 * Math.PI * 2;
+    const spike = Math.pow(Math.max(0, Math.cos(a * 8)), 5) * 0.46;
+    const r = 0.60 + spike;
+    p.push([Math.cos(a) * r, Math.sin(a) * r]);
+  }
+  return p;
+}
+function v6sunset() {
+  const p = [[-1, 0.42], [1, 0.42], [1, 0.86], [-1, 0.86]];
+  // 半轮太阳立在海平线上
+  for (let i = 0; i <= 24; i++) {
+    const a = Math.PI + (i / 24) * Math.PI;
+    p.push([Math.cos(a) * 0.56, 0.42 + Math.sin(a) * 0.56]);
+  }
+  return p;
+}
+function v6gull() {
+  return [[-1, -0.22], [-0.52, 0.02], [0, 0.34], [0.52, 0.02], [1, -0.22],
+          [0.56, -0.06], [0, 0.16], [-0.56, -0.06]];
+}
+function v6plane() {
+  return [[0, -0.92], [0.98, 0.46], [0.12, 0.2], [0, 0.9], [-0.12, 0.2], [-0.98, 0.46]];
+}
+function v6pin() {
+  const p = [];
+  for (let i = 0; i <= 26; i++) {
+    const a = -Math.PI * 0.86 + (i / 26) * Math.PI * 1.72;
+    p.push([Math.cos(a) * 0.62, -0.34 + Math.sin(a) * 0.62]);
+  }
+  p.push([0.12, 0.55], [0, 0.96], [-0.12, 0.55]);
+  return p;
+}
+function v6heart() {
+  const p = [];
+  for (let i = 0; i < 64; i++) {
+    const t = i / 64 * Math.PI * 2;
+    const x = 16 * Math.pow(Math.sin(t), 3);
+    const y = 13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t);
+    p.push([x / 17, -y / 17]);
+  }
+  return p;
+}
+
+const V6_CIRCLE = (() => {
+  const p = [];
+  for (let k = 0; k < V6_N; k++) {
+    const a = -Math.PI / 2 + k / V6_N * Math.PI * 2;
+    p.push([Math.cos(a) * 0.72, Math.sin(a) * 0.72]);
+  }
+  return p;
+})();
+
+const V6_ICONS = [
+  { key: 'cup', label: '咖啡', color: '#E2593A', bg: '#FFF1E4', pts: v6cup() },
+  { key: 'sun', label: '太阳', color: '#FFB01F', bg: '#FFF6DC', pts: v6sun() },
+  { key: 'sunset', label: '日落', color: '#FF6B45', bg: '#FFE7D3', pts: v6sunset() },
+  { key: 'gull', label: '海鸥', color: '#2E6E9E', bg: '#E4F2FB', pts: v6gull() },
+  { key: 'plane', label: '纸飞机', color: '#6C5CE7', bg: '#EDE9FF', pts: v6plane() },
+  { key: 'pin', label: '定位', color: '#12A594', bg: '#E2F7F1', pts: v6pin() },
+  { key: 'heart', label: '心动', color: '#E8436B', bg: '#FFE8EF', pts: v6heart() },
+].map(ic => ({ ...ic, poly: v6resample(ic.pts), colorRGB: v6hex(ic.color), bgRGB: v6hex(ic.bg) }));
+
+const V6_T0 = 0.05, V6_HOLD = 0.42, V6_MORPH = 0.32;
+
+function v6state(t) {
+  // 返回 { from, to, p }；p<0 表示静止在 from
+  let acc = V6_T0;
+  for (let i = 0; i < V6_ICONS.length; i++) {
+    if (t < acc) return { i, j: i, p: 0 };
+    const holdEnd = acc + V6_HOLD;
+    if (t < holdEnd) return { i, j: i, p: 0 };
+    const morphEnd = holdEnd + V6_MORPH;
+    if (t < morphEnd) return { i, j: Math.min(i + 1, V6_ICONS.length - 1), p: (t - holdEnd) / V6_MORPH };
+    acc = morphEnd;
+  }
+  return { i: V6_ICONS.length - 1, j: V6_ICONS.length - 1, p: 0 };
+}
+
+function drawScene(t) {
+  const st = v6state(t);
+  const A = V6_ICONS[st.i], B = V6_ICONS[st.j];
+  const p = clamp(st.p, 0, 1);
+  const e = p > 0 ? v6ease(p) : 0;
+
+  // 背景色场：随形变推移
+  ctx.fillStyle = v6mix(A.bgRGB, B.bgRGB, e);
+  ctx.fillRect(0, 0, W, H);
+  // 形变瞬间的涟漪圈
+  if (p > 0 && p < 1) {
+    ctx.save();
+    ctx.globalAlpha = 0.28 * Math.sin(p * Math.PI);
+    ctx.strokeStyle = v6mix(A.colorRGB, B.colorRGB, e);
+    ctx.lineWidth = 2;
+    const rr = 60 + p * 190;
+    ctx.beginPath(); ctx.arc(V6_C.x, V6_C.y, rr, 0, Math.PI * 2); ctx.stroke();
+    ctx.globalAlpha = 0.14 * Math.sin(p * Math.PI * 2);
+    ctx.beginPath(); ctx.arc(V6_C.x, V6_C.y, rr * 0.72, 0, Math.PI * 2); ctx.stroke();
+    ctx.restore();
+  }
+
+  // 网格点，撑住版式
+  ctx.save();
+  ctx.fillStyle = 'rgba(40,30,60,.06)';
+  for (let x = 24; x < W; x += 32) for (let y = 24; y < H; y += 32) ctx.fillRect(x, y, 1.6, 1.6);
+  ctx.restore();
+
+  // 顶部标识
+  ctx.save();
+  ctx.fillStyle = 'rgba(42,32,62,.55)';
+  ctx.font = `600 11px ${FONT}`; ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+  ctx.fillText('MORPH  /  ONE SHAPE, EVERY STORY', 28, 30);
+  ctx.restore();
+
+  // 形变：A → 圆 → B，中段最快
+  let poly;
+  if (p <= 0) {
+    poly = A.poly;
+  } else {
+    const stage1 = e < 0.5;
+    const k = stage1 ? e * 2 : (e - 0.5) * 2;
+    const kk = v6fast(clamp(k, 0, 1));
+    poly = [];
+    for (let i = 0; i < V6_N; i++) {
+      const from = stage1 ? A.poly[i] : V6_CIRCLE[i];
+      const to = stage1 ? V6_CIRCLE[i] : B.poly[i];
+      poly.push([lerp(from[0], to[0], kk), lerp(from[1], to[1], kk)]);
+    }
+  }
+  // 挤压 + 轻微旋转
+  const squash = Math.sin(Math.PI * p) * 0.13;
+  const rot = Math.sin(Math.PI * 2 * p) * 0.10;
+  const breathe = 1 + Math.sin(t * 1.9) * 0.018;
+  const col = v6mix(A.colorRGB, B.colorRGB, e);
+
+  // 运动拖影
+  if (p > 0.05 && p < 0.95) {
+    ctx.save();
+    ctx.globalAlpha = 0.16;
+    ctx.fillStyle = col;
+    [-0.10, 0.10].forEach(off => {
+      ctx.beginPath();
+      poly.forEach((pt, i) => {
+        const x = V6_C.x + pt[0] * V6_C.s * 1.06 + off * 60;
+        const y = V6_C.y + pt[1] * V6_C.s * 1.06;
+        i ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
+      });
+      ctx.closePath(); ctx.fill();
+    });
+    ctx.restore();
+  }
+
+  ctx.save();
+  ctx.translate(V6_C.x, V6_C.y);
+  ctx.rotate(rot);
+  ctx.scale((1 + squash) * (1 + breathe * 0.6), (1 - squash) * (1 + breathe));
+  // 投影
+  ctx.save();
+  ctx.translate(3, 9);
+  ctx.globalAlpha = 0.15;
+  ctx.fillStyle = '#3B2A52';
+  ctx.beginPath();
+  poly.forEach((pt, i) => { const x = pt[0] * V6_C.s, y = pt[1] * V6_C.s; i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); });
+  ctx.closePath(); ctx.fill();
+  ctx.restore();
+  // 主体
+  ctx.fillStyle = col;
+  ctx.beginPath();
+  poly.forEach((pt, i) => { const x = pt[0] * V6_C.s, y = pt[1] * V6_C.s; i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); });
+  ctx.closePath(); ctx.fill();
+  // 内部高光：一圈稍亮的内轮廓
+  ctx.save();
+  ctx.globalAlpha = 0.22;
+  ctx.strokeStyle = '#FFFFFF'; ctx.lineWidth = 3; ctx.lineJoin = 'round';
+  ctx.beginPath();
+  poly.forEach((pt, i) => { const x = pt[0] * V6_C.s * 0.93, y = pt[1] * V6_C.s * 0.93; i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); });
+  ctx.closePath(); ctx.stroke();
+  ctx.restore();
+  ctx.restore();
+
+  // 图形旁的小装饰点
+  ctx.save();
+  ctx.globalAlpha = 0.5;
+  ctx.fillStyle = col;
+  for (let i = 0; i < 3; i++) {
+    const a = t * 0.8 + i * 2.1;
+    ctx.beginPath();
+    ctx.arc(V6_C.x + Math.cos(a) * 150, V6_C.y + Math.sin(a) * 108, 2.4 + i * 0.8, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.restore();
+
+  // 标签：切换时快速淡入淡出
+  const showLabel = (ic, alpha, dy) => {
+    if (alpha <= 0) return;
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.translate(0, dy);
+    ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
+    ctx.fillStyle = '#2A1E3E';
+    ctx.font = `700 20px ${FONT}`;
+    ctx.fillText(ic.label, 320, 312);
+    ctx.fillStyle = 'rgba(42,30,62,.45)';
+    ctx.font = `500 11px ${FONT}`;
+    ctx.fillText('ONE SHAPE  ·  ' + String(V6_ICONS.indexOf(ic) + 1).padStart(2, '0') + ' / 07', 320, 330);
+    ctx.restore();
+  };
+  if (p <= 0) {
+    showLabel(A, v6seg(t, 0, 0.25), 0);
+  } else {
+    const outA = 1 - clamp(p * 2.4, 0, 1);
+    const inB = clamp((p - 0.62) * 2.6, 0, 1);
+    showLabel(A, outA, -8 * (1 - outA));
+    showLabel(B, inB, 8 * (1 - inB));
+  }
+
+  // 收尾：最后一枚心形上浮，标题与呼吸感
+  const endP = v6seg(t, 4.86, 5.28);
+  if (endP > 0) {
+    const e2 = v6ease(endP);
+    ctx.save();
+    ctx.globalAlpha = e2;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
+    ctx.fillStyle = 'rgba(42,30,62,.9)';
+    ctx.font = `800 26px ${FONT}`;
+    ctx.fillText('一形万象', 320, 78);
+    ctx.fillStyle = 'rgba(42,30,62,.5)';
+    ctx.font = `500 12px ${FONT}`;
+    ctx.fillText('六个意思，一个形状。', 320, 98);
+    ctx.restore();
+  }
+}
+
+  // ===== 共享渲染与署名 =======================================================
+  function watermark() {
+    const text = 'DeepSeek Harness 生成示例';
+    ctx.save();
+    ctx.font = '11px ' + FONT;
+    const w = ctx.measureText(text).width + 14;
+    const x = W - w - 8, y = H - 24;
+    ctx.fillStyle = 'rgba(0,0,0,.46)';
+    ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(x, y, w, 18, 4); else ctx.rect(x, y, w, 18);
+    ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,.82)';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(text, x + 7, y + 9.5);
+    ctx.restore();
+  }
+
+  function paint(t) {
+    ctx.save();
+    ctx.clearRect(0, 0, W, H);
+    try { drawScene(t); } catch (err) { console.error(err); }
+    ctx.restore();
+    watermark();
+  }
+
+  function renderAt(seconds) {
+    const t = ((Number(seconds) % DURATION) + DURATION) % DURATION;
+    paint(t);
+    syncUI(t);
+    return t;
+  }
+  window.renderAt = renderAt;
+
+  // ===== 播放、控制、减少动态 =================================================
+  const playBtn = document.getElementById('play');
+  const timeline = document.getElementById('timeline');
+  const clock = document.getElementById('clock');
+  let playing = false, base = 0, start = 0, current = 0;
+  const reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function syncUI(t) {
+    if (EXPORT) return;
+    current = t;
+    if (timeline) timeline.value = String(t.toFixed(2));
+    if (clock) clock.textContent = t.toFixed(2) + ' / ' + DURATION.toFixed(2) + 's';
+  }
+  function frame(now) {
+    if (!playing) return;
+    const t = ((now - start) / 1000 + base) % DURATION;
+    paint(t);
+    syncUI(t);
+    requestAnimationFrame(frame);
+  }
+  function play() {
+    if (playing) return;
+    playing = true;
+    start = performance.now();
+    base = current;
+    if (playBtn) playBtn.textContent = '暂停';
+    requestAnimationFrame(frame);
+  }
+  function pause() {
+    playing = false;
+    if (playBtn) playBtn.textContent = '播放';
+  }
+  if (playBtn) playBtn.addEventListener('click', () => { playing ? pause() : play(); });
+  document.getElementById('replay')?.addEventListener('click', () => {
+    base = 0; start = performance.now(); paint(0); syncUI(0); play();
+  });
+  timeline?.addEventListener('input', () => {
+    pause(); paint(Number(timeline.value)); syncUI(Number(timeline.value));
+  });
+  window.addEventListener('keydown', e => {
+    if (e.code === 'Space') { e.preventDefault(); playing ? pause() : play(); }
+    if (e.key === 'r' || e.key === 'R') { base = 0; start = performance.now(); paint(0); syncUI(0); play(); }
+  });
+
+  if (EXPORT) {
+    document.body.classList.add('export');
+    renderAt(0);
+  } else if (reduced) {
+    renderAt(2.4);
+    pause();
+  } else {
+    renderAt(0);
+    play();
+  }
+})();
+</script>
+</body>
+</html>

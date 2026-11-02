@@ -1,0 +1,447 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>V12 80 年代合成波 / VHS · DeepSeek Harness 生成示例</title>
+<!--
+  Provenance
+  ----------
+  风格来源：code-animation-styles 目录（《来自俯仰观照博主的动画画风整理》整理稿）
+  catalog commit: 01576924a2b316d1f11ae33f75d3c005e8781451
+  style id: V12「80 年代合成波 / VHS」
+  license: MIT（mg-styles-15，Copyright (c) 2026 Vincentwei1021）
+  本文件：DeepSeek Harness（deepseek-flash）根据该风格提示词新写的候选示例，
+  不是原作者样片，也不是原项目演示；仅用于风格挑选预览。共享的只有时间轴、
+  尺寸、导出接口与页脚署名，画面与动作按本风格重新设计。
+  原文“只输出代码”等语句属于素材的一部分，不覆盖本任务的交付合同。
+-->
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; min-height: 100%; background: #0c0c10; color: #e9e9ee;
+    font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif; }
+  #app { min-height: 100vh; display: flex; flex-direction: column; align-items: center;
+    justify-content: center; gap: 12px; padding: 20px; }
+  #stage { width: min(94vw, 1000px); aspect-ratio: 16 / 9; background: #000;
+    box-shadow: 0 18px 60px rgba(0,0,0,.55); position: relative; overflow: hidden; }
+  canvas { display: block; width: 100%; height: 100%; }
+  #head, #ui { width: min(94vw, 1000px); }
+  #head h1 { margin: 0 0 4px; font-size: 15px; font-weight: 600; letter-spacing: .02em; }
+  #head p { margin: 0; font-size: 12px; line-height: 1.5; color: #9a9aa8; }
+  #ui { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  #ui button { background: #1d1d26; color: #f2f2f6; border: 1px solid #343444;
+    border-radius: 7px; padding: 6px 12px; font-size: 12px; cursor: pointer; }
+  #ui button:hover { background: #272734; }
+  #ui input[type=range] { flex: 1 1 220px; min-width: 150px; accent-color: #7c8cff; }
+  #clock { font-variant-numeric: tabular-nums; font-size: 12px; color: #a9a9ba; min-width: 78px; }
+  #credit { width: min(94vw, 1000px); font-size: 11px; line-height: 1.6; color: #6f6f80; }
+  #credit b { color: #9c9cae; font-weight: 500; }
+  body.export, body.export #app { display: block; width: 640px; height: 360px; min-height: 0;
+    padding: 0; margin: 0; overflow: hidden; background: #000; }
+  body.export #stage { width: 640px; height: 360px; box-shadow: none; }
+  body.export #head, body.export #ui, body.export #credit { display: none; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="head">
+    <h1>V12 · 80 年代合成波 / VHS</h1>
+    <p>80 年代合成波：透视网格向观者滚动，切缝日落压在网格后，镀铬标题落到画面中央，VHS 扫描线、色偏与追踪带持续做旧。</p>
+  </div>
+  <div id="stage"><canvas id="c" width="640" height="360" aria-label="80 年代合成波 / VHS 风格动画示例"></canvas></div>
+  <div id="ui">
+    <button id="play" type="button">暂停</button>
+    <button id="replay" type="button">重播</button>
+    <input id="timeline" type="range" min="0" max="6" step="0.01" value="0" aria-label="时间轴">
+    <span id="clock">0.00 / 6.00s</span>
+  </div>
+  <div id="credit">
+    <b>DeepSeek Harness 生成示例</b>（非原项目样片）· 来源：来自俯仰观照博主的动画画风整理 ·
+    许可：MIT（mg-styles-15，Copyright (c) 2026 Vincentwei1021） · 画面与文字均由代码绘制，静音。
+  </div>
+</div>
+<script>
+(() => {
+  'use strict';
+  // ===== 共享脚手架（可改，但导出合同不要破坏）=================================
+  const W = 640, H = 360, DURATION = 6;
+  const EXPORT = new URLSearchParams(location.search).get('export') === '1';
+  const canvas = document.getElementById('c');
+  const ctx = canvas.getContext('2d');
+  const FONT = '"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",sans-serif';
+
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  const lerp = (a, b, t) => a + (b - a) * t;
+  const smooth = t => t * t * (3 - 2 * t);
+  const easeOut = t => 1 - Math.pow(1 - t, 3);
+  const easeIn = t => t * t * t;
+  function rng(seed) { let s = seed >>> 0; return () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; }; }
+
+  // ===== 场景（每个 ID 独立设计；下面的注释区由构建器替换）===================
+  // DESC: 80 年代合成波：透视网格向观者滚动，切缝日落压在网格后，镀铬标题落到画面中央，VHS 扫描线、色偏与追踪带持续做旧。
+// V12 80 年代合成波 · VHS · DeepSeek Harness 生成示例
+const V12_SKY = ['#1B0526', '#3D0B45', '#8A1360', '#FF3E7F'];
+const V12_CYAN = '#22E0FF', V12_MAG = '#FF2A6D', V12_HORIZON = 202;
+
+function v12seg(t, a, b) { return clamp((t - a) / (b - a), 0, 1); }
+function v12out(p) { return 1 - Math.pow(1 - p, 3); }
+function v12back(p) { const c = 2.2, q = p - 1; return 1 + (c + 1) * q * q * q + c * q * q; }
+
+const V12_STARS = (() => {
+  const r = rng(1986);
+  return Array.from({ length: 90 }, () => ({ x: r() * W, y: r() * 190, s: 0.6 + r() * 1.4, p: r() * 6.28 }));
+})();
+const V12_SCAN = (() => {
+  const c = document.createElement('canvas'); c.width = 4; c.height = 3;
+  const g = c.getContext('2d');
+  g.fillStyle = 'rgba(0,0,0,.34)';
+  g.fillRect(0, 0, 4, 1.2);
+  return c;
+})();
+let V12_SCAN_PAT = null;
+const V12_NOISE = (() => {
+  const r = rng(7788);
+  return Array.from({ length: 170 }, () => ({ x: r() * W, y: r() * H, w: 2 + r() * 22, h: 1 + r() * 2, a: 0.04 + r() * 0.12 }));
+})();
+
+// 太阳：横向切缝的复古落日
+function v12Sun(cx, cy, r, t) {
+  ctx.save();
+  const g = ctx.createLinearGradient(0, cy - r, 0, cy + r);
+  g.addColorStop(0, '#FFE45E');
+  g.addColorStop(0.42, '#FFB03A');
+  g.addColorStop(0.75, '#FF5C7A');
+  g.addColorStop(1, '#FF2A6D');
+  ctx.shadowColor = '#FF4E8E'; ctx.shadowBlur = 48;
+  ctx.fillStyle = g;
+  ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.fill();
+  ctx.shadowBlur = 0;
+  // 下半部切缝，越往下越宽
+  ctx.save();
+  ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.clip();
+  for (let i = 0; i < 8; i++) {
+    const yy = cy - r * 0.42 + i * (r * 0.115);
+    const hh = 1.4 + i * 1.5;
+    ctx.fillStyle = 'rgba(26,6,36,.92)';
+    ctx.fillRect(cx - r, yy, r * 2, hh);
+  }
+  ctx.restore();
+  // 顶部辉光
+  const hg = ctx.createRadialGradient(cx, cy, r * 0.6, cx, cy, r * 2.4);
+  hg.addColorStop(0, 'rgba(255,80,140,.42)');
+  hg.addColorStop(1, 'rgba(255,80,140,0)');
+  ctx.fillStyle = hg;
+  ctx.beginPath(); ctx.arc(cx, cy, r * 2.4, 0, Math.PI * 2); ctx.fill();
+  ctx.restore();
+}
+
+// 透视网格
+function v12Grid(t) {
+  const y0 = V12_HORIZON, vx = 320;
+  ctx.save();
+  ctx.lineCap = 'round';
+  // 纵向：全部指向灭点
+  ctx.strokeStyle = V12_CYAN;
+  ctx.shadowColor = V12_CYAN; ctx.shadowBlur = 8;
+  ctx.globalAlpha = 0.85;
+  ctx.lineWidth = 1.2;
+  for (let k = -10; k <= 10; k++) {
+    ctx.beginPath();
+    ctx.moveTo(vx + k * 11, y0);
+    ctx.lineTo(vx + k * 96, H + 20);
+    ctx.stroke();
+  }
+  // 横向：透视压缩 + 向前滚动
+  const phase = (t * 0.42) % 1;
+  ctx.strokeStyle = V12_MAG;
+  ctx.shadowColor = V12_MAG;
+  for (let i = 0; i < 16; i++) {
+    const k = (i + phase) / 16;
+    const y = y0 + (H - y0 + 30) * k * k;
+    if (y > H + 4) continue;
+    const a = 0.25 + 0.75 * clamp((y - y0) / (H - y0), 0, 1);
+    ctx.globalAlpha = a;
+    ctx.lineWidth = 1 + k * 2.2;
+    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
+  }
+  ctx.restore();
+  // 地平线强光
+  ctx.save();
+  const lg = ctx.createLinearGradient(0, y0 - 12, 0, y0 + 12);
+  lg.addColorStop(0, 'rgba(255,42,109,0)');
+  lg.addColorStop(0.5, 'rgba(255,180,220,.85)');
+  lg.addColorStop(1, 'rgba(255,42,109,0)');
+  ctx.fillStyle = lg;
+  ctx.fillRect(0, y0 - 12, W, 24);
+  ctx.restore();
+}
+
+// 镀铬字
+function v12Chrome(text, x, y, size, p) {
+  if (p <= 0) return;
+  const e = v12back(clamp(p, 0, 1));
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.scale(e, e);
+  ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
+  ctx.font = `900 ${size}px ${FONT}`;
+  // 外发光
+  ctx.shadowColor = '#FF3E9E'; ctx.shadowBlur = 26;
+  ctx.fillStyle = '#2A0A2E';
+  ctx.fillText(text, 0, 0);
+  ctx.shadowBlur = 0;
+  // 金属渐变
+  const g = ctx.createLinearGradient(0, -size * 0.82, 0, size * 0.16);
+  g.addColorStop(0, '#FFFFFF');
+  g.addColorStop(0.28, '#CFE4FF');
+  g.addColorStop(0.44, '#7C8BD9');
+  g.addColorStop(0.5, '#2B2B55');
+  g.addColorStop(0.62, '#8FA3E8');
+  g.addColorStop(0.78, '#F2F7FF');
+  g.addColorStop(1, '#9FB2E6');
+  ctx.fillStyle = g;
+  ctx.fillText(text, 0, 0);
+  // 描边
+  ctx.lineWidth = 1.6;
+  ctx.strokeStyle = 'rgba(255,255,255,.75)';
+  ctx.strokeText(text, 0, 0);
+  // 顶部高光线
+  ctx.globalAlpha = 0.6;
+  ctx.strokeStyle = '#FFFFFF';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(-ctx.measureText(text).width / 2, -size * 0.52);
+  ctx.lineTo(ctx.measureText(text).width / 2, -size * 0.52);
+  ctx.stroke();
+  ctx.restore();
+}
+
+// VHS 做旧：扫描线 + 追踪带 + 噪点 + 色偏 + 随机撕裂
+function v12VHS(t) {
+  // 扫描线
+  ctx.save();
+  ctx.globalAlpha = 0.85;
+  ctx.fillStyle = V12_SCAN_PAT;
+  ctx.fillRect(0, 0, W, H);
+  ctx.restore();
+  // 噪点
+  ctx.save();
+  for (const n of V12_NOISE) {
+    ctx.globalAlpha = n.a;
+    ctx.fillStyle = Math.floor(t * 12) % 3 === 0 ? '#FFFFFF' : '#FFD4EC';
+    ctx.fillRect(n.x, (n.y + t * 60) % H, n.w, n.h);
+  }
+  ctx.restore();
+  // 追踪带：一条亮带缓慢下移
+  const bandY = ((t * 42) % (H + 80)) - 40;
+  ctx.save();
+  const bg = ctx.createLinearGradient(0, bandY - 16, 0, bandY + 16);
+  bg.addColorStop(0, 'rgba(255,255,255,0)');
+  bg.addColorStop(0.5, 'rgba(255,255,255,.12)');
+  bg.addColorStop(1, 'rgba(255,255,255,0)');
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, bandY - 16, W, 32);
+  ctx.restore();
+  // RGB 色偏：整屏红蓝各偏一点（用 lighter 叠很淡的整片色）
+  ctx.save();
+  ctx.globalCompositeOperation = 'lighter';
+  ctx.globalAlpha = 0.05;
+  ctx.fillStyle = '#FF0033'; ctx.fillRect(2, 0, W, H);
+  ctx.fillStyle = '#00C8FF'; ctx.fillRect(-2, 0, W, H);
+  ctx.restore();
+  // 随机撕裂条：每 1.6 秒左右来一次
+  const gt = t % 1.6;
+  if (gt < 0.14) {
+    const r = rng(Math.floor(t * 10) + 3);
+    for (let i = 0; i < 4; i++) {
+      const sy = r() * H;
+      const sh = 4 + r() * 14;
+      const dx = (r() - 0.5) * 26;
+      ctx.save();
+      ctx.globalAlpha = 0.55;
+      ctx.drawImage(ctx.canvas, 0, sy, W, sh, dx, sy, W, sh);
+      ctx.restore();
+    }
+    ctx.save();
+    ctx.globalAlpha = 0.18;
+    ctx.fillStyle = '#FFFFFF';
+    ctx.fillRect(0, (t * 400) % H, W, 2);
+    ctx.restore();
+  }
+  // 暗角 + 圆角遮罩
+  const vg = ctx.createRadialGradient(320, 180, 130, 320, 180, 400);
+  vg.addColorStop(0, 'rgba(0,0,0,0)');
+  vg.addColorStop(1, 'rgba(0,0,0,.55)');
+  ctx.fillStyle = vg; ctx.fillRect(0, 0, W, H);
+}
+
+function drawScene(t) {
+  if (!V12_SCAN_PAT) V12_SCAN_PAT = ctx.createPattern(V12_SCAN, 'repeat');
+  // 天空
+  const sky = ctx.createLinearGradient(0, 0, 0, V12_HORIZON + 20);
+  sky.addColorStop(0, V12_SKY[0]);
+  sky.addColorStop(0.45, V12_SKY[1]);
+  sky.addColorStop(0.8, V12_SKY[2]);
+  sky.addColorStop(1, V12_SKY[3]);
+  ctx.fillStyle = sky; ctx.fillRect(0, 0, W, V12_HORIZON + 22);
+  // 远处地面
+  ctx.fillStyle = '#160520';
+  ctx.fillRect(0, V12_HORIZON, W, H - V12_HORIZON);
+
+  // 星
+  for (const s of V12_STARS) {
+    ctx.save();
+    ctx.globalAlpha = 0.35 + 0.45 * Math.abs(Math.sin(t * 1.6 + s.p));
+    ctx.fillStyle = '#FFE6F4';
+    ctx.fillRect(s.x, s.y, s.s, s.s);
+    ctx.restore();
+  }
+
+  // 太阳在网格后面
+  v12Sun(320, lerp(242, 196, v12out(v12seg(t, 0, 3.2))), 86, t);
+
+  // 两侧山脉剪影
+  ctx.save();
+  ctx.fillStyle = '#2B0838';
+  ctx.beginPath();
+  ctx.moveTo(0, V12_HORIZON);
+  ctx.lineTo(60, 150); ctx.lineTo(120, V12_HORIZON);
+  ctx.closePath(); ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(520, V12_HORIZON);
+  ctx.lineTo(592, 158); ctx.lineTo(640, V12_HORIZON);
+  ctx.closePath(); ctx.fill();
+  ctx.restore();
+
+  // 网格
+  v12Grid(t);
+
+  // 标题
+  const tp = v12seg(t, 1.15, 1.95);
+  const shake = (t > 4.35 && t < 4.7) ? Math.sin(t * 90) * 5 : 0;
+  v12Chrome('霓虹夜驰', 320 + shake, 108, 52, tp);
+  const sp = v12seg(t, 1.7, 2.3);
+  if (sp > 0) {
+    ctx.save();
+    ctx.globalAlpha = v12out(sp) * 0.9;
+    ctx.fillStyle = '#9FE9FF';
+    ctx.font = `600 12px "SFMono-Regular",Menlo,Consolas,${FONT}`;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
+    ctx.shadowColor = V12_CYAN; ctx.shadowBlur = 12;
+    ctx.fillText('M I D N I G H T   D R I V E   ·   1 9 8 6', 320, 130);
+    ctx.restore();
+  }
+
+  // 左下角时间码小字（磁带感）
+  ctx.save();
+  ctx.globalAlpha = 0.75;
+  ctx.fillStyle = '#8DF3FF';
+  ctx.font = `500 11px "SFMono-Regular",Menlo,Consolas,${FONT}`;
+  ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+  ctx.fillText('SP  ▶  ' + String(Math.floor(t * 10) % 100).padStart(2, '0') + ':' + String(Math.floor(t * 30) % 60).padStart(2, '0'), 22, 340);
+  ctx.restore();
+
+  v12VHS(t);
+
+  // 圆角遮罩（VHS 录影的画面圆角）
+  ctx.save();
+  ctx.globalCompositeOperation = 'destination-in';
+  ctx.beginPath();
+  if (ctx.roundRect) ctx.roundRect(0, 0, W, H, 18); else ctx.rect(0, 0, W, H);
+  ctx.fillStyle = '#000'; ctx.fill();
+  ctx.restore();
+}
+
+  // ===== 共享渲染与署名 =======================================================
+  function watermark() {
+    const text = 'DeepSeek Harness 生成示例';
+    ctx.save();
+    ctx.font = '11px ' + FONT;
+    const w = ctx.measureText(text).width + 14;
+    const x = W - w - 8, y = H - 24;
+    ctx.fillStyle = 'rgba(0,0,0,.46)';
+    ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(x, y, w, 18, 4); else ctx.rect(x, y, w, 18);
+    ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,.82)';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(text, x + 7, y + 9.5);
+    ctx.restore();
+  }
+
+  function paint(t) {
+    ctx.save();
+    ctx.clearRect(0, 0, W, H);
+    try { drawScene(t); } catch (err) { console.error(err); }
+    ctx.restore();
+    watermark();
+  }
+
+  function renderAt(seconds) {
+    const t = ((Number(seconds) % DURATION) + DURATION) % DURATION;
+    paint(t);
+    syncUI(t);
+    return t;
+  }
+  window.renderAt = renderAt;
+
+  // ===== 播放、控制、减少动态 =================================================
+  const playBtn = document.getElementById('play');
+  const timeline = document.getElementById('timeline');
+  const clock = document.getElementById('clock');
+  let playing = false, base = 0, start = 0, current = 0;
+  const reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function syncUI(t) {
+    if (EXPORT) return;
+    current = t;
+    if (timeline) timeline.value = String(t.toFixed(2));
+    if (clock) clock.textContent = t.toFixed(2) + ' / ' + DURATION.toFixed(2) + 's';
+  }
+  function frame(now) {
+    if (!playing) return;
+    const t = ((now - start) / 1000 + base) % DURATION;
+    paint(t);
+    syncUI(t);
+    requestAnimationFrame(frame);
+  }
+  function play() {
+    if (playing) return;
+    playing = true;
+    start = performance.now();
+    base = current;
+    if (playBtn) playBtn.textContent = '暂停';
+    requestAnimationFrame(frame);
+  }
+  function pause() {
+    playing = false;
+    if (playBtn) playBtn.textContent = '播放';
+  }
+  if (playBtn) playBtn.addEventListener('click', () => { playing ? pause() : play(); });
+  document.getElementById('replay')?.addEventListener('click', () => {
+    base = 0; start = performance.now(); paint(0); syncUI(0); play();
+  });
+  timeline?.addEventListener('input', () => {
+    pause(); paint(Number(timeline.value)); syncUI(Number(timeline.value));
+  });
+  window.addEventListener('keydown', e => {
+    if (e.code === 'Space') { e.preventDefault(); playing ? pause() : play(); }
+    if (e.key === 'r' || e.key === 'R') { base = 0; start = performance.now(); paint(0); syncUI(0); play(); }
+  });
+
+  if (EXPORT) {
+    document.body.classList.add('export');
+    renderAt(0);
+  } else if (reduced) {
+    renderAt(2.4);
+    pause();
+  } else {
+    renderAt(0);
+    play();
+  }
+})();
+</script>
+</body>
+</html>

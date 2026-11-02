@@ -1,0 +1,464 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>V5 3D 渲染 · DeepSeek Harness 生成示例</title>
+<!--
+  Provenance
+  ----------
+  风格来源：code-animation-styles 目录（《来自俯仰观照博主的动画画风整理》整理稿）
+  catalog commit: 01576924a2b316d1f11ae33f75d3c005e8781451
+  style id: V5「3D 渲染」
+  license: MIT（mg-styles-15，Copyright (c) 2026 Vincentwei1021）
+  本文件：DeepSeek Harness（deepseek-flash）根据该风格提示词新写的候选示例，
+  不是原作者样片，也不是原项目演示；仅用于风格挑选预览。共享的只有时间轴、
+  尺寸、导出接口与页脚署名，画面与动作按本风格重新设计。
+  原文“只输出代码”等语句属于素材的一部分，不覆盖本任务的交付合同。
+-->
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; min-height: 100%; background: #0c0c10; color: #e9e9ee;
+    font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif; }
+  #app { min-height: 100vh; display: flex; flex-direction: column; align-items: center;
+    justify-content: center; gap: 12px; padding: 20px; }
+  #stage { width: min(94vw, 1000px); aspect-ratio: 16 / 9; background: #000;
+    box-shadow: 0 18px 60px rgba(0,0,0,.55); position: relative; overflow: hidden; }
+  canvas { display: block; width: 100%; height: 100%; }
+  #head, #ui { width: min(94vw, 1000px); }
+  #head h1 { margin: 0 0 4px; font-size: 15px; font-weight: 600; letter-spacing: .02em; }
+  #head p { margin: 0; font-size: 12px; line-height: 1.5; color: #9a9aa8; }
+  #ui { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  #ui button { background: #1d1d26; color: #f2f2f6; border: 1px solid #343444;
+    border-radius: 7px; padding: 6px 12px; font-size: 12px; cursor: pointer; }
+  #ui button:hover { background: #272734; }
+  #ui input[type=range] { flex: 1 1 220px; min-width: 150px; accent-color: #7c8cff; }
+  #clock { font-variant-numeric: tabular-nums; font-size: 12px; color: #a9a9ba; min-width: 78px; }
+  #credit { width: min(94vw, 1000px); font-size: 11px; line-height: 1.6; color: #6f6f80; }
+  #credit b { color: #9c9cae; font-weight: 500; }
+  body.export, body.export #app { display: block; width: 640px; height: 360px; min-height: 0;
+    padding: 0; margin: 0; overflow: hidden; background: #000; }
+  body.export #stage { width: 640px; height: 360px; box-shadow: none; }
+  body.export #head, body.export #ui, body.export #credit { display: none; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="head">
+    <h1>V5 · 3D 渲染</h1>
+    <p>柔和棚拍的 3D 糖果质感：克隆球阵泛起波纹，一颗软胶大球长尾缓动落下、挤压回弹，最后浮出软圆体标题。</p>
+  </div>
+  <div id="stage"><canvas id="c" width="640" height="360" aria-label="3D 渲染 风格动画示例"></canvas></div>
+  <div id="ui">
+    <button id="play" type="button">暂停</button>
+    <button id="replay" type="button">重播</button>
+    <input id="timeline" type="range" min="0" max="6" step="0.01" value="0" aria-label="时间轴">
+    <span id="clock">0.00 / 6.00s</span>
+  </div>
+  <div id="credit">
+    <b>DeepSeek Harness 生成示例</b>（非原项目样片）· 来源：来自俯仰观照博主的动画画风整理 ·
+    许可：MIT（mg-styles-15，Copyright (c) 2026 Vincentwei1021） · 画面与文字均由代码绘制，静音。
+  </div>
+</div>
+<script>
+(() => {
+  'use strict';
+  // ===== 共享脚手架（可改，但导出合同不要破坏）=================================
+  const W = 640, H = 360, DURATION = 6;
+  const EXPORT = new URLSearchParams(location.search).get('export') === '1';
+  const canvas = document.getElementById('c');
+  const ctx = canvas.getContext('2d');
+  const FONT = '"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",sans-serif';
+
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  const lerp = (a, b, t) => a + (b - a) * t;
+  const smooth = t => t * t * (3 - 2 * t);
+  const easeOut = t => 1 - Math.pow(1 - t, 3);
+  const easeIn = t => t * t * t;
+  function rng(seed) { let s = seed >>> 0; return () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; }; }
+
+  // ===== 场景（每个 ID 独立设计；下面的注释区由构建器替换）===================
+  // DESC: 柔和棚拍的 3D 糖果质感：克隆球阵泛起波纹，一颗软胶大球长尾缓动落下、挤压回弹，最后浮出软圆体标题。
+// V5 3D 渲染 · DeepSeek Harness 生成示例
+const V5_BG1 = '#F8E9F4', V5_BG2 = '#FFF6EC', V5_FLOOR = '#F3DCEA';
+const V5_PINKS = ['#FFC2D4', '#FFB3C7', '#FFD3DE'];
+const V5_PEACH = ['#FFD6B8', '#FFC29B', '#FFE3CE'];
+const V5_LILAC = ['#DCC8F7', '#C9B0EE', '#E8DBFB'];
+const V5_MINT = ['#C8F1DF', '#A9E6CE', '#DAF8ED'];
+
+function v5seg(t, a, b) { return clamp((t - a) / (b - a), 0, 1); }
+function v5ease(p) { return 1 - Math.pow(1 - p, 5); }          // 长尾缓动：前 20% 走完 80%
+function v5in(p) { return p * p * p; }
+
+// 预计算：柔影贴图 + 颗粒
+const V5_SHADOW = (() => {
+  const c = document.createElement('canvas'); c.width = 160; c.height = 80;
+  const g = c.getContext('2d');
+  const rg = g.createRadialGradient(80, 40, 2, 80, 40, 78);
+  rg.addColorStop(0, 'rgba(126,86,120,.55)');
+  rg.addColorStop(0.45, 'rgba(126,86,120,.22)');
+  rg.addColorStop(1, 'rgba(126,86,120,0)');
+  g.fillStyle = rg; g.beginPath(); g.ellipse(80, 40, 78, 36, 0, 0, Math.PI * 2); g.fill();
+  return c;
+})();
+const V5_GRAIN = (() => {
+  const r = rng(5519);
+  return Array.from({ length: 500 }, () => ({ x: r() * W, y: r() * H, a: 0.015 + r() * 0.035, s: 0.6 + r() * 1.1 }));
+})();
+
+function v5Shadow(x, y, w, h, alpha) {
+  ctx.save();
+  ctx.globalAlpha = alpha === undefined ? 1 : alpha;
+  ctx.drawImage(V5_SHADOW, x - w / 2, y - h / 2, w, h);
+  ctx.restore();
+}
+
+// 一颗软胶球：高光 → 中间色 → 暗部 + 边缘反光 + 糖霜高光点
+function v5Sphere(x, y, r, cols, squashX, squashY, glow) {
+  const sx = squashX === undefined ? 1 : squashX;
+  const sy = squashY === undefined ? 1 : squashY;
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.scale(sx, sy);
+  const g = ctx.createRadialGradient(-r * 0.34, -r * 0.42, r * 0.04, 0, 0, r * 1.05);
+  g.addColorStop(0, '#FFFFFF');
+  g.addColorStop(0.22, cols[0]);
+  g.addColorStop(0.72, cols[1]);
+  g.addColorStop(1, cols[2]);
+  ctx.fillStyle = g;
+  ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI * 2); ctx.fill();
+  // 下缘的环境反弹光
+  const bg = ctx.createRadialGradient(r * 0.2, r * 0.72, r * 0.1, r * 0.1, r * 0.6, r * 0.9);
+  bg.addColorStop(0, 'rgba(255,246,236,.55)');
+  bg.addColorStop(1, 'rgba(255,246,236,0)');
+  ctx.fillStyle = bg;
+  ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI * 2); ctx.fill();
+  // 边缘反光
+  ctx.strokeStyle = 'rgba(255,255,255,.30)'; ctx.lineWidth = Math.max(1, r * 0.06);
+  ctx.beginPath(); ctx.arc(0, 0, r * 0.94, Math.PI * 0.12, Math.PI * 0.92); ctx.stroke();
+  if (glow !== false) {
+    // 柔光溢出
+    const og = ctx.createRadialGradient(0, 0, r * 0.9, 0, 0, r * 1.28);
+    og.addColorStop(0, 'rgba(255,255,255,.16)');
+    og.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.fillStyle = og; ctx.beginPath(); ctx.arc(0, 0, r * 1.28, 0, Math.PI * 2); ctx.fill();
+  }
+  // 主高光
+  ctx.fillStyle = 'rgba(255,255,255,.92)';
+  ctx.beginPath();
+  ctx.ellipse(-r * 0.34, -r * 0.44, r * 0.20, r * 0.13, -0.5, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = 'rgba(255,255,255,.55)';
+  ctx.beginPath(); ctx.arc(-r * 0.12, -r * 0.62, r * 0.055, 0, Math.PI * 2); ctx.fill();
+  ctx.restore();
+}
+
+// 一颗胶囊（克隆器里的软糖柱）
+function v5Pill(x, y, w, h, cols) {
+  ctx.save();
+  ctx.translate(x, y);
+  const g = ctx.createLinearGradient(-w / 2, 0, w / 2, 0);
+  g.addColorStop(0, cols[2]);
+  g.addColorStop(0.42, cols[0]);
+  g.addColorStop(1, cols[1]);
+  ctx.fillStyle = g;
+  const r = w / 2;
+  ctx.beginPath();
+  if (ctx.roundRect) ctx.roundRect(-w / 2, -h / 2, w, h, r); else ctx.rect(-w / 2, -h / 2, w, h);
+  ctx.fill();
+  // 顶部圆头高光
+  const hg = ctx.createRadialGradient(-w * 0.18, -h / 2 + r * 0.3, 1, 0, -h / 2 + r, r * 1.1);
+  hg.addColorStop(0, 'rgba(255,255,255,.9)');
+  hg.addColorStop(1, 'rgba(255,255,255,0)');
+  ctx.fillStyle = hg;
+  ctx.beginPath(); ctx.arc(0, -h / 2 + r, r, 0, Math.PI * 2); ctx.fill();
+  // 侧缘反光
+  ctx.strokeStyle = 'rgba(255,255,255,.35)'; ctx.lineWidth = Math.max(1, w * 0.06);
+  ctx.beginPath();
+  if (ctx.roundRect) ctx.roundRect(-w / 2, -h / 2, w, h, r); else ctx.rect(-w / 2, -h / 2, w, h);
+  ctx.stroke();
+  ctx.restore();
+}
+
+// 克隆器阵列：由远到近 5 排，每排 9 颗，随时间做正弦波起伏
+function v5Field(t, heroX, heroY, heroR, impact) {
+  const rows = 5, cols = 9;
+  for (let j = rows - 1; j >= 0; j--) {
+    const depth = j / (rows - 1);                 // 0 近 1 远
+    const sc = 1 - depth * 0.46;
+    const baseY = 316 - j * 30;
+    const gap = 60 * (1 - depth * 0.18);
+    for (let i = 0; i < cols; i++) {
+      const wx = (i - (cols - 1) / 2) * gap;
+      const x = 320 + wx;
+      // 波纹：以画面中心为相位源
+      const ph = t * 2.3 - (Math.abs(wx) / 120) - j * 0.55;
+      let bob = Math.sin(ph) * 4 * sc;
+      // 主角落地时的冲击波把周围的球推开
+      const d = Math.hypot(x - heroX, (baseY - heroY) * 1.5);
+      const push = Math.max(0, 1 - d / 230) * impact;
+      bob -= push * 16 * Math.cos(d / 34);
+      const r = 13 * sc;
+      const y = baseY + bob - push * 8;
+      if (depth > 0.55) {
+        // 远景：低对比 + 空气雾，模拟浅景深
+        ctx.save();
+        ctx.globalAlpha = 0.55;
+        v5Sphere(x, y, r, i % 3 === 0 ? V5_PEACH : V5_PINKS, 1, 1, false);
+        ctx.restore();
+      } else if (i % 4 === 1) {
+        v5Pill(x, y, r * 1.25, r * 3.1, j % 2 ? V5_MINT : V5_LILAC);
+      } else {
+        v5Sphere(x, y, r, i % 3 === 0 ? V5_PEACH : (i % 3 === 1 ? V5_PINKS : V5_LILAC), 1, 1, depth < 0.3);
+      }
+      // 接触阴影
+      v5Shadow(x, baseY + 6, r * 3.1 * sc, r * 1.15 * sc, 0.34 * (1 - depth * 0.45));
+    }
+  }
+}
+
+function drawScene(t) {
+  // 影棚背景：无限弧形背板
+  const bg = ctx.createLinearGradient(0, 0, 0, H);
+  bg.addColorStop(0, '#F4DEEE');
+  bg.addColorStop(0.5, '#FDEBE6');
+  bg.addColorStop(1, '#EFD3E3');
+  ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+  // 顶部大柔光
+  const key = ctx.createRadialGradient(240, 40, 10, 240, 60, 420);
+  key.addColorStop(0, 'rgba(255,255,255,.85)');
+  key.addColorStop(1, 'rgba(255,255,255,0)');
+  ctx.fillStyle = key; ctx.fillRect(0, 0, W, H);
+  // 远处地平雾
+  const haze = ctx.createLinearGradient(0, 120, 0, 340);
+  haze.addColorStop(0, 'rgba(255,250,246,0)');
+  haze.addColorStop(0.46, 'rgba(255,246,252,.55)');
+  haze.addColorStop(1, 'rgba(255,246,252,.10)');
+  ctx.fillStyle = haze; ctx.fillRect(0, 120, W, 220);
+
+  // 镜头：长尾推近
+  const push = v5ease(v5seg(t, 0.1, 4.4));
+  const zoom = 1 + push * 0.10;
+  const camY = push * 6;
+
+  ctx.save();
+  ctx.translate(320, 190);
+  ctx.scale(zoom, zoom);
+  ctx.translate(-320, -190 - camY);
+
+  // 主角：从上方落下，落地挤压回弹（阻尼弹簧）
+  const dropStart = 1.35, landT = 2.02;
+  const fall = v5seg(t, dropStart, landT);
+  const heroR = 52;
+  const floorY = 262;
+  let hy, hsx = 1, hsy = 1;
+  if (t < dropStart) {
+    hy = -120;
+  } else if (fall < 1) {
+    hy = lerp(-120, floorY, v5in(fall));
+    hsy = 1 + 0.30 * fall; hsx = 1 - 0.14 * fall;
+  } else {
+    const d = t - landT;
+    const amp = 0.30 * Math.exp(-5.2 * d);
+    const w = Math.cos(14 * d);
+    hy = floorY - Math.abs(Math.sin(9 * d)) * 12 * Math.exp(-4 * d);
+    hsx = 1 + amp * w; hsy = 1 - amp * w;
+  }
+  const impact = t > landT ? Math.exp(-3.2 * (t - landT)) : 0;
+
+  // 主角的投影：随高度变化
+  const hFactor = clamp((floorY - hy) / 120, 0, 1);
+  v5Shadow(320, floorY + 34, 168 + hFactor * 70, 58 + hFactor * 26, 0.8 - hFactor * 0.4);
+  // 地面上的粉色反光，像抛光台面
+  ctx.save();
+  const rg = ctx.createRadialGradient(320, floorY + 30, 6, 320, floorY + 30, 150);
+  rg.addColorStop(0, `rgba(255,150,180,${0.34 - hFactor * 0.18})`);
+  rg.addColorStop(1, 'rgba(255,150,180,0)');
+  ctx.fillStyle = rg;
+  ctx.beginPath(); ctx.ellipse(320, floorY + 30, 150, 44, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.restore();
+
+  // 克隆器阵列
+  v5Field(t, 320, hy, heroR, impact);
+
+  // 主角本体（软胶大球）
+  const heroCols = ['#FFD9E3', '#FFB0C6', '#FF8FAE'];
+  ctx.save();
+  // 自发光溢出
+  const hg = ctx.createRadialGradient(320, hy - heroR * 0.2, heroR * 0.4, 320, hy, heroR * 1.9);
+  hg.addColorStop(0, 'rgba(255,190,210,.42)');
+  hg.addColorStop(1, 'rgba(255,190,210,0)');
+  ctx.fillStyle = hg;
+  ctx.beginPath(); ctx.arc(320, hy, heroR * 1.9, 0, Math.PI * 2); ctx.fill();
+  ctx.restore();
+  v5Sphere(320, hy, heroR, heroCols, hsx, hsy, true);
+  // 软胶的内部透光：底部偏亮的椭圆
+  ctx.save();
+  ctx.globalAlpha = 0.35;
+  const ig = ctx.createRadialGradient(320, hy + heroR * 0.45, 2, 320, hy + heroR * 0.45, heroR * 0.8);
+  ig.addColorStop(0, 'rgba(255,255,255,.85)');
+  ig.addColorStop(1, 'rgba(255,255,255,0)');
+  ctx.fillStyle = ig;
+  ctx.beginPath(); ctx.ellipse(320, hy + heroR * 0.42, heroR * 0.72, heroR * 0.42, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.restore();
+
+  // 落地后溅起的小糖球
+  if (t > landT - 0.04) {
+    const sp = t - landT + 0.04;
+    for (let i = 0; i < 7; i++) {
+      const a = -Math.PI * 0.86 + i * 0.28;
+      const rr = clamp(sp / 0.9, 0, 1);
+      const dist = 74 + rr * 58;
+      const x = 320 + Math.cos(a) * dist * (0.7 + (i % 3) * 0.18);
+      const y = floorY + Math.sin(a) * dist * 0.7 + rr * rr * 90;
+      const s = (1 - rr) * (7 + (i % 3) * 2.4);
+      if (s > 0.5) v5Sphere(x, y, s, i % 2 ? V5_MINT : V5_LILAC, 1, 1, false);
+    }
+  }
+
+  ctx.restore();
+
+  // 空气中的漂浮小球（近景虚焦）
+  for (let i = 0; i < 4; i++) {
+    const ph = t * 0.9 + i * 1.7;
+    const x = 90 + i * 150 + Math.sin(ph) * 16;
+    const y = 70 + i * 26 + Math.cos(ph * 1.3) * 12;
+    ctx.save();
+    ctx.globalAlpha = 0.5;
+    v5Sphere(x, y, 13 + i * 3, i % 2 ? V5_PEACH : V5_LILAC, 1, 1, false);
+    ctx.restore();
+  }
+
+  // 标题：软圆体，轻投影
+  const tp = v5seg(t, 3.5, 4.15);
+  if (tp > 0) {
+    const e = v5ease(tp);
+    ctx.save();
+    ctx.globalAlpha = e;
+    ctx.translate(0, (1 - e) * 10);
+    ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
+    // 柔和的接触影
+    ctx.fillStyle = 'rgba(150,104,132,.16)';
+    ctx.font = `800 34px ${FONT}`;
+    ctx.fillText('柔软着陆', 322, 84);
+    ctx.fillStyle = '#6E4A63';
+    ctx.fillText('柔软着陆', 320, 82);
+    ctx.fillStyle = 'rgba(110,74,99,.62)';
+    ctx.font = `500 11px ${FONT}`;
+    ctx.fillText('S O F T   L A N D I N G', 320, 102);
+    ctx.restore();
+  }
+
+  // 糖霜颗粒 + 暗角，统一成“渲染出来”的质感
+  ctx.save();
+  for (const g of V5_GRAIN) {
+    ctx.fillStyle = `rgba(255,255,255,${g.a})`;
+    ctx.fillRect(g.x, g.y, g.s, g.s);
+  }
+  ctx.restore();
+  const vg = ctx.createRadialGradient(320, 176, 120, 320, 176, 430);
+  vg.addColorStop(0, 'rgba(255,255,255,0)');
+  vg.addColorStop(1, 'rgba(178,120,156,.24)');
+  ctx.fillStyle = vg; ctx.fillRect(0, 0, W, H);
+
+  // 结尾：主角轻轻呼吸，画面回暖循环
+  const endP = v5seg(t, 5.75, 6);
+  if (endP > 0) {
+    ctx.save(); ctx.globalAlpha = endP * 0.35; ctx.fillStyle = '#FFF6EC';
+    ctx.fillRect(0, 0, W, H); ctx.restore();
+  }
+}
+
+  // ===== 共享渲染与署名 =======================================================
+  function watermark() {
+    const text = 'DeepSeek Harness 生成示例';
+    ctx.save();
+    ctx.font = '11px ' + FONT;
+    const w = ctx.measureText(text).width + 14;
+    const x = W - w - 8, y = H - 24;
+    ctx.fillStyle = 'rgba(0,0,0,.46)';
+    ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(x, y, w, 18, 4); else ctx.rect(x, y, w, 18);
+    ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,.82)';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(text, x + 7, y + 9.5);
+    ctx.restore();
+  }
+
+  function paint(t) {
+    ctx.save();
+    ctx.clearRect(0, 0, W, H);
+    try { drawScene(t); } catch (err) { console.error(err); }
+    ctx.restore();
+    watermark();
+  }
+
+  function renderAt(seconds) {
+    const t = ((Number(seconds) % DURATION) + DURATION) % DURATION;
+    paint(t);
+    syncUI(t);
+    return t;
+  }
+  window.renderAt = renderAt;
+
+  // ===== 播放、控制、减少动态 =================================================
+  const playBtn = document.getElementById('play');
+  const timeline = document.getElementById('timeline');
+  const clock = document.getElementById('clock');
+  let playing = false, base = 0, start = 0, current = 0;
+  const reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function syncUI(t) {
+    if (EXPORT) return;
+    current = t;
+    if (timeline) timeline.value = String(t.toFixed(2));
+    if (clock) clock.textContent = t.toFixed(2) + ' / ' + DURATION.toFixed(2) + 's';
+  }
+  function frame(now) {
+    if (!playing) return;
+    const t = ((now - start) / 1000 + base) % DURATION;
+    paint(t);
+    syncUI(t);
+    requestAnimationFrame(frame);
+  }
+  function play() {
+    if (playing) return;
+    playing = true;
+    start = performance.now();
+    base = current;
+    if (playBtn) playBtn.textContent = '暂停';
+    requestAnimationFrame(frame);
+  }
+  function pause() {
+    playing = false;
+    if (playBtn) playBtn.textContent = '播放';
+  }
+  if (playBtn) playBtn.addEventListener('click', () => { playing ? pause() : play(); });
+  document.getElementById('replay')?.addEventListener('click', () => {
+    base = 0; start = performance.now(); paint(0); syncUI(0); play();
+  });
+  timeline?.addEventListener('input', () => {
+    pause(); paint(Number(timeline.value)); syncUI(Number(timeline.value));
+  });
+  window.addEventListener('keydown', e => {
+    if (e.code === 'Space') { e.preventDefault(); playing ? pause() : play(); }
+    if (e.key === 'r' || e.key === 'R') { base = 0; start = performance.now(); paint(0); syncUI(0); play(); }
+  });
+
+  if (EXPORT) {
+    document.body.classList.add('export');
+    renderAt(0);
+  } else if (reduced) {
+    renderAt(2.4);
+    pause();
+  } else {
+    renderAt(0);
+    play();
+  }
+})();
+</script>
+</body>
+</html>

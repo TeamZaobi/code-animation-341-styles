@@ -1,0 +1,423 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>M27 无对白短片，声音讲一半 · DeepSeek Harness 生成示例</title>
+<!--
+  Provenance
+  ----------
+  风格来源：code-animation-styles 目录（《来自俯仰观照博主的动画画风整理》整理稿）
+  catalog commit: 01576924a2b316d1f11ae33f75d3c005e8781451
+  style id: M27「无对白短片，声音讲一半」
+  license: upstream-custom-noncommercial（俯仰观照整理稿，非商业）
+  本文件：DeepSeek Harness（deepseek-flash）根据该风格提示词新写的候选示例，
+  不是原作者样片，也不是原项目演示；仅用于风格挑选预览。共享的只有时间轴、
+  尺寸、导出接口与页脚署名，画面与动作按本风格重新设计。
+  原文“只输出代码”等语句属于素材的一部分，不覆盖本任务的交付合同。
+-->
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; min-height: 100%; background: #0c0c10; color: #e9e9ee;
+    font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif; }
+  #app { min-height: 100vh; display: flex; flex-direction: column; align-items: center;
+    justify-content: center; gap: 12px; padding: 20px; }
+  #stage { width: min(94vw, 1000px); aspect-ratio: 16 / 9; background: #000;
+    box-shadow: 0 18px 60px rgba(0,0,0,.55); position: relative; overflow: hidden; }
+  canvas { display: block; width: 100%; height: 100%; }
+  #head, #ui { width: min(94vw, 1000px); }
+  #head h1 { margin: 0 0 4px; font-size: 15px; font-weight: 600; letter-spacing: .02em; }
+  #head p { margin: 0; font-size: 12px; line-height: 1.5; color: #9a9aa8; }
+  #ui { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  #ui button { background: #1d1d26; color: #f2f2f6; border: 1px solid #343444;
+    border-radius: 7px; padding: 6px 12px; font-size: 12px; cursor: pointer; }
+  #ui button:hover { background: #272734; }
+  #ui input[type=range] { flex: 1 1 220px; min-width: 150px; accent-color: #7c8cff; }
+  #clock { font-variant-numeric: tabular-nums; font-size: 12px; color: #a9a9ba; min-width: 78px; }
+  #credit { width: min(94vw, 1000px); font-size: 11px; line-height: 1.6; color: #6f6f80; }
+  #credit b { color: #9c9cae; font-weight: 500; }
+  body.export, body.export #app { display: block; width: 640px; height: 360px; min-height: 0;
+    padding: 0; margin: 0; overflow: hidden; background: #000; }
+  body.export #stage { width: 640px; height: 360px; box-shadow: none; }
+  body.export #head, body.export #ui, body.export #credit { display: none; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="head">
+    <h1>M27 · 无对白短片，声音讲一半</h1>
+    <p>宽银幕海夜，灯塔灯亮起、光束扫过海面，远处小船用灯光闪三下回应，镜头缓缓推近再退回。</p>
+  </div>
+  <div id="stage"><canvas id="c" width="640" height="360" aria-label="无对白短片，声音讲一半 风格动画示例"></canvas></div>
+  <div id="ui">
+    <button id="play" type="button">暂停</button>
+    <button id="replay" type="button">重播</button>
+    <input id="timeline" type="range" min="0" max="6" step="0.01" value="0" aria-label="时间轴">
+    <span id="clock">0.00 / 6.00s</span>
+  </div>
+  <div id="credit">
+    <b>DeepSeek Harness 生成示例</b>（非原项目样片）· 来源：来自俯仰观照博主的动画画风整理 ·
+    许可：upstream-custom-noncommercial（俯仰观照整理稿，非商业） · 画面与文字均由代码绘制，静音。
+  </div>
+</div>
+<script>
+(() => {
+  'use strict';
+  // ===== 共享脚手架（可改，但导出合同不要破坏）=================================
+  const W = 640, H = 360, DURATION = 6;
+  const EXPORT = new URLSearchParams(location.search).get('export') === '1';
+  const canvas = document.getElementById('c');
+  const ctx = canvas.getContext('2d');
+  const FONT = '"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",sans-serif';
+
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  const lerp = (a, b, t) => a + (b - a) * t;
+  const smooth = t => t * t * (3 - 2 * t);
+  const easeOut = t => 1 - Math.pow(1 - t, 3);
+  const easeIn = t => t * t * t;
+  function rng(seed) { let s = seed >>> 0; return () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; }; }
+
+  // ===== 场景（每个 ID 独立设计；下面的注释区由构建器替换）===================
+  // DESC: 宽银幕海夜，灯塔灯亮起、光束扫过海面，远处小船用灯光闪三下回应，镜头缓缓推近再退回。
+// M27 无对白短片 · DeepSeek Harness 生成示例
+const M27_SKY0 = '#0e1c26', M27_SKY1 = '#2b3a44', M27_HORIZON = '#8a6a5e';
+const M27_SEA0 = '#14232b', M27_SEA1 = '#0a1116';
+const M27_WARM = '#ffd18a', M27_FAR = '#f4e2c0';
+const M27_GRAIN = (() => {
+  const r = rng(2727);
+  return Array.from({ length: 640 }, () => ({ x: r() * W, y: r() * H, a: 0.012 + r() * 0.05, s: 0.5 + r() * 1.1 }));
+})();
+const M27_STARS = (() => {
+  const r = rng(727);
+  return Array.from({ length: 46 }, () => ({ x: r() * W, y: 30 + r() * 170, a: 0.15 + r() * 0.55, s: 0.6 + r() * 1.2, ph: r() * 6.28 }));
+})();
+const M27_WAVES = (() => {
+  const r = rng(272);
+  return Array.from({ length: 46 }, () => ({ x: r() * 760, y: 250 + r() * 76, w: 16 + r() * 52, a: 0.06 + r() * 0.12, sp: 0.4 + r() * 0.9 }));
+})();
+
+function m27seg(t, a, b) { return clamp((t - a) / (b - a), 0, 1); }
+function m27e(t) { return 1 - Math.pow(1 - t, 3); }
+function m27flash(t, at, dur) {
+  return clamp(1 - Math.abs(t - at) / (dur || 0.1), 0, 1);
+}
+
+function m27Sky(t) {
+  const g = ctx.createLinearGradient(0, 30, 0, 248);
+  g.addColorStop(0, '#0b1620');
+  g.addColorStop(0.55, M27_SKY0);
+  g.addColorStop(1, M27_SKY1);
+  ctx.fillStyle = g; ctx.fillRect(0, 0, W, 250);
+  // 地平线暖色余晖
+  const hg = ctx.createLinearGradient(0, 200, 0, 250);
+  hg.addColorStop(0, 'rgba(138,106,94,0)');
+  hg.addColorStop(0.7, 'rgba(138,106,94,.55)');
+  hg.addColorStop(1, 'rgba(120,88,78,.15)');
+  ctx.fillStyle = hg; ctx.fillRect(0, 200, W, 50);
+  // 星星
+  for (const s of M27_STARS) {
+    const tw = 0.55 + 0.45 * Math.sin(t * 1.6 + s.ph);
+    ctx.fillStyle = `rgba(238,244,255,${s.a * tw})`;
+    ctx.beginPath(); ctx.arc(s.x, s.y, s.s, 0, Math.PI * 2); ctx.fill();
+  }
+  // 远处山脊
+  ctx.fillStyle = 'rgba(10,20,26,.92)';
+  ctx.beginPath();
+  ctx.moveTo(0, 250);
+  ctx.lineTo(0, 238); ctx.lineTo(72, 226); ctx.lineTo(140, 234); ctx.lineTo(196, 222);
+  ctx.lineTo(270, 236); ctx.lineTo(340, 228); ctx.lineTo(420, 240); ctx.lineTo(510, 230);
+  ctx.lineTo(600, 238); ctx.lineTo(640, 232); ctx.lineTo(640, 250); ctx.closePath(); ctx.fill();
+}
+
+function m27Sea(t) {
+  const g = ctx.createLinearGradient(0, 248, 0, 360);
+  g.addColorStop(0, M27_SEA0);
+  g.addColorStop(1, M27_SEA1);
+  ctx.fillStyle = g; ctx.fillRect(0, 248, W, H - 248);
+  // 月光/灯光带
+  const lit = 0.45 + 0.55 * m27seg(t, 0.9, 1.4);
+  const band = ctx.createLinearGradient(0, 250, 0, 344);
+  band.addColorStop(0, `rgba(255,209,138,${0.10 * lit})`);
+  band.addColorStop(1, 'rgba(255,209,138,0)');
+  ctx.fillStyle = band;
+  ctx.beginPath();
+  ctx.moveTo(120, 250); ctx.lineTo(300, 250); ctx.lineTo(360, 344); ctx.lineTo(60, 344); ctx.closePath();
+  ctx.fill();
+  // 波浪短线
+  for (const w of M27_WAVES) {
+    const x = ((w.x + t * 9 * w.sp) % (W + 120)) - 60;
+    ctx.strokeStyle = `rgba(200,222,230,${w.a})`;
+    ctx.lineWidth = 1.2;
+    ctx.beginPath();
+    ctx.moveTo(x, w.y);
+    ctx.quadraticCurveTo(x + w.w / 2, w.y - 1.6, x + w.w, w.y);
+    ctx.stroke();
+  }
+}
+
+function m27Lighthouse(t) {
+  // 岩石
+  ctx.fillStyle = '#0a1216';
+  ctx.beginPath();
+  ctx.moveTo(56, 360);
+  ctx.lineTo(74, 312); ctx.lineTo(104, 300); ctx.lineTo(150, 306); ctx.lineTo(186, 298);
+  ctx.lineTo(224, 310); ctx.lineTo(246, 360);
+  ctx.closePath(); ctx.fill();
+  // 塔身
+  ctx.fillStyle = '#111c22';
+  ctx.beginPath();
+  ctx.moveTo(122, 306); ctx.lineTo(144, 172); ctx.lineTo(160, 172); ctx.lineTo(182, 306);
+  ctx.closePath(); ctx.fill();
+  // 塔身暖光边（灯在下方的反射）
+  ctx.save();
+  ctx.globalAlpha = 0.5;
+  const lg = ctx.createLinearGradient(148, 170, 168, 306);
+  lg.addColorStop(0, 'rgba(255,209,138,.55)');
+  lg.addColorStop(1, 'rgba(255,209,138,0)');
+  ctx.fillStyle = lg;
+  ctx.beginPath();
+  ctx.moveTo(152, 306); ctx.lineTo(160, 172); ctx.lineTo(176, 172); ctx.lineTo(172, 306);
+  ctx.closePath(); ctx.fill();
+  ctx.restore();
+  // 塔身箍与栏杆，读起来更像灯塔
+  ctx.save();
+  ctx.strokeStyle = 'rgba(255,209,138,.14)';
+  ctx.lineWidth = 3;
+  for (let i = 0; i < 3; i++) {
+    const y = 210 + i * 32;
+    const f = (y - 172) / (306 - 172);
+    const hw = lerp(16, 30, f);
+    ctx.beginPath(); ctx.moveTo(152 - hw, y); ctx.lineTo(152 + hw, y); ctx.stroke();
+  }
+  ctx.strokeStyle = 'rgba(255,226,180,.35)';
+  ctx.lineWidth = 1.6;
+  ctx.beginPath(); ctx.moveTo(132, 168); ctx.lineTo(172, 168); ctx.stroke();
+  for (let i = 0; i < 4; i++) {
+    ctx.beginPath(); ctx.moveTo(135 + i * 11, 168); ctx.lineTo(135 + i * 11, 163); ctx.stroke();
+  }
+  ctx.restore();
+  // 平台与灯室
+  ctx.fillStyle = '#0d171c';
+  ctx.fillRect(134, 166, 36, 6);
+  ctx.fillRect(140, 140, 24, 26);
+  ctx.beginPath();
+  ctx.moveTo(148, 140); ctx.lineTo(152, 126); ctx.lineTo(156, 140); ctx.closePath(); ctx.fill();
+  // 灯
+  const fl = m27flash(t, 1.0, 0.18) + m27flash(t, 3.9, 0.14);
+  ctx.save();
+  ctx.globalAlpha = 0.35 + 0.65 * m27seg(t, 0.85, 1.1);
+  ctx.fillStyle = M27_WARM;
+  ctx.beginPath(); ctx.rect(146, 146, 12, 14); ctx.fill();
+  ctx.restore();
+  // 灯的光晕
+  const halo = 0.35 + 0.65 * m27seg(t, 0.9, 1.3) + fl * 0.4;
+  const g2 = ctx.createRadialGradient(152, 152, 2, 152, 152, 60);
+  g2.addColorStop(0, `rgba(255,214,150,${0.5 * halo})`);
+  g2.addColorStop(0.4, `rgba(255,190,120,${0.16 * halo})`);
+  g2.addColorStop(1, 'rgba(255,180,110,0)');
+  ctx.fillStyle = g2;
+  ctx.beginPath(); ctx.arc(152, 152, 60, 0, Math.PI * 2); ctx.fill();
+}
+
+// 光束：从灯室扫过海面，是本片唯一的「声音」
+function m27Beam(t) {
+  const on = m27seg(t, 0.92, 1.35);
+  if (on <= 0) return;
+  // 两次扫过：先右，再左
+  const sweep = Math.sin((t - 1.0) * 1.7);
+  const ang = 0.14 + sweep * 0.78;
+  const len = 520;
+  const srcX = 152, srcY = 152;
+  ctx.save();
+  ctx.globalAlpha = on * (0.5 + 0.12 * Math.sin(t * 3));
+  const ex = srcX + Math.cos(ang) * len, ey = srcY + Math.sin(ang) * 62;
+  const g = ctx.createLinearGradient(srcX, srcY, ex, ey);
+  g.addColorStop(0, 'rgba(255,224,170,.55)');
+  g.addColorStop(0.45, 'rgba(255,214,150,.14)');
+  g.addColorStop(1, 'rgba(255,206,140,0)');
+  ctx.fillStyle = g;
+  ctx.beginPath();
+  ctx.moveTo(srcX, srcY - 3);
+  ctx.lineTo(ex + Math.cos(ang + Math.PI / 2) * 30, ey + Math.sin(ang + Math.PI / 2) * 30);
+  ctx.lineTo(ex + Math.cos(ang - Math.PI / 2) * 30, ey + Math.sin(ang - Math.PI / 2) * 30);
+  ctx.lineTo(srcX, srcY + 3);
+  ctx.closePath(); ctx.fill();
+  ctx.restore();
+}
+
+function m27Boat(t, on) {
+  // 远处小船：灯光闪三下，替代一句「我回来了」
+  const bx = 476, by = 252;
+  ctx.save();
+  ctx.globalAlpha = on;
+  ctx.fillStyle = '#0a1418';
+  ctx.beginPath();
+  ctx.moveTo(bx - 20, by + 2); ctx.lineTo(bx + 20, by + 2);
+  ctx.lineTo(bx + 13, by + 10); ctx.lineTo(bx - 13, by + 10); ctx.closePath(); ctx.fill();
+  ctx.fillRect(bx - 1, by - 22, 2, 24);
+  // 三次闪
+  let f = 0;
+  const blinks = [2.5, 3.0, 3.5];
+  for (const b of blinks) f = Math.max(f, m27flash(t, b, 0.1));
+  // 船灯常亮
+  ctx.fillStyle = `rgba(255,236,200,${0.55 + 0.45 * f})`;
+  ctx.beginPath(); ctx.arc(bx, by - 24, 2.6 + f * 1.4, 0, Math.PI * 2); ctx.fill();
+  const gg = ctx.createRadialGradient(bx, by - 24, 0, bx, by - 24, 26 + f * 22);
+  gg.addColorStop(0, `rgba(255,236,200,${0.35 + f * 0.4})`);
+  gg.addColorStop(1, 'rgba(255,236,200,0)');
+  ctx.fillStyle = gg;
+  ctx.beginPath(); ctx.arc(bx, by - 24, 26 + f * 22, 0, Math.PI * 2); ctx.fill();
+  ctx.restore();
+}
+
+function drawScene(t) {
+  // 镜头：缓慢推近，再退回，保持稳定不晃
+  const push = 1 + 0.045 * m27e(m27seg(t, 0.2, 4.6)) - 0.02 * m27seg(t, 5.2, 6);
+  ctx.save();
+  ctx.translate(W / 2, 186);
+  ctx.scale(push, push);
+  ctx.translate(-W / 2, -186);
+
+  m27Sky(t);
+  m27Sea(t);
+  m27Beam(t);
+  m27Lighthouse(t);
+  m27Boat(t, m27seg(t, 1.9, 2.3));
+  // 近处岩石前景
+  ctx.fillStyle = '#060c10';
+  ctx.beginPath();
+  ctx.moveTo(0, 360); ctx.lineTo(0, 322); ctx.lineTo(58, 306); ctx.lineTo(96, 336);
+  ctx.lineTo(120, 360); ctx.closePath(); ctx.fill();
+  ctx.restore();
+
+  // 胶片颗粒（预计算，逐帧不重算）
+  ctx.save();
+  for (const g of M27_GRAIN) {
+    ctx.fillStyle = `rgba(235,240,245,${g.a})`;
+    ctx.fillRect(g.x, g.y, g.s, g.s);
+  }
+  ctx.restore();
+
+  // 暗角，压住四周
+    const vg = ctx.createRadialGradient(W / 2, 180, 150, W / 2, 180, 430);
+  vg.addColorStop(0, 'rgba(0,0,0,0)');
+  vg.addColorStop(1, 'rgba(0,0,0,.45)');
+  ctx.fillStyle = vg; ctx.fillRect(0, 0, W, H);
+
+  // 宽银幕黑边
+  ctx.fillStyle = '#04070a';
+  ctx.fillRect(0, 0, W, 24);
+  ctx.fillRect(0, 334, W, 26);
+  ctx.save();
+  ctx.globalAlpha = 0.5;
+  ctx.fillStyle = 'rgba(238,244,250,.5)';
+  ctx.font = `600 9px ${FONT}`; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+  ctx.fillText('NO DIALOGUE  /  6s', 20, 12);
+  ctx.restore();
+
+  // 结尾一句（不是台词，是字幕）
+  const cp = m27e(m27seg(t, 4.55, 5.1));
+  if (cp > 0) {
+    ctx.save();
+    ctx.globalAlpha = cp;
+    ctx.fillStyle = 'rgba(244,226,192,.92)';
+    ctx.font = `400 14px ${FONT}`;
+    ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+    ctx.fillText('灯亮三下，就是回来了。', 20, 347);
+    ctx.restore();
+  }
+}
+
+  // ===== 共享渲染与署名 =======================================================
+  function watermark() {
+    const text = 'DeepSeek Harness 生成示例';
+    ctx.save();
+    ctx.font = '11px ' + FONT;
+    const w = ctx.measureText(text).width + 14;
+    const x = W - w - 8, y = H - 24;
+    ctx.fillStyle = 'rgba(0,0,0,.46)';
+    ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(x, y, w, 18, 4); else ctx.rect(x, y, w, 18);
+    ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,.82)';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(text, x + 7, y + 9.5);
+    ctx.restore();
+  }
+
+  function paint(t) {
+    ctx.save();
+    ctx.clearRect(0, 0, W, H);
+    try { drawScene(t); } catch (err) { console.error(err); }
+    ctx.restore();
+    watermark();
+  }
+
+  function renderAt(seconds) {
+    const t = ((Number(seconds) % DURATION) + DURATION) % DURATION;
+    paint(t);
+    syncUI(t);
+    return t;
+  }
+  window.renderAt = renderAt;
+
+  // ===== 播放、控制、减少动态 =================================================
+  const playBtn = document.getElementById('play');
+  const timeline = document.getElementById('timeline');
+  const clock = document.getElementById('clock');
+  let playing = false, base = 0, start = 0, current = 0;
+  const reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function syncUI(t) {
+    if (EXPORT) return;
+    current = t;
+    if (timeline) timeline.value = String(t.toFixed(2));
+    if (clock) clock.textContent = t.toFixed(2) + ' / ' + DURATION.toFixed(2) + 's';
+  }
+  function frame(now) {
+    if (!playing) return;
+    const t = ((now - start) / 1000 + base) % DURATION;
+    paint(t);
+    syncUI(t);
+    requestAnimationFrame(frame);
+  }
+  function play() {
+    if (playing) return;
+    playing = true;
+    start = performance.now();
+    base = current;
+    if (playBtn) playBtn.textContent = '暂停';
+    requestAnimationFrame(frame);
+  }
+  function pause() {
+    playing = false;
+    if (playBtn) playBtn.textContent = '播放';
+  }
+  if (playBtn) playBtn.addEventListener('click', () => { playing ? pause() : play(); });
+  document.getElementById('replay')?.addEventListener('click', () => {
+    base = 0; start = performance.now(); paint(0); syncUI(0); play();
+  });
+  timeline?.addEventListener('input', () => {
+    pause(); paint(Number(timeline.value)); syncUI(Number(timeline.value));
+  });
+  window.addEventListener('keydown', e => {
+    if (e.code === 'Space') { e.preventDefault(); playing ? pause() : play(); }
+    if (e.key === 'r' || e.key === 'R') { base = 0; start = performance.now(); paint(0); syncUI(0); play(); }
+  });
+
+  if (EXPORT) {
+    document.body.classList.add('export');
+    renderAt(0);
+  } else if (reduced) {
+    renderAt(2.4);
+    pause();
+  } else {
+    renderAt(0);
+    play();
+  }
+})();
+</script>
+</body>
+</html>

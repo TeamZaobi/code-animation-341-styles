@@ -1,0 +1,480 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>K8 绘本 · DeepSeek Harness 生成示例</title>
+<!--
+  Provenance
+  ----------
+  风格来源：code-animation-styles 目录（《来自俯仰观照博主的动画画风整理》整理稿）
+  catalog commit: 01576924a2b316d1f11ae33f75d3c005e8781451
+  style id: K8「绘本」
+  license: upstream-custom-noncommercial（俯仰观照整理稿，非商业）
+  本文件：DeepSeek Harness（deepseek-flash）根据该风格提示词新写的候选示例，
+  不是原作者样片，也不是原项目演示；仅用于风格挑选预览。共享的只有时间轴、
+  尺寸、导出接口与页脚署名，画面与动作按本风格重新设计。
+  原文“只输出代码”等语句属于素材的一部分，不覆盖本任务的交付合同。
+-->
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; min-height: 100%; background: #0c0c10; color: #e9e9ee;
+    font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif; }
+  #app { min-height: 100vh; display: flex; flex-direction: column; align-items: center;
+    justify-content: center; gap: 12px; padding: 20px; }
+  #stage { width: min(94vw, 1000px); aspect-ratio: 16 / 9; background: #000;
+    box-shadow: 0 18px 60px rgba(0,0,0,.55); position: relative; overflow: hidden; }
+  canvas { display: block; width: 100%; height: 100%; }
+  #head, #ui { width: min(94vw, 1000px); }
+  #head h1 { margin: 0 0 4px; font-size: 15px; font-weight: 600; letter-spacing: .02em; }
+  #head p { margin: 0; font-size: 12px; line-height: 1.5; color: #9a9aa8; }
+  #ui { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  #ui button { background: #1d1d26; color: #f2f2f6; border: 1px solid #343444;
+    border-radius: 7px; padding: 6px 12px; font-size: 12px; cursor: pointer; }
+  #ui button:hover { background: #272734; }
+  #ui input[type=range] { flex: 1 1 220px; min-width: 150px; accent-color: #7c8cff; }
+  #clock { font-variant-numeric: tabular-nums; font-size: 12px; color: #a9a9ba; min-width: 78px; }
+  #credit { width: min(94vw, 1000px); font-size: 11px; line-height: 1.6; color: #6f6f80; }
+  #credit b { color: #9c9cae; font-weight: 500; }
+  body.export, body.export #app { display: block; width: 640px; height: 360px; min-height: 0;
+    padding: 0; margin: 0; overflow: hidden; background: #000; }
+  body.export #stage { width: 640px; height: 360px; box-shadow: none; }
+  body.export #head, body.export #ui, body.export #credit { display: none; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="head">
+    <h1>K8 · 绘本</h1>
+    <p>绘本里的暖色山坡，穿红雨衣的小孩和一只小熊看风筝慢慢升起来。</p>
+  </div>
+  <div id="stage"><canvas id="c" width="640" height="360" aria-label="绘本 风格动画示例"></canvas></div>
+  <div id="ui">
+    <button id="play" type="button">暂停</button>
+    <button id="replay" type="button">重播</button>
+    <input id="timeline" type="range" min="0" max="6" step="0.01" value="0" aria-label="时间轴">
+    <span id="clock">0.00 / 6.00s</span>
+  </div>
+  <div id="credit">
+    <b>DeepSeek Harness 生成示例</b>（非原项目样片）· 来源：来自俯仰观照博主的动画画风整理 ·
+    许可：upstream-custom-noncommercial（俯仰观照整理稿，非商业） · 画面与文字均由代码绘制，静音。
+  </div>
+</div>
+<script>
+(() => {
+  'use strict';
+  // ===== 共享脚手架（可改，但导出合同不要破坏）=================================
+  const W = 640, H = 360, DURATION = 6;
+  const EXPORT = new URLSearchParams(location.search).get('export') === '1';
+  const canvas = document.getElementById('c');
+  const ctx = canvas.getContext('2d');
+  const FONT = '"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",sans-serif';
+
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  const lerp = (a, b, t) => a + (b - a) * t;
+  const smooth = t => t * t * (3 - 2 * t);
+  const easeOut = t => 1 - Math.pow(1 - t, 3);
+  const easeIn = t => t * t * t;
+  function rng(seed) { let s = seed >>> 0; return () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; }; }
+
+  // ===== 场景（每个 ID 独立设计；下面的注释区由构建器替换）===================
+  // DESC: 绘本里的暖色山坡，穿红雨衣的小孩和一只小熊看风筝慢慢升起来。
+// K8 绘本 · DeepSeek Harness 生成示例
+const K8_PAPER = '#f8ecd2', K8_INK = '#5b4634', K8_RED = '#d9674e', K8_RED_D = '#b8492f';
+const K8_MOSS = '#7d955e', K8_MOSS_D = '#5d7448', K8_MOSS_L = '#9db27c';
+const K8_SKY = '#cfe3dd', K8_SKY_WARM = '#f6e3bd', K8_CREAM = '#fff6e2', K8_BEAR = '#a8794f';
+const K8_BEAR_L = '#c79a6d', K8_YELLOW = '#f2c14e';
+
+const K8_GRAIN = (() => {
+  const r = rng(20261108);
+  return Array.from({ length: 900 }, () => ({
+    x: r() * W, y: r() * H, s: 0.5 + r() * 1.6, a: 0.02 + r() * 0.05,
+  }));
+})();
+const K8_TUFTS = (() => {
+  const r = rng(88);
+  return Array.from({ length: 46 }, () => ({ x: r() * W, y: 250 + r() * 100, h: 6 + r() * 11, ph: r() * 6.28 }));
+})();
+
+function k8seg(t, a, b) { return clamp((t - a) / (b - a), 0, 1); }
+function k8ease(p) { return 1 - Math.pow(1 - p, 3); }
+
+// 纸面：底色 + 颗粒 + 淡淡的晕染
+function k8Paper() {
+  ctx.fillStyle = K8_PAPER; ctx.fillRect(0, 0, W, H);
+
+  // 天空的两遍水彩晕染
+  const sky = ctx.createLinearGradient(0, 0, 0, 240);
+  sky.addColorStop(0, K8_SKY);
+  sky.addColorStop(1, K8_SKY_WARM);
+  ctx.save(); ctx.globalAlpha = 0.9;
+  ctx.fillStyle = sky;
+  ctx.beginPath();
+  ctx.moveTo(0, 0); ctx.lineTo(W, 0); ctx.lineTo(W, 196);
+  ctx.quadraticCurveTo(470, 214, 320, 200);
+  ctx.quadraticCurveTo(150, 186, 0, 208);
+  ctx.closePath(); ctx.fill();
+  ctx.restore();
+
+  // 纸颗粒
+  ctx.save();
+  ctx.globalAlpha = 1;
+  for (const g of K8_GRAIN) {
+    ctx.fillStyle = `rgba(120,96,66,${g.a})`;
+    ctx.fillRect(g.x, g.y, g.s, g.s);
+  }
+  ctx.restore();
+
+  // 四角压暗，像被翻过的纸
+  const vg = ctx.createRadialGradient(320, 190, 120, 320, 190, 420);
+  vg.addColorStop(0, 'rgba(255,255,255,0)');
+  vg.addColorStop(1, 'rgba(150,116,70,.16)');
+  ctx.fillStyle = vg; ctx.fillRect(0, 0, W, H);
+}
+
+function k8Hill(y, color, amp, phase, alpha) {
+  ctx.save();
+  ctx.globalAlpha = alpha === undefined ? 1 : alpha;
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  ctx.moveTo(-20, H + 20);
+  ctx.lineTo(-20, y);
+  for (let x = -20; x <= W + 20; x += 20) {
+    ctx.lineTo(x, y + Math.sin(x * 0.012 + phase) * amp + Math.sin(x * 0.031 + phase * 2) * amp * 0.35);
+  }
+  ctx.lineTo(W + 20, H + 20);
+  ctx.closePath(); ctx.fill();
+  ctx.restore();
+}
+
+function k8Child(x, y, s, t, waveP, bob) {
+  ctx.save();
+  ctx.translate(x, y + bob); ctx.scale(s, s);
+  ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+  // 靴子
+  ctx.fillStyle = '#8d5b40';
+  ctx.beginPath(); ctx.ellipse(-11, 44, 9, 5, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(11, 44, 9, 5, 0.1, 0, Math.PI * 2); ctx.fill();
+  // 雨衣（软软的小钟形）
+  ctx.fillStyle = K8_RED;
+  ctx.strokeStyle = K8_RED_D; ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(-15, -18);
+  ctx.quadraticCurveTo(-26, 10, -22, 38);
+  ctx.quadraticCurveTo(0, 46, 22, 38);
+  ctx.quadraticCurveTo(26, 10, 15, -18);
+  ctx.closePath(); ctx.fill(); ctx.stroke();
+  // 雨衣亮面
+  ctx.save(); ctx.globalAlpha = 0.35; ctx.fillStyle = '#ef8a70';
+  ctx.beginPath();
+  ctx.moveTo(-13, -14); ctx.quadraticCurveTo(-20, 8, -17, 32);
+  ctx.quadraticCurveTo(-10, 22, -8, -14);
+  ctx.closePath(); ctx.fill(); ctx.restore();
+  // 口袋
+  ctx.strokeStyle = K8_RED_D; ctx.lineWidth = 1.6;
+  ctx.beginPath(); ctx.arc(9, 18, 5, 0.2, Math.PI - 0.2); ctx.stroke();
+
+  // 手臂：右手牵绳
+  ctx.strokeStyle = K8_RED; ctx.lineWidth = 8; ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.moveTo(-15, -6); ctx.lineTo(-24, 12); ctx.stroke();
+  const ay = lerp(10, -14, waveP);
+  ctx.beginPath(); ctx.moveTo(15, -6); ctx.lineTo(25, ay); ctx.stroke();
+  ctx.fillStyle = '#f4c9a6';
+  ctx.beginPath(); ctx.arc(-25, 14, 4.5, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.arc(26, ay + 1, 4.5, 0, Math.PI * 2); ctx.fill();
+
+  // 兜帽 + 脸
+  ctx.fillStyle = K8_RED;
+  ctx.strokeStyle = K8_RED_D; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.arc(0, -26, 20, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+  ctx.fillStyle = '#f6d3b3';
+  ctx.beginPath(); ctx.ellipse(0, -24, 13, 13, 0, 0, Math.PI * 2); ctx.fill();
+  // 刘海
+  ctx.fillStyle = '#7a5236';
+  ctx.beginPath(); ctx.ellipse(0, -34, 12, 6, 0, 0, Math.PI * 2); ctx.fill();
+  // 五官
+  ctx.fillStyle = K8_INK;
+  ctx.beginPath(); ctx.arc(-4.5, -25, 1.7, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.arc(4.5, -25, 1.7, 0, Math.PI * 2); ctx.fill();
+  ctx.strokeStyle = K8_INK; ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.arc(0, -19, 3.4, 0.3, Math.PI - 0.3); ctx.stroke();
+  // 腮红
+  ctx.save(); ctx.globalAlpha = 0.5; ctx.fillStyle = '#ef9d84';
+  ctx.beginPath(); ctx.arc(-9, -20, 2.6, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.arc(9, -20, 2.6, 0, Math.PI * 2); ctx.fill();
+  ctx.restore();
+  ctx.restore();
+}
+
+function k8Bear(x, y, s, t, bob) {
+  ctx.save();
+  ctx.translate(x, y + bob); ctx.scale(s, s);
+  ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+  // 脚
+  ctx.fillStyle = '#8a613c';
+  ctx.beginPath(); ctx.ellipse(-10, 30, 8, 5, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(10, 30, 8, 5, 0, 0, Math.PI * 2); ctx.fill();
+  // 身体
+  ctx.fillStyle = K8_BEAR;
+  ctx.strokeStyle = '#7e5734'; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.ellipse(0, 8, 19, 24, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+  ctx.fillStyle = K8_BEAR_L;
+  ctx.beginPath(); ctx.ellipse(0, 12, 12, 15, 0, 0, Math.PI * 2); ctx.fill();
+  // 耳朵
+  ctx.fillStyle = K8_BEAR;
+  for (const ex of [-13, 13]) {
+    ctx.beginPath(); ctx.arc(ex, -18, 7, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = '#c79a6d';
+    ctx.beginPath(); ctx.arc(ex, -18, 3.6, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = K8_BEAR;
+  }
+  // 头
+  ctx.beginPath(); ctx.arc(0, -20, 16, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+  // 口鼻
+  ctx.fillStyle = '#f0d9b8';
+  ctx.beginPath(); ctx.ellipse(0, -14, 8, 6, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = '#5b4634';
+  ctx.beginPath(); ctx.ellipse(0, -16.5, 2.6, 2, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.strokeStyle = '#5b4634'; ctx.lineWidth = 1.3;
+  ctx.beginPath(); ctx.moveTo(0, -14.5); ctx.lineTo(0, -12); ctx.stroke();
+  // 眼睛
+  ctx.fillStyle = '#3f3226';
+  ctx.beginPath(); ctx.arc(-6, -23, 1.8, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.arc(6, -23, 1.8, 0, Math.PI * 2); ctx.fill();
+  // 手臂
+  ctx.strokeStyle = K8_BEAR; ctx.lineWidth = 6;
+  ctx.beginPath(); ctx.moveTo(-17, 2); ctx.lineTo(-23, 12 + Math.sin(t * 2) * 1.5); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(17, 2); ctx.lineTo(23, 12 - Math.sin(t * 2) * 1.5); ctx.stroke();
+  // 腮红
+  ctx.save(); ctx.globalAlpha = 0.4; ctx.fillStyle = '#d98a6a';
+  ctx.beginPath(); ctx.arc(-10, -16, 2.6, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.arc(10, -16, 2.6, 0, Math.PI * 2); ctx.fill();
+  ctx.restore();
+  ctx.restore();
+}
+
+function drawScene(t) {
+  k8Paper();
+
+  // 太阳：从山后面慢慢升起来
+  const sunP = k8ease(k8seg(t, 0, 2.6));
+  const sunY = lerp(250, 196, sunP);
+  const glow = ctx.createRadialGradient(158, sunY, 10, 158, sunY, 150);
+  glow.addColorStop(0, 'rgba(255,236,178,.95)');
+  glow.addColorStop(0.35, 'rgba(255,220,150,.45)');
+  glow.addColorStop(1, 'rgba(255,210,140,0)');
+  ctx.fillStyle = glow; ctx.fillRect(0, 0, W, H);
+  ctx.save();
+  ctx.globalAlpha = 0.9; ctx.fillStyle = '#ffe7a8';
+  ctx.beginPath(); ctx.arc(158, sunY, 38, 0, Math.PI * 2); ctx.fill();
+  ctx.globalAlpha = 0.5; ctx.fillStyle = '#fff4cc';
+  ctx.beginPath(); ctx.arc(158, sunY, 30, 0, Math.PI * 2); ctx.fill();
+  ctx.restore();
+
+  // 鸟
+  ctx.save();
+  ctx.strokeStyle = 'rgba(91,70,52,.45)'; ctx.lineWidth = 1.8; ctx.lineCap = 'round';
+  for (let i = 0; i < 3; i++) {
+    const bx = ((200 + i * 90 + t * 26) % 760) - 60;
+    const by = 86 + i * 16 + Math.sin(t * 1.6 + i) * 4;
+    ctx.beginPath();
+    ctx.moveTo(bx - 7, by); ctx.quadraticCurveTo(bx - 2, by - 5, bx, by);
+    ctx.quadraticCurveTo(bx + 2, by - 5, bx + 7, by);
+    ctx.stroke();
+  }
+  ctx.restore();
+
+  // 远山（浅） / 中景山（人物站这层） / 近景山
+  k8Hill(216, '#b9c79b', 10, 0.4, 0.85);
+  k8Hill(248, K8_MOSS_L, 12, 1.7, 1);
+  // 中景山上的草
+  ctx.save();
+  ctx.strokeStyle = 'rgba(93,116,72,.55)'; ctx.lineWidth = 2; ctx.lineCap = 'round';
+  for (const g of K8_TUFTS) {
+    if (g.y < 252 || g.y > 320) continue;
+    const sw = Math.sin(t * 1.6 + g.ph) * 2.6;
+    ctx.beginPath();
+    ctx.moveTo(g.x, g.y);
+    ctx.quadraticCurveTo(g.x + sw, g.y - g.h * 0.6, g.x + sw * 1.8, g.y - g.h);
+    ctx.stroke();
+  }
+  ctx.restore();
+
+  k8Hill(292, K8_MOSS, 14, 3.1, 1);
+  k8Hill(330, K8_MOSS_D, 8, 4.6, 1);
+
+  // 小孩与小熊：慢慢走上坡（先算位置，风筝线要连到手上）
+  const walkP = k8ease(k8seg(t, 0.4, 4.4));
+  const cx = 246 + walkP * 42;
+  const cy = 268;
+  const bobC = Math.abs(Math.sin(t * 3.1)) * 2.2;
+  const bobB = Math.abs(Math.sin(t * 3.1 + 0.5)) * 2;
+  const wave = k8seg(t, 1.0, 1.7) * (1 - k8seg(t, 3.6, 4.2));
+
+  // 风筝线 + 风筝
+  const kiteP = k8ease(k8seg(t, 1.2, 3.6));
+  const kx = 352 + kiteP * 96 + Math.sin(t * 1.3) * 6;
+  const ky = lerp(196, 84, kiteP) + Math.sin(t * 2.1) * 4;
+  const ax = cx + 26 * 1.28, ay = cy - 14 * 1.28 - bobC;
+  if (kiteP > 0.02) {
+    ctx.save();
+    ctx.strokeStyle = 'rgba(91,70,52,.5)'; ctx.lineWidth = 1.6;
+    ctx.beginPath();
+    ctx.moveTo(ax, ay);
+    ctx.quadraticCurveTo((ax + kx) / 2 + 18, (ay + ky) / 2 + 20, kx, ky + 14);
+    ctx.stroke();
+    // 风筝
+    ctx.translate(kx, ky);
+    ctx.rotate(Math.sin(t * 1.6) * 0.08);
+    ctx.fillStyle = K8_RED;
+    ctx.strokeStyle = K8_RED_D; ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(0, -20); ctx.lineTo(16, 0); ctx.lineTo(0, 22); ctx.lineTo(-16, 0);
+    ctx.closePath(); ctx.fill(); ctx.stroke();
+    ctx.strokeStyle = K8_CREAM; ctx.lineWidth = 1.6;
+    ctx.beginPath(); ctx.moveTo(0, -20); ctx.lineTo(0, 22); ctx.moveTo(-16, 0); ctx.lineTo(16, 0); ctx.stroke();
+    // 尾巴
+    ctx.strokeStyle = K8_RED_D; ctx.lineWidth = 1.8;
+    ctx.beginPath();
+    for (let i = 0; i < 4; i++) {
+      const yy = 22 + i * 13;
+      const xx = Math.sin(t * 3 + i * 0.9) * 9;
+      if (!i) ctx.moveTo(0, yy); else ctx.quadraticCurveTo(xx * 1.4, yy - 6, xx, yy);
+    }
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  k8Child(cx, cy, 1.28, t, wave, -bobC);
+  k8Bear(cx + 62, cy + 10, 0.95, t, -bobB);
+
+  // 前景草叶
+  ctx.save();
+  ctx.strokeStyle = 'rgba(60,84,48,.6)'; ctx.lineWidth = 2.6; ctx.lineCap = 'round';
+  for (const g of K8_TUFTS) {
+    if (g.y < 300) continue;
+    const sw = Math.sin(t * 1.4 + g.ph) * 3.4;
+    ctx.beginPath();
+    ctx.moveTo(g.x, g.y);
+    ctx.quadraticCurveTo(g.x + sw, g.y - g.h * 0.6, g.x + sw * 1.8, g.y - g.h);
+    ctx.stroke();
+  }
+  ctx.restore();
+
+  // 文字
+  ctx.save();
+  ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+  ctx.fillStyle = K8_INK; ctx.font = `800 32px ${FONT}`;
+  ctx.fillText('一起去山坡', 40, 74);
+  ctx.fillStyle = 'rgba(91,70,52,.7)'; ctx.font = `600 14px ${FONT}`;
+  ctx.fillText('暖色 · 纸张纹理 · 软形状', 40, 98);
+  ctx.restore();
+
+  const capP = k8seg(t, 4.3, 5.1);
+  if (capP > 0) {
+    ctx.save(); ctx.globalAlpha = capP;
+    ctx.shadowColor = 'rgba(60,72,44,.55)'; ctx.shadowBlur = 5;
+    ctx.fillStyle = '#fff8e6'; ctx.font = `700 17px ${FONT}`;
+    ctx.fillText('风把风筝带高了', 40, 330);
+    ctx.restore();
+  }
+
+  ctx.save();
+  ctx.globalAlpha = 0.45; ctx.fillStyle = K8_INK; ctx.font = `500 13px ${FONT}`;
+  ctx.fillText('K8 · 绘本 / picture book', 40, 28);
+  ctx.restore();
+}
+
+  // ===== 共享渲染与署名 =======================================================
+  function watermark() {
+    const text = 'DeepSeek Harness 生成示例';
+    ctx.save();
+    ctx.font = '11px ' + FONT;
+    const w = ctx.measureText(text).width + 14;
+    const x = W - w - 8, y = H - 24;
+    ctx.fillStyle = 'rgba(0,0,0,.46)';
+    ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(x, y, w, 18, 4); else ctx.rect(x, y, w, 18);
+    ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,.82)';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(text, x + 7, y + 9.5);
+    ctx.restore();
+  }
+
+  function paint(t) {
+    ctx.save();
+    ctx.clearRect(0, 0, W, H);
+    try { drawScene(t); } catch (err) { console.error(err); }
+    ctx.restore();
+    watermark();
+  }
+
+  function renderAt(seconds) {
+    const t = ((Number(seconds) % DURATION) + DURATION) % DURATION;
+    paint(t);
+    syncUI(t);
+    return t;
+  }
+  window.renderAt = renderAt;
+
+  // ===== 播放、控制、减少动态 =================================================
+  const playBtn = document.getElementById('play');
+  const timeline = document.getElementById('timeline');
+  const clock = document.getElementById('clock');
+  let playing = false, base = 0, start = 0, current = 0;
+  const reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function syncUI(t) {
+    if (EXPORT) return;
+    current = t;
+    if (timeline) timeline.value = String(t.toFixed(2));
+    if (clock) clock.textContent = t.toFixed(2) + ' / ' + DURATION.toFixed(2) + 's';
+  }
+  function frame(now) {
+    if (!playing) return;
+    const t = ((now - start) / 1000 + base) % DURATION;
+    paint(t);
+    syncUI(t);
+    requestAnimationFrame(frame);
+  }
+  function play() {
+    if (playing) return;
+    playing = true;
+    start = performance.now();
+    base = current;
+    if (playBtn) playBtn.textContent = '暂停';
+    requestAnimationFrame(frame);
+  }
+  function pause() {
+    playing = false;
+    if (playBtn) playBtn.textContent = '播放';
+  }
+  if (playBtn) playBtn.addEventListener('click', () => { playing ? pause() : play(); });
+  document.getElementById('replay')?.addEventListener('click', () => {
+    base = 0; start = performance.now(); paint(0); syncUI(0); play();
+  });
+  timeline?.addEventListener('input', () => {
+    pause(); paint(Number(timeline.value)); syncUI(Number(timeline.value));
+  });
+  window.addEventListener('keydown', e => {
+    if (e.code === 'Space') { e.preventDefault(); playing ? pause() : play(); }
+    if (e.key === 'r' || e.key === 'R') { base = 0; start = performance.now(); paint(0); syncUI(0); play(); }
+  });
+
+  if (EXPORT) {
+    document.body.classList.add('export');
+    renderAt(0);
+  } else if (reduced) {
+    renderAt(2.4);
+    pause();
+  } else {
+    renderAt(0);
+    play();
+  }
+})();
+</script>
+</body>
+</html>

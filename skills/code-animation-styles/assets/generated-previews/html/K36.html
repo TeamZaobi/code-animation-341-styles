@@ -1,0 +1,472 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>K36 丝网印刷 · DeepSeek Harness 生成示例</title>
+<!--
+  Provenance
+  ----------
+  风格来源：code-animation-styles 目录（《来自俯仰观照博主的动画画风整理》整理稿）
+  catalog commit: 01576924a2b316d1f11ae33f75d3c005e8781451
+  style id: K36「丝网印刷」
+  license: upstream-custom-noncommercial（俯仰观照整理稿，非商业）
+  本文件：DeepSeek Harness（deepseek-flash）根据该风格提示词新写的候选示例，
+  不是原作者样片，也不是原项目演示；仅用于风格挑选预览。共享的只有时间轴、
+  尺寸、导出接口与页脚署名，画面与动作按本风格重新设计。
+  原文“只输出代码”等语句属于素材的一部分，不覆盖本任务的交付合同。
+-->
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; min-height: 100%; background: #0c0c10; color: #e9e9ee;
+    font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif; }
+  #app { min-height: 100vh; display: flex; flex-direction: column; align-items: center;
+    justify-content: center; gap: 12px; padding: 20px; }
+  #stage { width: min(94vw, 1000px); aspect-ratio: 16 / 9; background: #000;
+    box-shadow: 0 18px 60px rgba(0,0,0,.55); position: relative; overflow: hidden; }
+  canvas { display: block; width: 100%; height: 100%; }
+  #head, #ui { width: min(94vw, 1000px); }
+  #head h1 { margin: 0 0 4px; font-size: 15px; font-weight: 600; letter-spacing: .02em; }
+  #head p { margin: 0; font-size: 12px; line-height: 1.5; color: #9a9aa8; }
+  #ui { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  #ui button { background: #1d1d26; color: #f2f2f6; border: 1px solid #343444;
+    border-radius: 7px; padding: 6px 12px; font-size: 12px; cursor: pointer; }
+  #ui button:hover { background: #272734; }
+  #ui input[type=range] { flex: 1 1 220px; min-width: 150px; accent-color: #7c8cff; }
+  #clock { font-variant-numeric: tabular-nums; font-size: 12px; color: #a9a9ba; min-width: 78px; }
+  #credit { width: min(94vw, 1000px); font-size: 11px; line-height: 1.6; color: #6f6f80; }
+  #credit b { color: #9c9cae; font-weight: 500; }
+  body.export, body.export #app { display: block; width: 640px; height: 360px; min-height: 0;
+    padding: 0; margin: 0; overflow: hidden; background: #000; }
+  body.export #stage { width: 640px; height: 360px; box-shadow: none; }
+  body.export #head, body.export #ui, body.export #credit { display: none; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="head">
+    <h1>K36 · 丝网印刷</h1>
+    <p>三色丝网印刷海报：放射底纹、红色圆、蓝色举灯的人依次套印，色版故意错开几毫米，最后「印出来」压上。</p>
+  </div>
+  <div id="stage"><canvas id="c" width="640" height="360" aria-label="丝网印刷 风格动画示例"></canvas></div>
+  <div id="ui">
+    <button id="play" type="button">暂停</button>
+    <button id="replay" type="button">重播</button>
+    <input id="timeline" type="range" min="0" max="6" step="0.01" value="0" aria-label="时间轴">
+    <span id="clock">0.00 / 6.00s</span>
+  </div>
+  <div id="credit">
+    <b>DeepSeek Harness 生成示例</b>（非原项目样片）· 来源：来自俯仰观照博主的动画画风整理 ·
+    许可：upstream-custom-noncommercial（俯仰观照整理稿，非商业） · 画面与文字均由代码绘制，静音。
+  </div>
+</div>
+<script>
+(() => {
+  'use strict';
+  // ===== 共享脚手架（可改，但导出合同不要破坏）=================================
+  const W = 640, H = 360, DURATION = 6;
+  const EXPORT = new URLSearchParams(location.search).get('export') === '1';
+  const canvas = document.getElementById('c');
+  const ctx = canvas.getContext('2d');
+  const FONT = '"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",sans-serif';
+
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  const lerp = (a, b, t) => a + (b - a) * t;
+  const smooth = t => t * t * (3 - 2 * t);
+  const easeOut = t => 1 - Math.pow(1 - t, 3);
+  const easeIn = t => t * t * t;
+  function rng(seed) { let s = seed >>> 0; return () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; }; }
+
+  // ===== 场景（每个 ID 独立设计；下面的注释区由构建器替换）===================
+  // DESC: 三色丝网印刷海报：放射底纹、红色圆、蓝色举灯的人依次套印，色版故意错开几毫米，最后「印出来」压上。
+// K36 丝网印刷 · DeepSeek Harness 生成示例
+const K36 = {
+  paper: '#f4ecd8', paperShade: '#e6dbc2', ink: '#161311',
+  red: '#e2402c', blue: '#1f4fa3', mustard: '#efb32c', cream: '#fbf3e0',
+};
+const k36seg = (t, a, b) => clamp((t - a) / (b - a), 0, 1);
+const k36ease = p => 1 - Math.pow(1 - p, 3);
+const K36_FIBERS = (() => {
+  const r = rng(3601);
+  return Array.from({ length: 380 }, () => ({ x: r() * W, y: r() * H, len: 3 + r() * 18, a: 0.015 + r() * 0.03, ang: (r() - 0.5) * 0.5 }));
+})();
+const K36_DOTS = (() => {
+  const r = rng(3611);
+  const out = [];
+  for (let y = 90; y < 340; y += 9) {
+    for (let x = 170; x < 470; x += 9) {
+      const dx = x - 300, dy = y - 210;
+      const d = Math.sqrt(dx * dx + dy * dy);
+      if (d > 132) continue;
+      const k = clamp(1 - d / 132, 0, 1);
+      out.push({ x: x + (r() - 0.5) * 2.2, y: y + (r() - 0.5) * 2.2, r: 0.6 + k * 2.9 + r() * 0.5 });
+    }
+  }
+  return out;
+})();
+
+function k36Paper() {
+  ctx.fillStyle = K36.paper; ctx.fillRect(0, 0, W, H);
+  ctx.save();
+  for (const f of K36_FIBERS) {
+    ctx.strokeStyle = `rgba(120,100,70,${f.a})`;
+    ctx.lineWidth = 0.8;
+    ctx.beginPath(); ctx.moveTo(f.x, f.y);
+    ctx.lineTo(f.x + Math.cos(f.ang) * f.len, f.y + Math.sin(f.ang) * f.len);
+    ctx.stroke();
+  }
+  // 轻微的纸面不匀
+  for (let i = 0; i < 12; i++) {
+    const x = (i * 137) % 640, y = (i * 89) % 360;
+    const g = ctx.createRadialGradient(x, y, 10, x, y, 130);
+    g.addColorStop(0, 'rgba(200,180,140,.05)');
+    g.addColorStop(1, 'rgba(200,180,140,0)');
+    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x, y, 130, 0, Math.PI * 2); ctx.fill();
+  }
+  ctx.restore();
+}
+
+function k36Marks(p) {
+  ctx.save();
+  ctx.globalAlpha = p;
+  ctx.strokeStyle = 'rgba(22,19,17,.55)';
+  ctx.lineWidth = 0.9;
+  const pts = [[34, 34], [606, 34], [34, 316], [606, 316]];
+  for (const [x, y] of pts) {
+    ctx.beginPath(); ctx.arc(x, y, 7, 0, Math.PI * 2); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(x - 12, y); ctx.lineTo(x + 12, y); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(x, y - 12); ctx.lineTo(x, y + 12); ctx.stroke();
+  }
+  // 色标
+  const bars = [K36.red, K36.blue, K36.mustard, K36.ink];
+  bars.forEach((c, i) => {
+    ctx.fillStyle = c;
+    ctx.fillRect(34 + i * 16, 326, 12, 10);
+  });
+  ctx.fillStyle = 'rgba(22,19,17,.6)';
+  ctx.font = `500 10px ${FONT}`;
+  ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+  ctx.fillText('3 色 / 300g', 106, 331);
+  ctx.restore();
+}
+
+function k36Sunburst(dx, dy, p) {
+  if (p <= 0.01) return;
+  ctx.save();
+  ctx.globalCompositeOperation = 'multiply';
+  ctx.globalAlpha = p;
+  ctx.translate(320 + dx, 208 + dy);
+  ctx.translate(-320, -208);
+  const n = 18;
+  for (let i = 0; i < n; i++) {
+    if (i % 2) continue;
+    const a0 = (i / n) * Math.PI * 2 + 0.06;
+    const a1 = ((i + 1) / n) * Math.PI * 2 - 0.06;
+    ctx.beginPath();
+    ctx.moveTo(320, 208);
+    ctx.lineTo(320 + Math.cos(a0) * 330, 208 + Math.sin(a0) * 330);
+    ctx.lineTo(320 + Math.cos(a1) * 330, 208 + Math.sin(a1) * 330);
+    ctx.closePath();
+    ctx.fillStyle = K36.mustard;
+    ctx.globalAlpha = p * 0.92;
+    ctx.fill();
+  }
+  ctx.restore();
+}
+
+function k36Disc(dx, dy, p) {
+  if (p <= 0.01) return;
+  ctx.save();
+  ctx.globalCompositeOperation = 'multiply';
+  ctx.globalAlpha = p;
+  ctx.beginPath(); ctx.arc(320 + dx, 208 + dy, 128, 0, Math.PI * 2);
+  ctx.fillStyle = K36.red;
+  ctx.fill();
+  // 套印叠色：圆内右下偏一点再叠一层黄，形成双色
+  ctx.globalAlpha = p * 0.22;
+  ctx.beginPath(); ctx.arc(320 + dx + 5, 208 + dy + 4, 128, 0, Math.PI * 2);
+  ctx.fillStyle = K36.mustard; ctx.fill();
+  ctx.restore();
+}
+
+function k36Halftone(dx, dy, p) {
+  if (p <= 0.01) return;
+  ctx.save();
+  ctx.globalCompositeOperation = 'multiply';
+  ctx.beginPath(); ctx.arc(320 + dx, 208 + dy, 126, 0, Math.PI * 2); ctx.clip();
+  ctx.fillStyle = K36.blue;
+  for (const d of K36_DOTS) {
+    ctx.globalAlpha = 0.55 * p;
+    ctx.beginPath();
+    ctx.arc(d.x + dx, d.y + dy, d.r * p, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.restore();
+}
+
+function k36Figure(dx, dy, p) {
+  if (p <= 0.01) return;
+  ctx.save();
+  ctx.globalAlpha = p;
+  ctx.translate(dx, dy);
+  const ink = K36.ink;
+  // 身体（蓝）
+  ctx.fillStyle = K36.blue;
+  ctx.beginPath();
+  ctx.moveTo(196, 372);
+  ctx.bezierCurveTo(198, 316, 208, 286, 236, 272);
+  ctx.lineTo(258, 262);
+  ctx.lineTo(252, 236);
+  ctx.lineTo(320, 236);
+  ctx.lineTo(314, 262);
+  ctx.lineTo(336, 272);
+  ctx.bezierCurveTo(362, 288, 372, 318, 374, 372);
+  ctx.closePath();
+  ctx.fill();
+  // 举起的手臂
+  ctx.strokeStyle = K36.blue; ctx.lineWidth = 30; ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.moveTo(336, 286); ctx.lineTo(392, 196); ctx.lineTo(410, 168); ctx.stroke();
+  // 另一只手
+  ctx.lineWidth = 26;
+  ctx.beginPath(); ctx.moveTo(232, 292); ctx.lineTo(206, 336); ctx.stroke();
+  // 头
+  ctx.fillStyle = K36.blue;
+  ctx.beginPath();
+  ctx.moveTo(244, 224);
+  ctx.bezierCurveTo(238, 186, 258, 156, 288, 154);
+  ctx.bezierCurveTo(320, 152, 336, 180, 332, 214);
+  ctx.bezierCurveTo(330, 234, 316, 244, 292, 244);
+  ctx.bezierCurveTo(266, 244, 248, 238, 244, 224);
+  ctx.closePath();
+  ctx.fill();
+  // 脸（纸色挖版）
+  ctx.fillStyle = K36.cream;
+  ctx.beginPath();
+  ctx.ellipse(290, 202, 26, 30, 0.04, 0, Math.PI * 2);
+  ctx.fill();
+  // 五官
+  ctx.fillStyle = ink;
+  ctx.beginPath(); ctx.ellipse(281, 198, 2.6, 3.4, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(302, 198, 2.6, 3.4, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.strokeStyle = ink; ctx.lineWidth = 1.8; ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.arc(291, 210, 6, 0.3, Math.PI - 0.3); ctx.stroke();
+  ctx.fillStyle = K36.red;
+  ctx.globalAlpha = p * 0.55;
+  ctx.beginPath(); ctx.arc(271, 212, 4.2, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.arc(311, 212, 4.2, 0, Math.PI * 2); ctx.fill();
+  ctx.globalAlpha = p;
+  // 手：握拳
+  ctx.fillStyle = K36.mustard;
+  ctx.beginPath(); ctx.ellipse(412, 160, 18, 15, -0.4, 0, Math.PI * 2); ctx.fill();
+  ctx.strokeStyle = ink; ctx.lineWidth = 1.6;
+  ctx.beginPath(); ctx.ellipse(412, 160, 18, 15, -0.4, 0, Math.PI * 2); ctx.stroke();
+  ctx.restore();
+}
+
+function k36Bulb(dx, dy, p) {
+  if (p <= 0.01) return;
+  ctx.save();
+  ctx.globalAlpha = p;
+  ctx.translate(412 + dx, 136 + dy);
+  // 光
+  ctx.globalCompositeOperation = 'multiply';
+  ctx.fillStyle = K36.mustard;
+  ctx.beginPath(); ctx.arc(0, 0, 28, 0, Math.PI * 2); ctx.fill();
+  ctx.globalCompositeOperation = 'source-over';
+  // 灯泡轮廓
+  ctx.fillStyle = K36.cream;
+  ctx.beginPath(); ctx.arc(0, -2, 20, 0, Math.PI * 2); ctx.fill();
+  ctx.strokeStyle = K36.ink; ctx.lineWidth = 2.2;
+  ctx.beginPath(); ctx.arc(0, -2, 20, 0, Math.PI * 2); ctx.stroke();
+  // 灯座
+  ctx.fillStyle = K36.ink;
+  ctx.fillRect(-8, 16, 16, 10);
+  ctx.fillStyle = K36.cream;
+  for (let i = 0; i < 3; i++) ctx.fillRect(-8, 17 + i * 3, 16, 1);
+  // 灯丝
+  ctx.strokeStyle = K36.ink; ctx.lineWidth = 1.6;
+  ctx.beginPath();
+  ctx.moveTo(-6, 8); ctx.lineTo(-3, -4); ctx.lineTo(0, 6); ctx.lineTo(3, -4); ctx.lineTo(6, 8);
+  ctx.stroke();
+  // 光芒
+  ctx.strokeStyle = K36.red; ctx.lineWidth = 3; ctx.lineCap = 'round';
+  for (let i = 0; i < 7; i++) {
+    const a = -Math.PI * 0.92 + i * Math.PI * 0.14;
+    ctx.beginPath();
+    ctx.moveTo(Math.cos(a) * 30, -2 + Math.sin(a) * 30);
+    ctx.lineTo(Math.cos(a) * 40, -2 + Math.sin(a) * 40);
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+function k36Type(t) {
+  ctx.save();
+  ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+  const p1 = 1;
+  if (p1 > 0) {
+    ctx.save();
+    ctx.globalAlpha = p1;
+    ctx.fillStyle = K36.ink;
+    ctx.font = `700 24px ${FONT}`;
+    ctx.fillText('一个念头', 34, 92);
+    ctx.restore();
+  }
+  const p2 = k36ease(k36seg(t, 2.9, 3.6));
+  if (p2 > 0) {
+    ctx.save();
+    // 错位红版 + 黑版
+    ctx.globalAlpha = p2;
+    ctx.font = `900 52px ${FONT}`;
+    ctx.fillStyle = K36.red;
+    ctx.fillText('印出来', 34 + 4, 152 + 3);
+    ctx.fillStyle = K36.blue;
+    ctx.fillText('印出来', 34 - 3, 152 - 2);
+    ctx.fillStyle = K36.ink;
+    ctx.fillText('印出来', 34, 152);
+    ctx.restore();
+  }
+  const p3 = k36seg(t, 3.3, 3.9);
+  if (p3 > 0) {
+    ctx.save();
+    ctx.globalAlpha = p3;
+    ctx.fillStyle = K36.ink;
+    ctx.font = `600 13px ${FONT}`;
+    ctx.fillText('三色套印 · 平涂 · 轻微错位', 36, 176);
+    ctx.strokeStyle = K36.ink; ctx.lineWidth = 1.2;
+    ctx.beginPath(); ctx.moveTo(36, 186); ctx.lineTo(196, 186); ctx.stroke();
+    ctx.restore();
+  }
+  const p4 = k36seg(t, 4.0, 4.6);
+  if (p4 > 0) {
+    ctx.save();
+    ctx.globalAlpha = p4;
+    ctx.fillStyle = K36.ink;
+    ctx.font = `500 13px ${FONT}`;
+    ctx.fillText('一版一色', 36, 214);
+    ctx.fillText('压一次', 36, 232);
+    ctx.fillStyle = K36.red;
+    ctx.font = `700 13px ${FONT}`;
+    ctx.fillText('错一点才像手工', 36, 258);
+    ctx.restore();
+  }
+  ctx.restore();
+}
+
+function baseScene(t) {
+  k36Paper();
+  const j1 = Math.sin(t * 12.5 + 0.4) * 0.7;
+  const j2 = Math.cos(t * 10.3) * 0.6;
+  k36Sunburst(k36ease(k36seg(t, 0.2, 1.2)) * 14 + j1, 8 - k36ease(k36seg(t, 0.2, 1.2)) * 8 + j2, 1);
+  k36Disc(-k36ease(k36seg(t, 0.8, 1.8)) * 16 + j2, 6 + j1, 1);
+  k36Halftone(j2 * 0.6, j1 * 0.6, 0.55 + 0.45 * k36seg(t, 1.7, 2.6));
+  k36Figure(-k36ease(k36seg(t, 1.3, 2.5)) * 10 + j1, k36ease(k36seg(t, 1.3, 2.5)) * 14 + j2, 1);
+  k36Bulb(j2 * 0.8, j1 * 0.8, 1);
+  k36Type(t);
+  k36Marks(k36seg(t, 0.0, 0.5));
+}
+
+function drawScene(t) {
+  const a = t / 6 * Math.PI * 2;
+  ctx.save();
+  ctx.translate(320, 180);
+  const z = 1.022 + 0.012 * Math.sin(a + 2.0);
+  ctx.scale(z, z);
+  ctx.translate(-320 + 2.6 * Math.sin(a), -180 + 2.0 * Math.cos(a + 0.4));
+  baseScene(t);
+  ctx.restore();
+}
+
+  // ===== 共享渲染与署名 =======================================================
+  function watermark() {
+    const text = 'DeepSeek Harness 生成示例';
+    ctx.save();
+    ctx.font = '11px ' + FONT;
+    const w = ctx.measureText(text).width + 14;
+    const x = W - w - 8, y = H - 24;
+    ctx.fillStyle = 'rgba(0,0,0,.46)';
+    ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(x, y, w, 18, 4); else ctx.rect(x, y, w, 18);
+    ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,.82)';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(text, x + 7, y + 9.5);
+    ctx.restore();
+  }
+
+  function paint(t) {
+    ctx.save();
+    ctx.clearRect(0, 0, W, H);
+    try { drawScene(t); } catch (err) { console.error(err); }
+    ctx.restore();
+    watermark();
+  }
+
+  function renderAt(seconds) {
+    const t = ((Number(seconds) % DURATION) + DURATION) % DURATION;
+    paint(t);
+    syncUI(t);
+    return t;
+  }
+  window.renderAt = renderAt;
+
+  // ===== 播放、控制、减少动态 =================================================
+  const playBtn = document.getElementById('play');
+  const timeline = document.getElementById('timeline');
+  const clock = document.getElementById('clock');
+  let playing = false, base = 0, start = 0, current = 0;
+  const reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function syncUI(t) {
+    if (EXPORT) return;
+    current = t;
+    if (timeline) timeline.value = String(t.toFixed(2));
+    if (clock) clock.textContent = t.toFixed(2) + ' / ' + DURATION.toFixed(2) + 's';
+  }
+  function frame(now) {
+    if (!playing) return;
+    const t = ((now - start) / 1000 + base) % DURATION;
+    paint(t);
+    syncUI(t);
+    requestAnimationFrame(frame);
+  }
+  function play() {
+    if (playing) return;
+    playing = true;
+    start = performance.now();
+    base = current;
+    if (playBtn) playBtn.textContent = '暂停';
+    requestAnimationFrame(frame);
+  }
+  function pause() {
+    playing = false;
+    if (playBtn) playBtn.textContent = '播放';
+  }
+  if (playBtn) playBtn.addEventListener('click', () => { playing ? pause() : play(); });
+  document.getElementById('replay')?.addEventListener('click', () => {
+    base = 0; start = performance.now(); paint(0); syncUI(0); play();
+  });
+  timeline?.addEventListener('input', () => {
+    pause(); paint(Number(timeline.value)); syncUI(Number(timeline.value));
+  });
+  window.addEventListener('keydown', e => {
+    if (e.code === 'Space') { e.preventDefault(); playing ? pause() : play(); }
+    if (e.key === 'r' || e.key === 'R') { base = 0; start = performance.now(); paint(0); syncUI(0); play(); }
+  });
+
+  if (EXPORT) {
+    document.body.classList.add('export');
+    renderAt(0);
+  } else if (reduced) {
+    renderAt(2.4);
+    pause();
+  } else {
+    renderAt(0);
+    play();
+  }
+})();
+</script>
+</body>
+</html>

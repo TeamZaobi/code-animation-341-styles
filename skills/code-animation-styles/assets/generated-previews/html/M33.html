@@ -1,0 +1,616 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>M33 从一个点拉远到宇宙 · DeepSeek Harness 生成示例</title>
+<!--
+  Provenance
+  ----------
+  风格来源：code-animation-styles 目录（《来自俯仰观照博主的动画画风整理》整理稿）
+  catalog commit: 01576924a2b316d1f11ae33f75d3c005e8781451
+  style id: M33「从一个点拉远到宇宙」
+  license: upstream-custom-noncommercial（俯仰观照整理稿，非商业）
+  本文件：DeepSeek Harness（deepseek-flash）根据该风格提示词新写的候选示例，
+  不是原作者样片，也不是原项目演示；仅用于风格挑选预览。共享的只有时间轴、
+  尺寸、导出接口与页脚署名，画面与动作按本风格重新设计。
+  原文“只输出代码”等语句属于素材的一部分，不覆盖本任务的交付合同。
+-->
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; min-height: 100%; background: #0c0c10; color: #e9e9ee;
+    font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif; }
+  #app { min-height: 100vh; display: flex; flex-direction: column; align-items: center;
+    justify-content: center; gap: 12px; padding: 20px; }
+  #stage { width: min(94vw, 1000px); aspect-ratio: 16 / 9; background: #000;
+    box-shadow: 0 18px 60px rgba(0,0,0,.55); position: relative; overflow: hidden; }
+  canvas { display: block; width: 100%; height: 100%; }
+  #head, #ui { width: min(94vw, 1000px); }
+  #head h1 { margin: 0 0 4px; font-size: 15px; font-weight: 600; letter-spacing: .02em; }
+  #head p { margin: 0; font-size: 12px; line-height: 1.5; color: #9a9aa8; }
+  #ui { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  #ui button { background: #1d1d26; color: #f2f2f6; border: 1px solid #343444;
+    border-radius: 7px; padding: 6px 12px; font-size: 12px; cursor: pointer; }
+  #ui button:hover { background: #272734; }
+  #ui input[type=range] { flex: 1 1 220px; min-width: 150px; accent-color: #7c8cff; }
+  #clock { font-variant-numeric: tabular-nums; font-size: 12px; color: #a9a9ba; min-width: 78px; }
+  #credit { width: min(94vw, 1000px); font-size: 11px; line-height: 1.6; color: #6f6f80; }
+  #credit b { color: #9c9cae; font-weight: 500; }
+  body.export, body.export #app { display: block; width: 640px; height: 360px; min-height: 0;
+    padding: 0; margin: 0; overflow: hidden; background: #000; }
+  body.export #stage { width: 640px; height: 360px; box-shadow: none; }
+  body.export #head, body.export #ui, body.export #credit { display: none; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="head">
+    <h1>M33 · 从一个点拉远到宇宙</h1>
+    <p>黑屏上一个点展开成一张卡片，镜头一路拉远：桌面、亮灯的窗、城市、星球、星系，最后推进另一扇窗并落一句话。</p>
+  </div>
+  <div id="stage"><canvas id="c" width="640" height="360" aria-label="从一个点拉远到宇宙 风格动画示例"></canvas></div>
+  <div id="ui">
+    <button id="play" type="button">暂停</button>
+    <button id="replay" type="button">重播</button>
+    <input id="timeline" type="range" min="0" max="6" step="0.01" value="0" aria-label="时间轴">
+    <span id="clock">0.00 / 6.00s</span>
+  </div>
+  <div id="credit">
+    <b>DeepSeek Harness 生成示例</b>（非原项目样片）· 来源：来自俯仰观照博主的动画画风整理 ·
+    许可：upstream-custom-noncommercial（俯仰观照整理稿，非商业） · 画面与文字均由代码绘制，静音。
+  </div>
+</div>
+<script>
+(() => {
+  'use strict';
+  // ===== 共享脚手架（可改，但导出合同不要破坏）=================================
+  const W = 640, H = 360, DURATION = 6;
+  const EXPORT = new URLSearchParams(location.search).get('export') === '1';
+  const canvas = document.getElementById('c');
+  const ctx = canvas.getContext('2d');
+  const FONT = '"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",sans-serif';
+
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  const lerp = (a, b, t) => a + (b - a) * t;
+  const smooth = t => t * t * (3 - 2 * t);
+  const easeOut = t => 1 - Math.pow(1 - t, 3);
+  const easeIn = t => t * t * t;
+  function rng(seed) { let s = seed >>> 0; return () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; }; }
+
+  // ===== 场景（每个 ID 独立设计；下面的注释区由构建器替换）===================
+  // DESC: 黑屏上一个点展开成一张卡片，镜头一路拉远：桌面、亮灯的窗、城市、星球、星系，最后推进另一扇窗并落一句话。
+// M33 从一个点拉远到宇宙 · DeepSeek Harness 生成示例
+const M33_STARS = (() => {
+  const r = rng(3333);
+  return Array.from({ length: 150 }, () => ({ x: r(), y: r(), s: 0.4 + r() * 1.5, a: 0.15 + r() * 0.7 }));
+})();
+const M33_GALAXY = (() => {
+  const r = rng(3311);
+  return Array.from({ length: 460 }, (_, i) => {
+    const t = i / 460;
+    const arm = i % 2 === 0 ? 0 : Math.PI;
+    const rad = Math.pow(t, 0.62);
+    const ang = arm + rad * 4.6 + (r() - 0.5) * 0.35;
+    return { rad, ang, s: 0.5 + r() * 1.8, a: 0.25 + r() * 0.6, warm: r() > 0.62 };
+  });
+})();
+
+function m33seg(t, a, b) { return clamp((t - a) / (b - a), 0, 1); }
+function m33e(t) { return 1 - Math.pow(1 - t, 3); }
+function m33smooth(t) { return t * t * (3 - 2 * t); }
+
+function m33Scene(level, t, s, alpha) {
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  ctx.translate(320, 180);
+  ctx.scale(s, s);
+  ctx.translate(-320, -180);
+  if (level === 0) m33LvlCard(t);
+  else if (level === 1) m33LvlDesk(t);
+  else if (level === 2) m33LvlCity(t);
+  else if (level === 3) m33LvlPlanet(t);
+  else if (level === 4) m33LvlGalaxy(t);
+  else m33LvlWindow(t);
+  ctx.restore();
+}
+
+// 0：一点 → 一张卡片
+function m33LvlCard(t) {
+  const cardW = 300, cardH = 190;
+  ctx.fillStyle = '#f4f1e8';
+  ctx.beginPath();
+  if (ctx.roundRect) ctx.roundRect(320 - cardW / 2, 180 - cardH / 2, cardW, cardH, 12);
+  else ctx.rect(320 - cardW / 2, 180 - cardH / 2, cardW, cardH);
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(20,26,40,.16)'; ctx.lineWidth = 2; ctx.stroke();
+  // 卡片内容：三根柱 + 两行字
+  ctx.fillStyle = '#1c2333';
+  ctx.fillRect(320 - cardW / 2 + 26, 180 - cardH / 2 + 26, 84, 7);
+  ctx.fillStyle = 'rgba(28,35,51,.35)';
+  ctx.fillRect(320 - cardW / 2 + 26, 180 - cardH / 2 + 42, 120, 4);
+  const bars = [[0.4, '#e0a33d'], [0.62, '#3d7de0'], [0.86, '#4fbf8f']];
+  bars.forEach((b, i) => {
+    const w = 22, h = 84 * b[0];
+    const x = 320 + 26 + i * 34;
+    ctx.fillStyle = b[1];
+    ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(x, 180 + cardH / 2 - 34 - h, w, h, 5);
+    else ctx.rect(x, 180 + cardH / 2 - 34 - h, w, h);
+    ctx.fill();
+  });
+  ctx.fillStyle = 'rgba(28,35,51,.25)';
+  ctx.fillRect(320 - cardW / 2 + 26, 180 + cardH / 2 - 26, 150, 4);
+}
+
+// 1：桌面
+function m33LvlDesk(t) {
+  const g = ctx.createLinearGradient(0, 0, 0, H);
+  g.addColorStop(0, '#b98a5c');
+  g.addColorStop(1, '#8a5f3c');
+  ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  // 木纹
+  ctx.strokeStyle = 'rgba(70,44,26,.15)'; ctx.lineWidth = 2;
+  for (let i = 0; i < 9; i++) {
+    ctx.beginPath();
+    ctx.moveTo(0, 18 + i * 42);
+    ctx.bezierCurveTo(180, 10 + i * 42, 420, 30 + i * 42, W, 16 + i * 42);
+    ctx.stroke();
+  }
+  // 卡片
+  ctx.save();
+  ctx.translate(320, 180);
+  ctx.shadowColor = 'rgba(40,20,8,.35)'; ctx.shadowBlur = 22; ctx.shadowOffsetY = 8;
+  ctx.fillStyle = '#f4f1e8';
+  ctx.beginPath();
+  if (ctx.roundRect) ctx.roundRect(-110, -70, 220, 140, 8); else ctx.rect(-110, -70, 220, 140);
+  ctx.fill();
+  ctx.shadowColor = 'transparent';
+  ctx.fillStyle = 'rgba(28,35,51,.5)';
+  ctx.fillRect(-90, -48, 76, 5); ctx.fillRect(-90, -36, 120, 3);
+  ctx.fillStyle = '#3d7de0';
+  ctx.fillRect(-90, 6, 14, 34); ctx.fillRect(-68, 20, 14, 20); ctx.fillRect(-46, -8, 14, 54);
+  ctx.restore();
+  // 键盘
+  ctx.save();
+  ctx.translate(196, 288); ctx.rotate(-0.04);
+  ctx.fillStyle = '#3a3a42';
+  ctx.beginPath();
+  if (ctx.roundRect) ctx.roundRect(-92, -26, 184, 52, 6); else ctx.rect(-92, -26, 184, 52);
+  ctx.fill();
+  ctx.fillStyle = 'rgba(255,255,255,.16)';
+  for (let i = 0; i < 5; i++) for (let j = 0; j < 2; j++) ctx.fillRect(-82 + i * 34, -18 + j * 20, 26, 12);
+  ctx.restore();
+  // 马克杯
+  ctx.fillStyle = '#2f5a56';
+  ctx.beginPath(); ctx.arc(452, 268, 26, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = '#57301f';
+  ctx.beginPath(); ctx.arc(452, 268, 19, 0, Math.PI * 2); ctx.fill();
+  ctx.strokeStyle = '#2f5a56'; ctx.lineWidth = 6;
+  ctx.beginPath(); ctx.arc(480, 268, 11, -1.2, 1.2); ctx.stroke();
+  // 台灯
+  ctx.save();
+  ctx.translate(540, 92);
+  ctx.fillStyle = '#2f3a44';
+  ctx.beginPath(); ctx.moveTo(-14, 24); ctx.lineTo(14, 24); ctx.lineTo(30, -10); ctx.lineTo(-30, -10); ctx.closePath(); ctx.fill();
+  ctx.fillRect(-4, 24, 8, 30);
+  ctx.restore();
+  const lg = ctx.createRadialGradient(540, 108, 4, 540, 108, 90);
+  lg.addColorStop(0, 'rgba(255,222,160,.40)');
+  lg.addColorStop(1, 'rgba(255,210,150,0)');
+  ctx.fillStyle = lg;
+  ctx.beginPath(); ctx.arc(540, 108, 90, 0, Math.PI * 2); ctx.fill();
+}
+
+// 2：城市 / 亮灯的那扇窗
+function m33LvlCity(t) {
+  const g = ctx.createLinearGradient(0, 0, 0, H);
+  g.addColorStop(0, '#0b1424');
+  g.addColorStop(1, '#050a12');
+  ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  // 楼体
+  ctx.fillStyle = '#0e1a2c';
+  ctx.fillRect(96, 60, 448, 300);
+  // 窗格：正中那扇就是刚才的桌面
+  const cols = 8, rows = 6;
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      const x = 108 + c * 55, y = 74 + r * 42;
+      const isHero = r === 2 && c === 3;
+      if (isHero) {
+        const hg = ctx.createRadialGradient(x + 24, y + 22, 2, x + 24, y + 22, 66);
+        hg.addColorStop(0, 'rgba(255,214,148,.85)');
+        hg.addColorStop(0.4, 'rgba(255,190,120,.35)');
+        hg.addColorStop(1, 'rgba(255,180,110,0)');
+        ctx.fillStyle = hg;
+        ctx.beginPath(); ctx.arc(x + 24, y + 22, 66, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#ffe2a8';
+        ctx.beginPath();
+        if (ctx.roundRect) ctx.roundRect(x, y, 36, 28, 2); else ctx.rect(x, y, 36, 28);
+        ctx.fill();
+      } else {
+        const on = (c * 3 + r * 5 + Math.floor(t * 0.6)) % 5 === 0;
+        ctx.fillStyle = on ? 'rgba(255,214,150,.26)' : 'rgba(150,190,220,.06)';
+        ctx.beginPath();
+        if (ctx.roundRect) ctx.roundRect(x, y, 36, 28, 2); else ctx.rect(x, y, 36, 28);
+        ctx.fill();
+        if (on) {
+          ctx.fillStyle = 'rgba(60,40,20,.35)';
+          ctx.fillRect(x + 5, y + 13, 26, 1.6);
+        }
+      }
+    }
+  }
+  // 天线
+  ctx.strokeStyle = 'rgba(150,190,220,.2)'; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(320, 60); ctx.lineTo(320, 34); ctx.stroke();
+  ctx.beginPath(); ctx.arc(320, 32, 3, 0, Math.PI * 2); ctx.stroke();
+  // 地面雾
+  const fog = ctx.createLinearGradient(0, 320, 0, 360);
+  fog.addColorStop(0, 'rgba(90,130,170,0)');
+  fog.addColorStop(1, 'rgba(90,130,170,.18)');
+  ctx.fillStyle = fog; ctx.fillRect(0, 320, W, 40);
+}
+
+// 3：星球
+function m33LvlPlanet(t) {
+  ctx.fillStyle = '#04060e'; ctx.fillRect(0, 0, W, H);
+  for (const s of M33_STARS) {
+    ctx.fillStyle = `rgba(226,238,255,${s.a})`;
+    ctx.beginPath(); ctx.arc(s.x * W, s.y * H, s.s, 0, Math.PI * 2); ctx.fill();
+  }
+  // 星球
+  const cx = 320, cy = 178, r = 118;
+  const atmo = ctx.createRadialGradient(cx, cy, r * 0.86, cx, cy, r * 1.22);
+  atmo.addColorStop(0, 'rgba(120,180,255,.30)');
+  atmo.addColorStop(1, 'rgba(120,180,255,0)');
+  ctx.fillStyle = atmo;
+  ctx.beginPath(); ctx.arc(cx, cy, r * 1.22, 0, Math.PI * 2); ctx.fill();
+  const pg = ctx.createRadialGradient(cx - 40, cy - 44, 10, cx, cy, r);
+  pg.addColorStop(0, '#5f9e7e');
+  pg.addColorStop(0.45, '#2f6f74');
+  pg.addColorStop(0.82, '#123a4c');
+  pg.addColorStop(1, '#07141f');
+  ctx.fillStyle = pg;
+  ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.fill();
+  // 云带
+  ctx.save();
+  ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.clip();
+  ctx.fillStyle = 'rgba(255,255,255,.12)';
+  for (let i = 0; i < 5; i++) {
+    ctx.beginPath();
+    ctx.ellipse(cx - 30 + i * 22, cy - 70 + i * 34, 96 - i * 8, 9, -0.2, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.restore();
+  // 晨昏线
+  ctx.save();
+  ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.clip();
+  const term = ctx.createLinearGradient(cx + 10, 0, cx + r, 0);
+  term.addColorStop(0, 'rgba(2,6,14,0)');
+  term.addColorStop(1, 'rgba(2,6,14,.72)');
+  ctx.fillStyle = term;
+  ctx.fillRect(cx, cy - r, r, r * 2);
+  ctx.restore();
+  // 卫星
+  ctx.fillStyle = 'rgba(200,214,230,.55)';
+  ctx.beginPath(); ctx.arc(cx + 168, cy - 66, 7, 0, Math.PI * 2); ctx.fill();
+}
+
+// 4：星系
+function m33LvlGalaxy(t) {
+  ctx.fillStyle = '#03040a'; ctx.fillRect(0, 0, W, H);
+  const cx = 320, cy = 180;
+  const g1 = ctx.createRadialGradient(cx, cy, 2, cx, cy, 120);
+  g1.addColorStop(0, 'rgba(255,236,200,.85)');
+  g1.addColorStop(0.25, 'rgba(255,200,150,.30)');
+  g1.addColorStop(1, 'rgba(120,120,220,0)');
+  ctx.fillStyle = g1;
+  ctx.beginPath(); ctx.arc(cx, cy, 120, 0, Math.PI * 2); ctx.fill();
+  for (const d of M33_GALAXY) {
+    const rot = d.ang + t * 0.06;
+    const rad = d.rad * 250;
+    const x = cx + Math.cos(rot) * rad;
+    const y = cy + Math.sin(rot) * rad * 0.42;
+    ctx.fillStyle = d.warm
+      ? `rgba(255,214,170,${d.a})`
+      : `rgba(170,196,255,${d.a})`;
+    ctx.beginPath(); ctx.arc(x, y, d.s, 0, Math.PI * 2); ctx.fill();
+  }
+  // 核心
+  ctx.fillStyle = 'rgba(255,246,226,.95)';
+  ctx.beginPath(); ctx.arc(cx, cy, 7, 0, Math.PI * 2); ctx.fill();
+  // 周边的星
+  for (const s of M33_STARS) {
+    ctx.fillStyle = `rgba(226,238,255,${s.a * 0.7})`;
+    ctx.beginPath(); ctx.arc(s.x * W, s.y * H, s.s * 0.8, 0, Math.PI * 2); ctx.fill();
+  }
+}
+
+// 5：落到另一扇窗
+function m33LvlWindow(t) {
+  const g = ctx.createLinearGradient(0, 0, 0, H);
+  g.addColorStop(0, '#141a26');
+  g.addColorStop(0.6, '#1d2433');
+  g.addColorStop(1, '#0d111a');
+  ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  // 窗
+  const wx = 190, wy = 46, ww = 260, wh = 190;
+  const sky = ctx.createLinearGradient(0, wy, 0, wy + wh);
+  sky.addColorStop(0, '#3b4a72');
+  sky.addColorStop(0.55, '#c46a5e');
+  sky.addColorStop(1, '#f0a872');
+  ctx.fillStyle = sky;
+  ctx.beginPath();
+  if (ctx.roundRect) ctx.roundRect(wx, wy, ww, wh, 8); else ctx.rect(wx, wy, ww, wh);
+  ctx.fill();
+  ctx.fillStyle = 'rgba(255,236,190,.95)';
+  ctx.beginPath(); ctx.arc(wx + 178, wy + 118, 20, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = 'rgba(70,50,50,.5)';
+  ctx.beginPath();
+  ctx.moveTo(wx, wy + wh);
+  ctx.lineTo(wx, wy + wh - 46);
+  ctx.lineTo(wx + 76, wy + wh - 66);
+  ctx.lineTo(wx + 150, wy + wh - 40);
+  ctx.lineTo(wx + ww, wy + wh - 58);
+  ctx.lineTo(wx + ww, wy + wh);
+  ctx.closePath(); ctx.fill();
+  // 窗框
+  ctx.strokeStyle = '#3a2a24'; ctx.lineWidth = 12;
+  ctx.beginPath();
+  if (ctx.roundRect) ctx.roundRect(wx, wy, ww, wh, 8); else ctx.rect(wx, wy, ww, wh);
+  ctx.stroke();
+  ctx.strokeStyle = 'rgba(255,226,190,.25)'; ctx.lineWidth = 2;
+  ctx.beginPath();
+  if (ctx.roundRect) ctx.roundRect(wx - 6, wy - 6, ww + 12, wh + 12, 10); else ctx.rect(wx - 6, wy - 6, ww + 12, wh + 12);
+  ctx.stroke();
+  // 窗台 + 杯子
+  ctx.fillStyle = '#241a18';
+  ctx.fillRect(wx - 34, wy + wh + 8, ww + 68, 10);
+  ctx.fillStyle = '#e8dcc8';
+  ctx.beginPath();
+  ctx.moveTo(300, wy + wh - 6); ctx.lineTo(344, wy + wh - 6);
+  ctx.lineTo(338, wy + wh + 8); ctx.lineTo(306, wy + wh + 8); ctx.closePath(); ctx.fill();
+  ctx.fillStyle = '#57301f';
+  ctx.beginPath(); ctx.ellipse(322, wy + wh - 6, 21, 4, 0, 0, Math.PI * 2); ctx.fill();
+  // 热气
+  ctx.strokeStyle = 'rgba(255,244,232,.4)'; ctx.lineWidth = 2.2;
+  for (const side of [-1, 1]) {
+    ctx.beginPath();
+    for (let i = 0; i <= 14; i++) {
+      const p = i / 14;
+      const y = wy + wh - 12 - p * 52;
+      const x = 322 + side * (6 + p * 9) + Math.sin(p * 5 + t * 2.2) * 4;
+      if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+  }
+  // 暖光
+  const lg = ctx.createRadialGradient(322, wy + wh - 10, 4, 322, wy + wh - 10, 110);
+  lg.addColorStop(0, 'rgba(255,206,150,.22)');
+  lg.addColorStop(1, 'rgba(255,200,140,0)');
+  ctx.fillStyle = lg;
+  ctx.beginPath(); ctx.arc(322, wy + wh - 10, 110, 0, Math.PI * 2); ctx.fill();
+}
+
+const M33_LEVELS = [
+  { a: 0.00, b: 1.50, lvl: 0 },
+  { a: 0.90, b: 2.55, lvl: 1 },
+  { a: 1.95, b: 3.60, lvl: 2 },
+  { a: 2.90, b: 4.65, lvl: 3 },
+  { a: 3.90, b: 5.22, lvl: 4 },
+  { a: 4.95, b: 6.01, lvl: 5 },
+];
+
+function m33Scale(k, t) {
+  const L = M33_LEVELS[k];
+  if (L.lvl === 0) {
+    if (t < 0.62) return lerp(0.05, 1, m33e(m33seg(t, 0.02, 0.62)));
+    if (t < 0.95) return 1;
+    return lerp(1, 0.18, m33e(m33seg(t, 0.95, 1.50)));
+  }
+  if (L.lvl === 5) {
+    return lerp(0.05, 1, m33e(m33seg(t, 4.95, 5.5)));
+  }
+  if (L.lvl === 4) {
+    if (t < 4.85) return 1;
+    return lerp(1, 0.04, m33e(m33seg(t, 4.85, 5.08)));
+  }
+  const hold = L.a + 0.60;
+  if (t < hold) return 1;
+  return lerp(1, 0.18, m33e(m33seg(t, hold, L.b)));
+}
+
+// 每一层都裁成一块「屏幕」，缩小时是有边框的卡片，像一路套下去
+function m33Card(level, t, s, alpha) {
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  ctx.translate(320, 180);
+  ctx.scale(s, s);
+  ctx.translate(-320, -180);
+  ctx.beginPath();
+  if (ctx.roundRect) ctx.roundRect(-4, -4, W + 8, H + 8, 12); else ctx.rect(-4, -4, W + 8, H + 8);
+  if (s < 0.9 && level !== 0) {
+    ctx.save();
+    ctx.shadowColor = 'rgba(0,0,0,.55)';
+    ctx.shadowBlur = 16 / Math.max(s, 0.2);
+    ctx.shadowOffsetY = 6 / Math.max(s, 0.2);
+    ctx.fillStyle = 'rgba(4,6,12,.55)';
+    ctx.fill();
+    ctx.restore();
+  }
+  ctx.save();
+  ctx.clip();
+  if (level === 0) m33LvlCard(t);
+  else if (level === 1) m33LvlDesk(t);
+  else if (level === 2) m33LvlCity(t);
+  else if (level === 3) m33LvlPlanet(t);
+  else if (level === 4) m33LvlGalaxy(t);
+  else m33LvlWindow(t);
+  ctx.restore();
+  if (s < 0.92) {
+    ctx.strokeStyle = `rgba(210,230,255,${0.10 + 0.18 * (1 - s)})`;
+    ctx.lineWidth = 1.2 / s;
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+function drawScene(t) {
+  ctx.fillStyle = '#020307'; ctx.fillRect(0, 0, W, H);
+
+  // 从新到旧绘制：旧的更小，压在上面，像一路拉远
+  for (let k = M33_LEVELS.length - 1; k >= 0; k--) {
+    const L = M33_LEVELS[k];
+    if (t < L.a || t > L.b + 0.02) continue;
+    const alpha = L.lvl === 0 ? 1 : m33e(m33seg(t, L.a, L.a + 0.22));
+    m33Card(L.lvl, t, m33Scale(k, t), alpha);
+  }
+
+  // 起手的那点亮光
+  const gl = 1 - m33seg(t, 0.12, 0.55);
+  if (gl > 0) {
+    ctx.save();
+    ctx.globalAlpha = gl;
+    const g = ctx.createRadialGradient(320, 180, 1, 320, 180, 46);
+    g.addColorStop(0, 'rgba(255,255,255,.9)');
+    g.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.fillStyle = g;
+    ctx.beginPath(); ctx.arc(320, 180, 46, 0, Math.PI * 2); ctx.fill();
+    ctx.restore();
+  }
+
+  // 落在最后那句
+  const tp = m33e(m33seg(t, 5.62, 5.95));
+  if (tp > 0) {
+    ctx.save();
+    ctx.globalAlpha = tp;
+    const scrim = ctx.createLinearGradient(0, 262, 0, 320);
+    scrim.addColorStop(0, 'rgba(3,5,10,0)');
+    scrim.addColorStop(1, 'rgba(3,5,10,.55)');
+    ctx.fillStyle = scrim; ctx.fillRect(0, 262, W, 58);
+    ctx.fillStyle = '#f4efe4';
+    ctx.font = `700 26px ${FONT}`;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('从一点，到一整片。', 320, 300);
+    ctx.restore();
+  }
+  // 起手的小注解
+  const cp = 1 - m33seg(t, 0.9, 1.35);
+  if (cp > 0) {
+    ctx.save();
+    ctx.globalAlpha = cp * 0.7;
+    ctx.fillStyle = '#cfe0ff';
+    ctx.font = `500 13px ${FONT}`;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('一个点，先亮起来。', 320, 322);
+    ctx.restore();
+  }
+  // 尺度刻度：右侧一路跳
+  ctx.save();
+  ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+  const marks = [[0.4, '1'], [1.6, '10'], [2.8, '1K'], [4.0, '1M'], [4.9, '1B'], [5.7, '∞']];
+  marks.forEach((m, i) => {
+    const on = t >= m[0];
+    ctx.globalAlpha = on ? 0.5 : 0.14;
+    ctx.fillStyle = '#cfe0ff';
+    ctx.font = `600 10px ${FONT}`;
+    ctx.fillText(m[1], 624, 60 + i * 22);
+  });
+  ctx.globalAlpha = 0.16;
+  ctx.fillRect(626, 48, 1, 130);
+  ctx.restore();
+}
+
+  // ===== 共享渲染与署名 =======================================================
+  function watermark() {
+    const text = 'DeepSeek Harness 生成示例';
+    ctx.save();
+    ctx.font = '11px ' + FONT;
+    const w = ctx.measureText(text).width + 14;
+    const x = W - w - 8, y = H - 24;
+    ctx.fillStyle = 'rgba(0,0,0,.46)';
+    ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(x, y, w, 18, 4); else ctx.rect(x, y, w, 18);
+    ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,.82)';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(text, x + 7, y + 9.5);
+    ctx.restore();
+  }
+
+  function paint(t) {
+    ctx.save();
+    ctx.clearRect(0, 0, W, H);
+    try { drawScene(t); } catch (err) { console.error(err); }
+    ctx.restore();
+    watermark();
+  }
+
+  function renderAt(seconds) {
+    const t = ((Number(seconds) % DURATION) + DURATION) % DURATION;
+    paint(t);
+    syncUI(t);
+    return t;
+  }
+  window.renderAt = renderAt;
+
+  // ===== 播放、控制、减少动态 =================================================
+  const playBtn = document.getElementById('play');
+  const timeline = document.getElementById('timeline');
+  const clock = document.getElementById('clock');
+  let playing = false, base = 0, start = 0, current = 0;
+  const reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function syncUI(t) {
+    if (EXPORT) return;
+    current = t;
+    if (timeline) timeline.value = String(t.toFixed(2));
+    if (clock) clock.textContent = t.toFixed(2) + ' / ' + DURATION.toFixed(2) + 's';
+  }
+  function frame(now) {
+    if (!playing) return;
+    const t = ((now - start) / 1000 + base) % DURATION;
+    paint(t);
+    syncUI(t);
+    requestAnimationFrame(frame);
+  }
+  function play() {
+    if (playing) return;
+    playing = true;
+    start = performance.now();
+    base = current;
+    if (playBtn) playBtn.textContent = '暂停';
+    requestAnimationFrame(frame);
+  }
+  function pause() {
+    playing = false;
+    if (playBtn) playBtn.textContent = '播放';
+  }
+  if (playBtn) playBtn.addEventListener('click', () => { playing ? pause() : play(); });
+  document.getElementById('replay')?.addEventListener('click', () => {
+    base = 0; start = performance.now(); paint(0); syncUI(0); play();
+  });
+  timeline?.addEventListener('input', () => {
+    pause(); paint(Number(timeline.value)); syncUI(Number(timeline.value));
+  });
+  window.addEventListener('keydown', e => {
+    if (e.code === 'Space') { e.preventDefault(); playing ? pause() : play(); }
+    if (e.key === 'r' || e.key === 'R') { base = 0; start = performance.now(); paint(0); syncUI(0); play(); }
+  });
+
+  if (EXPORT) {
+    document.body.classList.add('export');
+    renderAt(0);
+  } else if (reduced) {
+    renderAt(2.4);
+    pause();
+  } else {
+    renderAt(0);
+    play();
+  }
+})();
+</script>
+</body>
+</html>

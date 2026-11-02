@@ -1,0 +1,391 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>M8 口播 + 逐字字幕 · DeepSeek Harness 生成示例</title>
+<!--
+  Provenance
+  ----------
+  风格来源：code-animation-styles 目录（《来自俯仰观照博主的动画画风整理》整理稿）
+  catalog commit: 01576924a2b316d1f11ae33f75d3c005e8781451
+  style id: M8「口播 + 逐字字幕」
+  license: upstream-custom-noncommercial（俯仰观照整理稿，非商业）
+  本文件：DeepSeek Harness（deepseek-flash）根据该风格提示词新写的候选示例，
+  不是原作者样片，也不是原项目演示；仅用于风格挑选预览。共享的只有时间轴、
+  尺寸、导出接口与页脚署名，画面与动作按本风格重新设计。
+  原文“只输出代码”等语句属于素材的一部分，不覆盖本任务的交付合同。
+-->
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; min-height: 100%; background: #0c0c10; color: #e9e9ee;
+    font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif; }
+  #app { min-height: 100vh; display: flex; flex-direction: column; align-items: center;
+    justify-content: center; gap: 12px; padding: 20px; }
+  #stage { width: min(94vw, 1000px); aspect-ratio: 16 / 9; background: #000;
+    box-shadow: 0 18px 60px rgba(0,0,0,.55); position: relative; overflow: hidden; }
+  canvas { display: block; width: 100%; height: 100%; }
+  #head, #ui { width: min(94vw, 1000px); }
+  #head h1 { margin: 0 0 4px; font-size: 15px; font-weight: 600; letter-spacing: .02em; }
+  #head p { margin: 0; font-size: 12px; line-height: 1.5; color: #9a9aa8; }
+  #ui { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  #ui button { background: #1d1d26; color: #f2f2f6; border: 1px solid #343444;
+    border-radius: 7px; padding: 6px 12px; font-size: 12px; cursor: pointer; }
+  #ui button:hover { background: #272734; }
+  #ui input[type=range] { flex: 1 1 220px; min-width: 150px; accent-color: #7c8cff; }
+  #clock { font-variant-numeric: tabular-nums; font-size: 12px; color: #a9a9ba; min-width: 78px; }
+  #credit { width: min(94vw, 1000px); font-size: 11px; line-height: 1.6; color: #6f6f80; }
+  #credit b { color: #9c9cae; font-weight: 500; }
+  body.export, body.export #app { display: block; width: 640px; height: 360px; min-height: 0;
+    padding: 0; margin: 0; overflow: hidden; background: #000; }
+  body.export #stage { width: 640px; height: 360px; box-shadow: none; }
+  body.export #head, body.export #ui, body.export #credit { display: none; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="head">
+    <h1>M8 · 口播 + 逐字字幕</h1>
+    <p>白底单字体的口播片：画面像照片一样按 16 分音符换格，黑字字幕跟着说话一个词一个词冒出来。</p>
+  </div>
+  <div id="stage"><canvas id="c" width="640" height="360" aria-label="口播 + 逐字字幕 风格动画示例"></canvas></div>
+  <div id="ui">
+    <button id="play" type="button">暂停</button>
+    <button id="replay" type="button">重播</button>
+    <input id="timeline" type="range" min="0" max="6" step="0.01" value="0" aria-label="时间轴">
+    <span id="clock">0.00 / 6.00s</span>
+  </div>
+  <div id="credit">
+    <b>DeepSeek Harness 生成示例</b>（非原项目样片）· 来源：来自俯仰观照博主的动画画风整理 ·
+    许可：upstream-custom-noncommercial（俯仰观照整理稿，非商业） · 画面与文字均由代码绘制，静音。
+  </div>
+</div>
+<script>
+(() => {
+  'use strict';
+  // ===== 共享脚手架（可改，但导出合同不要破坏）=================================
+  const W = 640, H = 360, DURATION = 6;
+  const EXPORT = new URLSearchParams(location.search).get('export') === '1';
+  const canvas = document.getElementById('c');
+  const ctx = canvas.getContext('2d');
+  const FONT = '"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",sans-serif';
+
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  const lerp = (a, b, t) => a + (b - a) * t;
+  const smooth = t => t * t * (3 - 2 * t);
+  const easeOut = t => 1 - Math.pow(1 - t, 3);
+  const easeIn = t => t * t * t;
+  function rng(seed) { let s = seed >>> 0; return () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; }; }
+
+  // ===== 场景（每个 ID 独立设计；下面的注释区由构建器替换）===================
+  // DESC: 白底单字体的口播片：画面像照片一样按 16 分音符换格，黑字字幕跟着说话一个词一个词冒出来。
+// M8 口播 + 逐字字幕 · DeepSeek Harness 生成示例
+const M8_INK = '#141414', M8_W = '#ffffff';
+
+function m8p(t, a, b) { return clamp((t - a) / (b - a), 0, 1); }
+
+// 16 分音符：每 0.15 秒换一格（同一场景的四格微差，像逐帧照片）
+function m8variant(t) { return Math.floor(t / 0.15) % 4; }
+
+// 胶片颗粒：文件加载时算一次
+const M8_GRAIN = (() => {
+  const r = rng(8021);
+  return Array.from({ length: 900 }, () => ({
+    x: 40 + r() * 560, y: 36 + r() * 216, a: 0.015 + r() * 0.05, s: 0.6 + r() * 1.3
+  }));
+})();
+
+function m8grain() {
+  ctx.save();
+  for (const g of M8_GRAIN) {
+    ctx.fillStyle = 'rgba(255,250,236,' + g.a.toFixed(3) + ')';
+    ctx.fillRect(g.x, g.y, g.s, g.s);
+  }
+  ctx.restore();
+}
+
+function m8clipPhoto() {
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(40, 36, 560, 216);
+  ctx.clip();
+}
+
+function m8vignette() {
+  const g = ctx.createRadialGradient(320, 140, 90, 320, 150, 400);
+  g.addColorStop(0, 'rgba(0,0,0,0)');
+  g.addColorStop(1, 'rgba(40,32,20,.28)');
+  ctx.fillStyle = g; ctx.fillRect(40, 36, 560, 216);
+}
+
+// 场景一：窗边的光
+function m8photoWindow(v, drift) {
+  const ox = drift + (v - 1.5) * 1.6, oy = (v % 2) * 1.4;
+  ctx.save();
+  ctx.translate(ox, oy);
+  const g = ctx.createLinearGradient(0, 36, 0, 252);
+  g.addColorStop(0, '#efe9de'); g.addColorStop(1, '#d9d0c1');
+  ctx.fillStyle = g; ctx.fillRect(30, 26, 590, 240);
+  // 窗
+  ctx.fillStyle = '#fbf4e4';
+  ctx.fillRect(150, 62, 300, 168);
+  ctx.fillStyle = 'rgba(255,250,235,.95)';
+  ctx.fillRect(160, 70, 130, 150);
+  ctx.fillRect(300, 70, 140, 150);
+  ctx.strokeStyle = '#c9bfae'; ctx.lineWidth = 7;
+  ctx.strokeRect(150, 62, 300, 168);
+  ctx.lineWidth = 5;
+  ctx.beginPath(); ctx.moveTo(300, 62); ctx.lineTo(300, 230); ctx.moveTo(150, 148); ctx.lineTo(450, 148); ctx.stroke();
+  // 光斑
+  const lg = ctx.createLinearGradient(150, 62, 470, 250);
+  lg.addColorStop(0, 'rgba(255,244,214,.55)');
+  lg.addColorStop(1, 'rgba(255,244,214,0)');
+  ctx.fillStyle = lg;
+  ctx.beginPath(); ctx.moveTo(160, 230); ctx.lineTo(300, 230); ctx.lineTo(500, 300); ctx.lineTo(230, 300); ctx.closePath(); ctx.fill();
+  // 绿植剪影
+  ctx.fillStyle = '#5b6350';
+  ctx.fillRect(496, 196, 8, 46);
+  for (let i = 0; i < 5; i++) {
+    ctx.beginPath();
+    ctx.ellipse(500 + (i - 2) * 9, 186 - Math.abs(i - 2) * 6, 15, 7, (i - 2) * 0.5 + 0.3, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  // 桌面
+  ctx.fillStyle = '#c6b8a3'; ctx.fillRect(30, 250, 590, 30);
+  m8vignette();
+  ctx.restore();
+}
+
+// 场景二：桌上一杯水
+function m8photoDesk(v, drift) {
+  const ox = drift + (v - 1.5) * 1.4, oy = (v % 3) * 1.2;
+  ctx.save();
+  ctx.translate(ox, oy);
+  const g = ctx.createLinearGradient(0, 36, 0, 252);
+  g.addColorStop(0, '#e4ddcf'); g.addColorStop(1, '#cdc2ae');
+  ctx.fillStyle = g; ctx.fillRect(30, 26, 590, 240);
+  // 光从左上进来
+  const lg = ctx.createRadialGradient(150, 60, 20, 150, 60, 340);
+  lg.addColorStop(0, 'rgba(255,248,228,.85)'); lg.addColorStop(1, 'rgba(255,248,228,0)');
+  ctx.fillStyle = lg; ctx.fillRect(30, 26, 590, 240);
+  // 笔记本
+  ctx.save();
+  ctx.translate(330, 172); ctx.rotate(-0.05);
+  ctx.fillStyle = '#f4eee2'; ctx.fillRect(-120, -62, 240, 130);
+  ctx.strokeStyle = 'rgba(80,70,55,.18)'; ctx.lineWidth = 1.4;
+  for (let i = 0; i < 4; i++) { ctx.beginPath(); ctx.moveTo(-100, -34 + i * 26); ctx.lineTo(96, -34 + i * 26); ctx.stroke(); }
+  ctx.strokeStyle = 'rgba(80,70,55,.12)'; ctx.strokeRect(-120, -62, 240, 130);
+  ctx.restore();
+  // 杯子
+  ctx.fillStyle = 'rgba(60,50,38,.18)';
+  ctx.beginPath(); ctx.ellipse(176, 232, 58, 11, 0, 0, Math.PI * 2); ctx.fill();
+  // 把手（在杯身后面）
+  ctx.strokeStyle = '#e6e2d6'; ctx.lineWidth = 9; ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.arc(216, 188, 19, -1.15, 1.15); ctx.stroke();
+  // 杯身
+  ctx.fillStyle = '#e6e2d6';
+  ctx.beginPath();
+  ctx.moveTo(132, 150); ctx.lineTo(220, 150); ctx.lineTo(212, 226); ctx.lineTo(140, 226); ctx.closePath(); ctx.fill();
+  ctx.strokeStyle = 'rgba(70,60,45,.22)'; ctx.lineWidth = 2; ctx.stroke();
+  ctx.fillStyle = '#6d7a66';
+  ctx.beginPath(); ctx.ellipse(176, 152, 43, 9, 0, 0, Math.PI * 2); ctx.fill();
+  // 桌面
+  ctx.fillStyle = '#b7a992'; ctx.fillRect(30, 248, 590, 34);
+  m8vignette();
+  ctx.restore();
+}
+
+// 场景三：一叠纸和一支笔
+function m8photoPaper(v, drift) {
+  const ox = drift + (v - 1.5) * 1.5, oy = (v % 2) * 1.3;
+  ctx.save();
+  ctx.translate(ox, oy);
+  const g = ctx.createLinearGradient(0, 36, 0, 252);
+  g.addColorStop(0, '#f2ece1'); g.addColorStop(1, '#ddd4c4');
+  ctx.fillStyle = g; ctx.fillRect(30, 26, 590, 240);
+  for (let i = 3; i >= 0; i--) {
+    ctx.save();
+    ctx.translate(318 + i * 7, 150 - i * 4); ctx.rotate(-0.06 + i * 0.018);
+    ctx.fillStyle = i === 0 ? '#fffdf7' : 'rgba(250,246,236,' + (0.72 + i * 0.06) + ')';
+    ctx.fillRect(-140, -84, 280, 168);
+    ctx.strokeStyle = 'rgba(90,78,60,.10)'; ctx.lineWidth = 1.2; ctx.strokeRect(-140, -84, 280, 168);
+    ctx.restore();
+  }
+  // 笔
+  ctx.save();
+  ctx.translate(250, 226); ctx.rotate(-0.42);
+  ctx.fillStyle = '#3a342c'; ctx.fillRect(-92, -4, 176, 8);
+  ctx.fillStyle = '#8d8272'; ctx.fillRect(64, -4, 24, 8);
+  ctx.restore();
+  ctx.fillStyle = 'rgba(60,50,38,.14)';
+  ctx.beginPath(); ctx.ellipse(320, 246, 150, 12, 0, 0, Math.PI * 2); ctx.fill();
+  m8vignette();
+  ctx.restore();
+}
+
+const M8_WORDS = [
+  ['先把', -0.05], ['话说', 0.42], ['清楚', 0.88],
+  ['画面', 2.35], ['自然', 2.82], ['就会', 3.28], ['跟上', 3.74]
+];
+
+function drawScene(t) {
+  ctx.fillStyle = M8_W; ctx.fillRect(0, 0, W, H);
+
+  const seg = Math.floor(t / 1.5) % 4;
+  const v = m8variant(t);
+  const segP = (t % 1.5) / 1.5;
+  // 每段只做一次慢慢漂移
+  const drift = (smooth(segP) - 0.5) * 14;
+
+  m8clipPhoto();
+  ctx.fillStyle = '#e7e1d5'; ctx.fillRect(40, 36, 560, 216);
+  if (seg === 0) m8photoWindow(v, drift);
+  else if (seg === 1) m8photoDesk(v, drift);
+  else if (seg === 2) m8photoPaper(v, drift);
+  else m8photoWindow(v, drift);
+  m8grain();
+  ctx.restore();
+
+  // 画面边缘极淡的一道白，像是切帧的一瞬
+  ctx.save();
+  ctx.globalAlpha = 0.5;
+  ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 1;
+  ctx.strokeRect(40.5, 36.5, 559, 215);
+  ctx.restore();
+
+  // 字幕：一个词一个词出来，黑字白底，没有底色块
+  ctx.save();
+  ctx.fillStyle = M8_INK;
+  ctx.font = `500 31px ${FONT}`;
+  ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+  let x = 48;
+  for (const [word, at] of M8_WORDS) {
+    const p = m8p(t, at, at + 0.16);
+    const w = ctx.measureText(word).width + 7;
+    if (p > 0) {
+      ctx.save();
+      ctx.globalAlpha = p;
+      ctx.fillText(word, x, 306 + (1 - p) * 5);
+      ctx.restore();
+    }
+    x += w;
+  }
+  ctx.restore();
+
+  // 说话的气息：一条极细的声波
+  ctx.save();
+  ctx.strokeStyle = 'rgba(20,20,20,.32)';
+  ctx.lineWidth = 1.2; ctx.lineCap = 'round';
+  ctx.beginPath();
+  for (let i = 0; i <= 120; i++) {
+    const px = 48 + i * 2.1;
+    const env = Math.sin(Math.PI * i / 120);
+    const amp = 6 * env * (0.55 + 0.45 * Math.sin(i * 0.7 + t * 9.5));
+    const py = 330 + amp;
+    if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+  }
+  ctx.stroke();
+  ctx.restore();
+
+  // 右上角小字：口播 / 逐字
+  ctx.save();
+  ctx.fillStyle = 'rgba(20,20,20,.38)';
+  ctx.font = `500 13px ${FONT}`;
+  ctx.textAlign = 'right'; ctx.textBaseline = 'alphabetic';
+  ctx.fillText('口播 · 逐字字幕', 600, 26);
+  ctx.restore();
+}
+
+  // ===== 共享渲染与署名 =======================================================
+  function watermark() {
+    const text = 'DeepSeek Harness 生成示例';
+    ctx.save();
+    ctx.font = '11px ' + FONT;
+    const w = ctx.measureText(text).width + 14;
+    const x = W - w - 8, y = H - 24;
+    ctx.fillStyle = 'rgba(0,0,0,.46)';
+    ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(x, y, w, 18, 4); else ctx.rect(x, y, w, 18);
+    ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,.82)';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(text, x + 7, y + 9.5);
+    ctx.restore();
+  }
+
+  function paint(t) {
+    ctx.save();
+    ctx.clearRect(0, 0, W, H);
+    try { drawScene(t); } catch (err) { console.error(err); }
+    ctx.restore();
+    watermark();
+  }
+
+  function renderAt(seconds) {
+    const t = ((Number(seconds) % DURATION) + DURATION) % DURATION;
+    paint(t);
+    syncUI(t);
+    return t;
+  }
+  window.renderAt = renderAt;
+
+  // ===== 播放、控制、减少动态 =================================================
+  const playBtn = document.getElementById('play');
+  const timeline = document.getElementById('timeline');
+  const clock = document.getElementById('clock');
+  let playing = false, base = 0, start = 0, current = 0;
+  const reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function syncUI(t) {
+    if (EXPORT) return;
+    current = t;
+    if (timeline) timeline.value = String(t.toFixed(2));
+    if (clock) clock.textContent = t.toFixed(2) + ' / ' + DURATION.toFixed(2) + 's';
+  }
+  function frame(now) {
+    if (!playing) return;
+    const t = ((now - start) / 1000 + base) % DURATION;
+    paint(t);
+    syncUI(t);
+    requestAnimationFrame(frame);
+  }
+  function play() {
+    if (playing) return;
+    playing = true;
+    start = performance.now();
+    base = current;
+    if (playBtn) playBtn.textContent = '暂停';
+    requestAnimationFrame(frame);
+  }
+  function pause() {
+    playing = false;
+    if (playBtn) playBtn.textContent = '播放';
+  }
+  if (playBtn) playBtn.addEventListener('click', () => { playing ? pause() : play(); });
+  document.getElementById('replay')?.addEventListener('click', () => {
+    base = 0; start = performance.now(); paint(0); syncUI(0); play();
+  });
+  timeline?.addEventListener('input', () => {
+    pause(); paint(Number(timeline.value)); syncUI(Number(timeline.value));
+  });
+  window.addEventListener('keydown', e => {
+    if (e.code === 'Space') { e.preventDefault(); playing ? pause() : play(); }
+    if (e.key === 'r' || e.key === 'R') { base = 0; start = performance.now(); paint(0); syncUI(0); play(); }
+  });
+
+  if (EXPORT) {
+    document.body.classList.add('export');
+    renderAt(0);
+  } else if (reduced) {
+    renderAt(2.4);
+    pause();
+  } else {
+    renderAt(0);
+    play();
+  }
+})();
+</script>
+</body>
+</html>

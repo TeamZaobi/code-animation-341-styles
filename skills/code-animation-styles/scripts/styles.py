@@ -14,6 +14,39 @@ ROOT = Path(__file__).resolve().parents[1]
 VENDOR = ROOT / 'vendor'
 LOCK = ROOT / 'references/source-lock.json'
 PREVIEWS = ROOT / 'assets/x-previews'
+GENERATED = ROOT / 'assets/generated-previews'
+
+
+def generated_file(relative):
+    path = (GENERATED / relative).resolve()
+    if not path.is_relative_to(GENERATED.resolve()):
+        raise ValueError('Generated preview path escapes assets directory')
+    return path
+
+
+def generated_catalog():
+    path = ROOT / 'references/generated-preview-lock.json'
+    if not path.exists():
+        return {'styles': {}}
+    lock = json.loads(path.read_text())
+    actual = {str(p.relative_to(GENERATED)): hashlib.sha256(p.read_bytes()).hexdigest()
+              for p in GENERATED.rglob('*') if p.is_file()}
+    if actual != lock['sha256']:
+        raise ValueError('Generated preview inventory or SHA256 mismatch')
+    expected = {e['id']: e for e in catalog() if not e.get('img') and e['s'] != 'X' and available(e)}
+    if set(lock['styles']) != set(expected):
+        raise ValueError('Generated previews must cover exactly the missing usable entries')
+    if lock['source_commit'] != json.loads(LOCK.read_text())['commit']:
+        raise ValueError('Generated preview source revision mismatch')
+    for id, entry in lock['styles'].items():
+        if entry['source_prompt'] != expected[id]['file']:
+            raise ValueError(f'Generated preview source binding mismatch: {id}')
+        if hashlib.sha256(source_file(entry['source_prompt']).read_bytes()).hexdigest() != entry['source_prompt_sha256']:
+            raise ValueError(f'Generated preview source digest mismatch: {id}')
+        for kind in ('poster', 'gif', 'html'):
+            if entry[kind] not in actual or not generated_file(entry[kind]).is_file():
+                raise ValueError(f'Missing generated asset: {id}/{kind}')
+    return lock
 
 
 def preview_file(relative):
@@ -91,7 +124,9 @@ def check():
         raise ValueError('Series or still counts mismatch')
     placeholders = [e['id'] for e in entries if not available(e)]
     previews = preview_catalog()
+    generated = generated_catalog()
     return {'status': 'pass', 'commit': lock['commit'], 'styles': len(ids),
+            'generated_previews': len(generated['styles']),
             'supplemental_animated_previews': len(previews['styles']), 'preview_commit': previews['commit'],
             'usable_styles': len(ids) - len(placeholders), 'upstream_placeholders': placeholders,
             'stills': len(stills), 'files': len(actual), 'by_series': counts}
@@ -100,12 +135,19 @@ def check():
 def picker_html():
     html = (VENDOR / '风格挑选.html').read_text()
     previews = preview_catalog()
+    generated = generated_catalog()
     def overlay(match):
         data = json.loads(match[1])
         for entry in data['entries']:
             if entry['id'] in previews['styles']:
                 entry['img'] = '/previews/' + previews['styles'][entry['id']]['file']
                 entry['preview_source'] = previews['repository'] + '/blob/' + previews['commit'] + '/' + previews['styles'][entry['id']]['source_path']
+            if entry['id'] in generated['styles']:
+                item = generated['styles'][entry['id']]
+                entry.update(img='/generated-previews/' + item['poster'],
+                             animatedPreview='/generated-previews/' + item['gif'],
+                             htmlPreview='/generated-previews/' + item['html'],
+                             generatedPreview=True, previewLimitations=item['limitations'])
         return '<script id="data" type="application/json">' + json.dumps(data, ensure_ascii=False).replace('</', '<\\/') + '</script>'
     html = re.sub(r'<script id="data" type="application/json">(.*?)</script>', overlay, html, flags=re.S)
     revision = json.loads(LOCK.read_text())['commit']
@@ -115,6 +157,16 @@ def picker_html():
 
 
 class Handler(http.server.SimpleHTTPRequestHandler):
+    def send_asset(self, path):
+        if not path.is_file():
+            return self.send_error(404)
+        content = path.read_bytes()
+        self.send_response(200)
+        self.send_header('Content-Type', self.guess_type(str(path)))
+        self.send_header('Content-Length', str(len(content)))
+        self.end_headers()
+        self.wfile.write(content)
+
     def do_GET(self):
         path = urlsplit(self.path).path
         if path in {'/', '/picker.html'}:
@@ -123,18 +175,14 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             content = (ROOT / 'assets/word-rain.html').read_bytes()
         elif path.startswith('/previews/'):
             try:
-                file = preview_file(unquote(path[len('/previews/'):]))
-                if not file.is_file():
-                    return self.send_error(404)
-                content = file.read_bytes()
+                return self.send_asset(preview_file(unquote(path[len('/previews/'):])) )
             except ValueError:
                 return self.send_error(403)
-            self.send_response(200)
-            self.send_header('Content-Type', self.guess_type(str(file)))
-            self.send_header('Content-Length', str(len(content)))
-            self.end_headers()
-            self.wfile.write(content)
-            return
+        elif path.startswith('/generated-previews/'):
+            try:
+                return self.send_asset(generated_file(unquote(path[len('/generated-previews/'):])) )
+            except ValueError:
+                return self.send_error(403)
         else:
             return super().do_GET()
         self.send_response(200)

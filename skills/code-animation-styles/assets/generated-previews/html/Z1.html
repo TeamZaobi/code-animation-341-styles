@@ -1,0 +1,391 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Z1 水墨 · DeepSeek Harness 生成示例</title>
+<!--
+  Provenance
+  ----------
+  风格来源：code-animation-styles 目录（《来自俯仰观照博主的动画画风整理》整理稿）
+  catalog commit: 01576924a2b316d1f11ae33f75d3c005e8781451
+  style id: Z1「水墨」
+  license: upstream-custom-noncommercial（俯仰观照整理稿，非商业）
+  本文件：DeepSeek Harness（deepseek-flash）根据该风格提示词新写的候选示例，
+  不是原作者样片，也不是原项目演示；仅用于风格挑选预览。共享的只有时间轴、
+  尺寸、导出接口与页脚署名，画面与动作按本风格重新设计。
+  原文“只输出代码”等语句属于素材的一部分，不覆盖本任务的交付合同。
+-->
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; min-height: 100%; background: #0c0c10; color: #e9e9ee;
+    font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif; }
+  #app { min-height: 100vh; display: flex; flex-direction: column; align-items: center;
+    justify-content: center; gap: 12px; padding: 20px; }
+  #stage { width: min(94vw, 1000px); aspect-ratio: 16 / 9; background: #000;
+    box-shadow: 0 18px 60px rgba(0,0,0,.55); position: relative; overflow: hidden; }
+  canvas { display: block; width: 100%; height: 100%; }
+  #head, #ui { width: min(94vw, 1000px); }
+  #head h1 { margin: 0 0 4px; font-size: 15px; font-weight: 600; letter-spacing: .02em; }
+  #head p { margin: 0; font-size: 12px; line-height: 1.5; color: #9a9aa8; }
+  #ui { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  #ui button { background: #1d1d26; color: #f2f2f6; border: 1px solid #343444;
+    border-radius: 7px; padding: 6px 12px; font-size: 12px; cursor: pointer; }
+  #ui button:hover { background: #272734; }
+  #ui input[type=range] { flex: 1 1 220px; min-width: 150px; accent-color: #7c8cff; }
+  #clock { font-variant-numeric: tabular-nums; font-size: 12px; color: #a9a9ba; min-width: 78px; }
+  #credit { width: min(94vw, 1000px); font-size: 11px; line-height: 1.6; color: #6f6f80; }
+  #credit b { color: #9c9cae; font-weight: 500; }
+  body.export, body.export #app { display: block; width: 640px; height: 360px; min-height: 0;
+    padding: 0; margin: 0; overflow: hidden; background: #000; }
+  body.export #stage { width: 640px; height: 360px; box-shadow: none; }
+  body.export #head, body.export #ui, body.export #credit { display: none; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="head">
+    <h1>Z1 · 水墨</h1>
+    <p>宣纸上远山淡墨晕开，竹枝从右下生长，飞鸟掠过，右侧留白题「留白」并落朱印。</p>
+  </div>
+  <div id="stage"><canvas id="c" width="640" height="360" aria-label="水墨 风格动画示例"></canvas></div>
+  <div id="ui">
+    <button id="play" type="button">暂停</button>
+    <button id="replay" type="button">重播</button>
+    <input id="timeline" type="range" min="0" max="6" step="0.01" value="0" aria-label="时间轴">
+    <span id="clock">0.00 / 6.00s</span>
+  </div>
+  <div id="credit">
+    <b>DeepSeek Harness 生成示例</b>（非原项目样片）· 来源：来自俯仰观照博主的动画画风整理 ·
+    许可：upstream-custom-noncommercial（俯仰观照整理稿，非商业） · 画面与文字均由代码绘制，静音。
+  </div>
+</div>
+<script>
+(() => {
+  'use strict';
+  // ===== 共享脚手架（可改，但导出合同不要破坏）=================================
+  const W = 640, H = 360, DURATION = 6;
+  const EXPORT = new URLSearchParams(location.search).get('export') === '1';
+  const canvas = document.getElementById('c');
+  const ctx = canvas.getContext('2d');
+  const FONT = '"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",sans-serif';
+
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  const lerp = (a, b, t) => a + (b - a) * t;
+  const smooth = t => t * t * (3 - 2 * t);
+  const easeOut = t => 1 - Math.pow(1 - t, 3);
+  const easeIn = t => t * t * t;
+  function rng(seed) { let s = seed >>> 0; return () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; }; }
+
+  // ===== 场景（每个 ID 独立设计；下面的注释区由构建器替换）===================
+  // DESC: 宣纸上远山淡墨晕开，竹枝从右下生长，飞鸟掠过，右侧留白题「留白」并落朱印。
+// Z1 水墨 · DeepSeek Harness 生成示例
+const Z1_PAPER = '#f2eee3', Z1_INK = '28,26,22', Z1_RED = '#a8322a';
+
+const Z1_FIBERS = (() => {
+  const r = rng(20261102);
+  return Array.from({ length: 420 }, () => ({ x: r() * W, y: r() * H, len: 4 + r() * 22, a: 0.015 + r() * 0.04, ang: (r() - 0.5) * 0.5 }));
+})();
+const Z1_LEAVES = (() => {
+  const r = rng(518);
+  return Array.from({ length: 16 }, (_, i) => ({
+    side: i % 2 ? 1 : -1, x: 150 + (i % 3) * 30 + r() * 14, y: 110 + i * 12 + r() * 8,
+    len: 26 + r() * 30, ang: -0.9 + r() * 1.2, seed: r() * 10,
+  }));
+})();
+
+function z1seg(t, a, b) { return clamp((t - a) / (b - a), 0, 1); }
+function z1ease(t) { return 1 - Math.pow(1 - t, 3); }
+
+let Z1_T = 0;
+function z1Wob(seed, amp) { return Math.sin(Z1_T * 1.7 + seed * 3.1) * amp; }
+
+function z1Paper() {
+  ctx.fillStyle = Z1_PAPER; ctx.fillRect(0, 0, W, H);
+  ctx.save();
+  for (const f of Z1_FIBERS) {
+    ctx.strokeStyle = `rgba(90,80,60,${f.a})`; ctx.lineWidth = 0.8;
+    ctx.beginPath(); ctx.moveTo(f.x, f.y); ctx.lineTo(f.x + Math.cos(f.ang) * f.len, f.y + Math.sin(f.ang) * f.len); ctx.stroke();
+  }
+  ctx.restore();
+}
+
+// 预先算好的远山墨晕（离屏一次生成）
+const Z1_MOUNTAIN = (() => {
+  const c = document.createElement('canvas'); c.width = W; c.height = H;
+  const g = c.getContext('2d');
+  const r = rng(881);
+  // 山体：三层淡墨
+  const layers = [
+    { y: 208, h: 78, a: 0.10, w: 520, x: 40 },
+    { y: 226, h: 56, a: 0.13, w: 430, x: 90 },
+    { y: 238, h: 40, a: 0.09, w: 360, x: 150 },
+  ];
+  for (const L of layers) {
+    g.save();
+    g.filter = 'blur(12px)';
+    g.fillStyle = `rgba(${Z1_INK},${L.a})`;
+    g.beginPath();
+    g.moveTo(L.x, L.y + L.h);
+    for (let i = 0; i <= 12; i++) {
+      const px = L.x + (L.w * i) / 12;
+      const py = L.y + Math.sin(i * 1.3 + L.y) * 14 + r() * 10;
+      g.lineTo(px, py);
+    }
+    g.lineTo(L.x + L.w, L.y + L.h); g.closePath(); g.fill();
+    g.restore();
+  }
+  // 山脚淡雾
+  g.save(); g.filter = 'blur(22px)';
+  const bg = g.createLinearGradient(0, 236, 0, 300);
+  bg.addColorStop(0, 'rgba(28,26,22,0.10)'); bg.addColorStop(1, 'rgba(28,26,22,0)');
+  g.fillStyle = bg; g.fillRect(0, 236, W, 70); g.restore();
+  return c;
+})();
+
+function z1Bamboo(px, top, p, sway, width) {
+  if (p <= 0) return;
+  const bottom = 342;
+  const grow = z1ease(clamp(p, 0, 1));
+  const y = lerp(bottom, top, grow);
+  ctx.save();
+  ctx.strokeStyle = `rgba(${Z1_INK},0.86)`;
+  ctx.lineCap = 'round';
+  // 竹竿分节
+  const segs = 7;
+  let prevY = bottom;
+  for (let i = 1; i <= segs; i++) {
+    const segY = lerp(bottom, y, i / segs);
+    if (segY < y) break;
+    const w = width * (0.62 + 0.38 * (i / segs));
+    const bend = Math.sin((i / segs) * 2.4 + sway) * 2.4;
+    ctx.lineWidth = w;
+    ctx.beginPath();
+    ctx.moveTo(px + bend * (i - 1) / segs, prevY);
+    ctx.quadraticCurveTo(px + bend * i / segs + 2, (prevY + segY) / 2, px + bend * i / segs, segY);
+    ctx.stroke();
+    // 节
+    if (i < segs && segY > y + 4) {
+      ctx.lineWidth = 1.6;
+      ctx.beginPath(); ctx.moveTo(px - w * 0.55, segY); ctx.lineTo(px + w * 0.55, segY); ctx.stroke();
+    }
+    prevY = segY;
+  }
+  ctx.restore();
+}
+
+function z1Leaf(x, y, len, ang, p, seed) {
+  if (p <= 0) return;
+  const L = len * z1ease(p);
+  ctx.save();
+  ctx.translate(x, y + z1Wob(seed, 1.2));
+  ctx.rotate(ang);
+  ctx.fillStyle = `rgba(${Z1_INK},${0.78 * p})`;
+  ctx.beginPath();
+  ctx.moveTo(0, 0);
+  ctx.quadraticCurveTo(L * 0.45, -L * 0.26, L, 0);
+  ctx.quadraticCurveTo(L * 0.5, L * 0.18, 0, 0);
+  ctx.fill();
+  // 叶脉
+  ctx.strokeStyle = 'rgba(242,238,227,.5)'; ctx.lineWidth = 0.9;
+  ctx.beginPath(); ctx.moveTo(3, 0); ctx.lineTo(L * 0.92, 0); ctx.stroke();
+  ctx.restore();
+}
+
+function drawScene(t) {
+  Z1_T = t;
+  z1Paper();
+
+  // 远山：墨色慢慢化开
+  const mp = z1seg(t, 0.2, 2.4);
+  ctx.save();
+  ctx.globalAlpha = 0.45 + 0.55 * z1ease(mp);
+  ctx.drawImage(Z1_MOUNTAIN, 0, 0);
+  ctx.restore();
+
+  // 竹：两枝，一主一辅
+  const p1 = 0.12 + 0.88 * z1seg(t, 0, 2.9), p2 = 0.05 + 0.95 * z1seg(t, 0.5, 3.3);
+  z1Bamboo(150, 66, p1, 0.4, 7);
+  z1Bamboo(208, 140, p2, 1.1, 4.6);
+
+  // 竹叶：跟着枝条长出来
+  Z1_LEAVES.forEach((L, i) => {
+    const at = 0.9 + (1 - (L.y - 66) / 276) * 2.0;
+    const p = z1seg(t, at, at + 0.5);
+    z1Leaf(L.x, L.y, L.len, L.ang, p, L.seed);
+  });
+
+  // 墨点：滴落、晕开
+  const dropP = z1seg(t, 3.2, 3.75);
+  if (dropP > 0) {
+    const dy = lerp(96, 238, dropP * dropP);
+    ctx.save();
+    ctx.fillStyle = `rgba(${Z1_INK},${0.9 * (1 - z1seg(t, 3.72, 3.9))})`;
+    ctx.beginPath(); ctx.ellipse(352, dy, 3.2, 5.2, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.restore();
+  }
+  const bloomP = z1seg(t, 3.7, 4.55);
+  if (bloomP > 0) {
+    const r = 4 + 46 * z1ease(bloomP);
+    const g = ctx.createRadialGradient(352, 246, 1, 352, 246, r);
+    g.addColorStop(0, `rgba(${Z1_INK},0.5)`);
+    g.addColorStop(0.55, `rgba(${Z1_INK},0.18)`);
+    g.addColorStop(1, `rgba(${Z1_INK},0)`);
+    ctx.save(); ctx.fillStyle = g;
+    ctx.beginPath(); ctx.ellipse(352, 246, r, r * 0.62, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.restore();
+  }
+
+  // 飞鸟：两三笔
+  const bp = z1seg(t, 4.15, 5.35);
+  if (bp > 0) {
+    const bx = lerp(60, 520, z1ease(bp));
+    const by = 96 - Math.sin(bp * Math.PI) * 26;
+    ctx.save(); ctx.strokeStyle = `rgba(${Z1_INK},.8)`; ctx.lineWidth = 2.1; ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(bx - 11, by + 3); ctx.quadraticCurveTo(bx - 5, by - 4, bx, by + 2);
+    ctx.quadraticCurveTo(bx + 5, by - 5, bx + 12, by + 1);
+    ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(bx - 4, by + 12); ctx.quadraticCurveTo(bx + 1, by + 7, bx + 7, by + 12); ctx.stroke();
+    ctx.restore();
+  }
+
+  // 右侧题字：留白
+  const tp = z1seg(t, 2.5, 3.2);
+  if (tp > 0) {
+    ctx.save();
+    ctx.globalAlpha = z1ease(tp);
+    ctx.fillStyle = `rgba(${Z1_INK},.82)`;
+    ctx.font = `200 25px ${FONT}`;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('留', 566, 90);
+    ctx.fillText('白', 566, 126);
+    ctx.restore();
+  }
+  // 落款小字
+  const sp = z1seg(t, 3.7, 4.2);
+  if (sp > 0) {
+    ctx.save();
+    ctx.globalAlpha = z1ease(sp) * 0.7;
+    ctx.fillStyle = `rgba(${Z1_INK},.7)`;
+    ctx.font = `300 9px ${FONT}`; ctx.textAlign = 'center';
+    ctx.fillText('俯仰观照 · 意临', 566, 160);
+    ctx.restore();
+  }
+  // 朱印
+  const sealP = z1seg(t, 4.35, 4.7);
+  if (sealP > 0) {
+    ctx.save();
+    ctx.globalAlpha = z1ease(sealP);
+    ctx.translate(566, 190);
+    ctx.rotate(-0.03);
+    const s = 1 + 0.12 * (1 - z1ease(sealP));
+    ctx.scale(s, s);
+    ctx.fillStyle = Z1_RED; ctx.fillRect(-13, -13, 26, 26);
+    ctx.fillStyle = 'rgba(242,238,227,.92)';
+    ctx.font = `700 15px ${FONT}`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('观', 0, 1);
+    ctx.restore();
+  }
+
+  // 前景淡墨一抹，压住构图
+  ctx.save();
+  ctx.globalAlpha = 0.06;
+  ctx.fillStyle = `rgb(${Z1_INK})`;
+  ctx.beginPath(); ctx.ellipse(120, 320, 150, 26, -0.08, 0, Math.PI * 2); ctx.fill();
+  ctx.restore();
+}
+
+  // ===== 共享渲染与署名 =======================================================
+  function watermark() {
+    const text = 'DeepSeek Harness 生成示例';
+    ctx.save();
+    ctx.font = '11px ' + FONT;
+    const w = ctx.measureText(text).width + 14;
+    const x = W - w - 8, y = H - 24;
+    ctx.fillStyle = 'rgba(0,0,0,.46)';
+    ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(x, y, w, 18, 4); else ctx.rect(x, y, w, 18);
+    ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,.82)';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(text, x + 7, y + 9.5);
+    ctx.restore();
+  }
+
+  function paint(t) {
+    ctx.save();
+    ctx.clearRect(0, 0, W, H);
+    try { drawScene(t); } catch (err) { console.error(err); }
+    ctx.restore();
+    watermark();
+  }
+
+  function renderAt(seconds) {
+    const t = ((Number(seconds) % DURATION) + DURATION) % DURATION;
+    paint(t);
+    syncUI(t);
+    return t;
+  }
+  window.renderAt = renderAt;
+
+  // ===== 播放、控制、减少动态 =================================================
+  const playBtn = document.getElementById('play');
+  const timeline = document.getElementById('timeline');
+  const clock = document.getElementById('clock');
+  let playing = false, base = 0, start = 0, current = 0;
+  const reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function syncUI(t) {
+    if (EXPORT) return;
+    current = t;
+    if (timeline) timeline.value = String(t.toFixed(2));
+    if (clock) clock.textContent = t.toFixed(2) + ' / ' + DURATION.toFixed(2) + 's';
+  }
+  function frame(now) {
+    if (!playing) return;
+    const t = ((now - start) / 1000 + base) % DURATION;
+    paint(t);
+    syncUI(t);
+    requestAnimationFrame(frame);
+  }
+  function play() {
+    if (playing) return;
+    playing = true;
+    start = performance.now();
+    base = current;
+    if (playBtn) playBtn.textContent = '暂停';
+    requestAnimationFrame(frame);
+  }
+  function pause() {
+    playing = false;
+    if (playBtn) playBtn.textContent = '播放';
+  }
+  if (playBtn) playBtn.addEventListener('click', () => { playing ? pause() : play(); });
+  document.getElementById('replay')?.addEventListener('click', () => {
+    base = 0; start = performance.now(); paint(0); syncUI(0); play();
+  });
+  timeline?.addEventListener('input', () => {
+    pause(); paint(Number(timeline.value)); syncUI(Number(timeline.value));
+  });
+  window.addEventListener('keydown', e => {
+    if (e.code === 'Space') { e.preventDefault(); playing ? pause() : play(); }
+    if (e.key === 'r' || e.key === 'R') { base = 0; start = performance.now(); paint(0); syncUI(0); play(); }
+  });
+
+  if (EXPORT) {
+    document.body.classList.add('export');
+    renderAt(0);
+  } else if (reduced) {
+    renderAt(2.4);
+    pause();
+  } else {
+    renderAt(0);
+    play();
+  }
+})();
+</script>
+</body>
+</html>

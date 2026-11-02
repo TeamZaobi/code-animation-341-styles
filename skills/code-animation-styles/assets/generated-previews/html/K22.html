@@ -1,0 +1,454 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>K22 折纸 · DeepSeek Harness 生成示例</title>
+<!--
+  Provenance
+  ----------
+  风格来源：code-animation-styles 目录（《来自俯仰观照博主的动画画风整理》整理稿）
+  catalog commit: 01576924a2b316d1f11ae33f75d3c005e8781451
+  style id: K22「折纸」
+  license: upstream-custom-noncommercial（俯仰观照整理稿，非商业）
+  本文件：DeepSeek Harness（deepseek-flash）根据该风格提示词新写的候选示例，
+  不是原作者样片，也不是原项目演示；仅用于风格挑选预览。共享的只有时间轴、
+  尺寸、导出接口与页脚署名，画面与动作按本风格重新设计。
+  原文“只输出代码”等语句属于素材的一部分，不覆盖本任务的交付合同。
+-->
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; min-height: 100%; background: #0c0c10; color: #e9e9ee;
+    font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif; }
+  #app { min-height: 100vh; display: flex; flex-direction: column; align-items: center;
+    justify-content: center; gap: 12px; padding: 20px; }
+  #stage { width: min(94vw, 1000px); aspect-ratio: 16 / 9; background: #000;
+    box-shadow: 0 18px 60px rgba(0,0,0,.55); position: relative; overflow: hidden; }
+  canvas { display: block; width: 100%; height: 100%; }
+  #head, #ui { width: min(94vw, 1000px); }
+  #head h1 { margin: 0 0 4px; font-size: 15px; font-weight: 600; letter-spacing: .02em; }
+  #head p { margin: 0; font-size: 12px; line-height: 1.5; color: #9a9aa8; }
+  #ui { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  #ui button { background: #1d1d26; color: #f2f2f6; border: 1px solid #343444;
+    border-radius: 7px; padding: 6px 12px; font-size: 12px; cursor: pointer; }
+  #ui button:hover { background: #272734; }
+  #ui input[type=range] { flex: 1 1 220px; min-width: 150px; accent-color: #7c8cff; }
+  #clock { font-variant-numeric: tabular-nums; font-size: 12px; color: #a9a9ba; min-width: 78px; }
+  #credit { width: min(94vw, 1000px); font-size: 11px; line-height: 1.6; color: #6f6f80; }
+  #credit b { color: #9c9cae; font-weight: 500; }
+  body.export, body.export #app { display: block; width: 640px; height: 360px; min-height: 0;
+    padding: 0; margin: 0; overflow: hidden; background: #000; }
+  body.export #stage { width: 640px; height: 360px; box-shadow: none; }
+  body.export #head, body.export #ui, body.export #credit { display: none; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="head">
+    <h1>K22 · 折纸</h1>
+    <p>折纸：一张方纸沿对角线对折两次，折痕仍清楚，随后展开成一只会扇翅膀的纸鹤。</p>
+  </div>
+  <div id="stage"><canvas id="c" width="640" height="360" aria-label="折纸 风格动画示例"></canvas></div>
+  <div id="ui">
+    <button id="play" type="button">暂停</button>
+    <button id="replay" type="button">重播</button>
+    <input id="timeline" type="range" min="0" max="6" step="0.01" value="0" aria-label="时间轴">
+    <span id="clock">0.00 / 6.00s</span>
+  </div>
+  <div id="credit">
+    <b>DeepSeek Harness 生成示例</b>（非原项目样片）· 来源：来自俯仰观照博主的动画画风整理 ·
+    许可：upstream-custom-noncommercial（俯仰观照整理稿，非商业） · 画面与文字均由代码绘制，静音。
+  </div>
+</div>
+<script>
+(() => {
+  'use strict';
+  // ===== 共享脚手架（可改，但导出合同不要破坏）=================================
+  const W = 640, H = 360, DURATION = 6;
+  const EXPORT = new URLSearchParams(location.search).get('export') === '1';
+  const canvas = document.getElementById('c');
+  const ctx = canvas.getContext('2d');
+  const FONT = '"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",sans-serif';
+
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  const lerp = (a, b, t) => a + (b - a) * t;
+  const smooth = t => t * t * (3 - 2 * t);
+  const easeOut = t => 1 - Math.pow(1 - t, 3);
+  const easeIn = t => t * t * t;
+  function rng(seed) { let s = seed >>> 0; return () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; }; }
+
+  // ===== 场景（每个 ID 独立设计；下面的注释区由构建器替换）===================
+  // DESC: 折纸：一张方纸沿对角线对折两次，折痕仍清楚，随后展开成一只会扇翅膀的纸鹤。
+const K22_PAPER = '#f4eee0';
+const K22_BACK = '#e6dcc6';
+const K22_LIGHT = '#fbf6e9';
+const K22_SHADE = '#d8cdb4';
+const K22_INK = '#3b4c5c';
+const K22_CREASE = 'rgba(120,104,78,.55)';
+
+const K22_WASHI = (() => {
+  const c = document.createElement('canvas'); c.width = W; c.height = H;
+  const g = c.getContext('2d');
+  g.fillStyle = '#e6ebeb'; g.fillRect(0, 0, W, H);
+  const r = rng(2222);
+  // 淡蓝灰晕
+  for (let i = 0; i < 34; i++) {
+    const x = r() * W, y = r() * H, rr = 40 + r() * 120;
+    const gr = g.createRadialGradient(x, y, 0, x, y, rr);
+    gr.addColorStop(0, `rgba(120,150,165,${0.015 + r() * 0.025})`);
+    gr.addColorStop(1, 'rgba(120,150,165,0)');
+    g.fillStyle = gr; g.beginPath(); g.arc(x, y, rr, 0, Math.PI * 2); g.fill();
+  }
+  // 纸纤维
+  for (let i = 0; i < 700; i++) {
+    const x = r() * W, y = r() * H, a = (r() - 0.5) * 1.2, l = 3 + r() * 16;
+    g.strokeStyle = `rgba(120,104,78,${0.012 + r() * 0.03})`;
+    g.lineWidth = 0.7;
+    g.beginPath(); g.moveTo(x, y); g.lineTo(x + Math.cos(a) * l, y + Math.sin(a) * l); g.stroke();
+  }
+  return c;
+})();
+
+function k22seg(t, a, b) { return clamp((t - a) / (b - a), 0, 1); }
+function k22ease(p) { return 1 - Math.pow(1 - p, 3); }
+function k22pop(p) {
+  p = clamp(p, 0, 1);
+  const c1 = 1.4, c3 = c1 + 1;
+  return 1 + c3 * Math.pow(p - 1, 3) + c1 * Math.pow(p - 1, 2);
+}
+function k22Poly(pts, fill, stroke, lw) {
+  if (!pts.length) return;
+  ctx.beginPath();
+  ctx.moveTo(pts[0][0], pts[0][1]);
+  for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i][0], pts[i][1]);
+  ctx.closePath();
+  if (fill) { ctx.fillStyle = fill; ctx.fill(); }
+  if (stroke) { ctx.strokeStyle = stroke; ctx.lineWidth = lw || 1.2; ctx.lineJoin = 'round'; ctx.stroke(); }
+}
+// 沿 A→B 折线折纸的二维投影：垂直距离按 cos 压缩，越过 90° 后翻到另一侧
+function k22Fold(pts, A, B, ang) {
+  const dx = B[0] - A[0], dy = B[1] - A[1], len = Math.hypot(dx, dy);
+  const ux = dx / len, uy = dy / len, nx = -uy, ny = ux;
+  const c = Math.cos(ang);
+  return pts.map(p => {
+    const vx = p[0] - A[0], vy = p[1] - A[1];
+    const along = vx * ux + vy * uy;
+    const d = vx * nx + vy * ny;
+    return [A[0] + ux * along + nx * d * c, A[1] + uy * along + ny * d * c];
+  });
+}
+function k22Crease(A, B, color, dash) {
+  ctx.save();
+  ctx.strokeStyle = color || K22_CREASE; ctx.lineWidth = 1.2;
+  if (dash) ctx.setLineDash([5, 5]);
+  ctx.beginPath(); ctx.moveTo(A[0], A[1]); ctx.lineTo(B[0], B[1]); ctx.stroke();
+  ctx.restore();
+}
+
+// 纸鹤局部坐标（原点在身体中心）
+function k22Crane(t, alpha) {
+  const flap = 0.16 + Math.sin(t * 4.2) * 0.22;
+  const bob = Math.sin(t * 2.1) * 3;
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  ctx.translate(0, bob);
+
+  // 阴影
+  ctx.save();
+  ctx.fillStyle = 'rgba(80,70,50,.16)';
+  ctx.beginPath(); ctx.ellipse(6, 66, 92, 20, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.restore();
+
+  // 尾
+  k22Poly([[-40, 20], [-98, -6], [-34, 6]], K22_SHADE, K22_CREASE, 1.1);
+  k22Poly([[-40, 20], [-98, -6], [-40, 12]], K22_BACK, null);
+
+  // 左翼
+  ctx.save();
+  ctx.translate(0, -8); ctx.rotate(-flap);
+  k22Poly([[0, 0], [-88, -34], [-20, 26]], K22_LIGHT, K22_CREASE, 1.1);
+  k22Poly([[0, 0], [-88, -34], [-46, 2]], K22_SHADE, null);
+  ctx.restore();
+  // 右翼
+  ctx.save();
+  ctx.translate(0, -8); ctx.rotate(flap);
+  k22Poly([[0, 0], [88, -34], [20, 26]], K22_LIGHT, K22_CREASE, 1.1);
+  k22Poly([[0, 0], [88, -34], [46, 2]], K22_SHADE, null);
+  ctx.restore();
+
+  // 身体
+  k22Poly([[0, -12], [48, 22], [0, 52], [-48, 22]], K22_LIGHT, K22_CREASE, 1.2);
+  k22Poly([[0, -12], [48, 22], [0, 52]], K22_BACK, null);
+  k22Poly([[0, -12], [0, 52], [-48, 22]], K22_LIGHT, null);
+  // 身体折痕
+  ctx.save();
+  ctx.strokeStyle = K22_CREASE; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(0, -12); ctx.lineTo(0, 52); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(-48, 22); ctx.lineTo(48, 22); ctx.stroke();
+  ctx.restore();
+
+  // 颈与头
+  k22Poly([[8, 2], [54, -50], [64, -44], [20, 8]], K22_LIGHT, K22_CREASE, 1.1);
+  k22Poly([[54, -50], [66, -58], [64, -44]], K22_BACK, K22_CREASE, 1.1);
+  k22Poly([[66, -58], [80, -52], [64, -44]], K22_LIGHT, K22_CREASE, 1.1);
+  ctx.save();
+  ctx.fillStyle = K22_INK;
+  ctx.beginPath(); ctx.arc(68, -52, 1.8, 0, Math.PI * 2); ctx.fill();
+  ctx.restore();
+  ctx.restore();
+}
+
+function drawScene(t) {
+  ctx.drawImage(K22_WASHI, 0, 0);
+
+  // 背景淡印：一枚折纸常用的小方框与虚线
+  ctx.save();
+  ctx.strokeStyle = 'rgba(59,76,92,.10)'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.arc(520, 236, 96, 0, Math.PI * 2); ctx.stroke();
+  ctx.setLineDash([4, 7]);
+  ctx.beginPath(); ctx.arc(520, 236, 112, 0, Math.PI * 2); ctx.stroke();
+  ctx.restore();
+
+  const cx = 300, cy = 196, s = 180;
+  const TL = [cx - s / 2, cy - s / 2], TR = [cx + s / 2, cy - s / 2];
+  const BR = [cx + s / 2, cy + s / 2], BL = [cx - s / 2, cy + s / 2];
+  const M = [cx, cy + s / 2];
+  const breathe = 1 + Math.sin(t * 1.6) * 0.006;
+
+  const fold1 = k22ease(k22seg(t, 1.0, 2.0));
+  const fold2 = k22ease(k22seg(t, 2.05, 2.95));
+  const craneP = k22ease(k22seg(t, 2.55, 3.45));
+
+  // 地面阴影（纸鹤成形时让位）
+  ctx.save();
+  ctx.globalAlpha = clamp(1 - craneP * 1.8, 0, 1);
+  ctx.fillStyle = 'rgba(80,70,50,.12)';
+  ctx.beginPath(); ctx.ellipse(cx, cy + 122, 108, 18, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.restore();
+
+  ctx.save();
+  ctx.translate(cx, cy); ctx.scale(breathe, breathe); ctx.translate(-cx, -cy);
+
+  if (craneP < 1) {
+    ctx.save();
+    ctx.globalAlpha = clamp(1 - craneP * 1.8, 0, 1);
+    // 折纸台面：方纸（第一次对折前）
+    if (fold1 < 1) {
+      k22Poly([[TL[0] + 5, TL[1] + 7], [TR[0] + 5, TR[1] + 7], [BR[0] + 7, BR[1] + 9], [BL[0] + 7, BL[1] + 9]], 'rgba(60,50,38,.20)', null);
+      k22Poly([TL, TR, BR, BL], K22_PAPER, 'rgba(120,104,78,.35)', 1.2);
+      // 折痕网格
+      const gp = k22ease(k22seg(t, 0, 0.9));
+      if (gp > 0) {
+        ctx.save();
+        ctx.globalAlpha = gp * 0.9;
+        K22_CREASE_LINES.forEach(L => k22Crease(L[0], L[1], K22_CREASE, true));
+        ctx.restore();
+      }
+      // 正在折的上半三角
+      if (fold1 > 0) {
+        const ang = fold1 * Math.PI;
+        const flapPts = k22Fold([TL, TR, BR], TL, BR, ang);
+        // 折片阴影
+        ctx.save();
+        ctx.globalAlpha = 0.18 * Math.sin(fold1 * Math.PI);
+        k22Poly(flapPts.map(p => [p[0] + 4, p[1] + 6]), 'rgba(60,50,38,.6)', null);
+        ctx.restore();
+        const front = Math.cos(ang) >= 0;
+        k22Poly(flapPts, front ? K22_LIGHT : K22_BACK, 'rgba(120,104,78,.4)', 1.1);
+      }
+      // 折线
+      k22Crease(TL, BR, 'rgba(120,104,78,.6)');
+    } else {
+      // 第一次对折完成：三角形；左半固定，右半继续向中折
+      k22Poly([TL, M, BL], K22_BACK, 'rgba(120,104,78,.4)', 1.2);
+      const ang2 = fold2 * Math.PI;
+      const flap2 = k22Fold([TL, M, BR], TL, M, ang2);
+      ctx.save();
+      ctx.globalAlpha = 0.16 * Math.sin(fold2 * Math.PI);
+      k22Poly(flap2.map(p => [p[0] + 4, p[1] + 6]), 'rgba(60,50,38,.6)', null);
+      ctx.restore();
+      const front2 = Math.cos(ang2) >= 0;
+      k22Poly(flap2, front2 ? K22_PAPER : K22_SHADE, 'rgba(120,104,78,.4)', 1.1);
+      k22Crease(TL, M, 'rgba(120,104,78,.45)');
+    }
+
+    ctx.restore();
+  }
+
+  // 纸鹤
+  if (craneP > 0.001) {
+    const sc = lerp(0.55, 1, k22pop(craneP));
+    const px = lerp(cx - 52, cx + 14, craneP);
+    const py = lerp(cy + 34, cy + 10, craneP);
+    ctx.save();
+    ctx.translate(px, py);
+    ctx.scale(sc, sc);
+    ctx.rotate(-0.05 + Math.sin(t * 1.7) * 0.03);
+    k22Crane(t, Math.min(1, craneP * 1.6));
+    ctx.restore();
+  }
+
+  ctx.restore();
+
+  // 折纸碎屑
+  const fp = k22ease(k22seg(t, 3.6, 5.0));
+  if (fp > 0 && fp < 1) {
+    ctx.save();
+    ctx.globalAlpha = 0.5 * (1 - fp);
+    const flecks = [[430, 250, -1.2], [470, 210, 0.5], [200, 120, 2.2], [500, 280, -0.4]];
+    flecks.forEach((f, i) => {
+      ctx.save();
+      ctx.translate(f[0] + Math.sin(t * 2 + i) * 14, f[1] - fp * 46 - i * 6);
+      ctx.rotate(f[2] + fp * 2);
+      ctx.fillStyle = K22_LIGHT;
+      ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(9, 3); ctx.lineTo(3, 9); ctx.closePath(); ctx.fill();
+      ctx.restore();
+    });
+    ctx.restore();
+  }
+
+  // 标题
+  ctx.save();
+  ctx.fillStyle = K22_INK;
+  ctx.font = `800 34px ${FONT}`; ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+  ctx.fillText('折一折', 36, 68);
+  ctx.fillStyle = 'rgba(59,76,92,.62)';
+  ctx.font = `600 13px ${FONT}`;
+  ctx.fillText('折纸  ·  一张纸的变形', 38, 92);
+  ctx.restore();
+
+  // 折痕图例
+  ctx.save();
+  ctx.strokeStyle = 'rgba(59,76,92,.4)'; ctx.lineWidth = 1;
+  ctx.setLineDash([5, 5]);
+  ctx.beginPath(); ctx.moveTo(38, 110); ctx.lineTo(78, 110); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle = 'rgba(59,76,92,.55)';
+  ctx.font = `600 12px ${FONT}`;
+  ctx.fillText('折痕', 86, 114);
+  ctx.restore();
+
+  // 字幕
+  const cp = k22ease(k22seg(t, 4.4, 5.1));
+  if (cp > 0) {
+    ctx.save();
+    ctx.globalAlpha = cp;
+    ctx.fillStyle = K22_INK;
+    ctx.font = `600 15px ${FONT}`; ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+    ctx.fillText('一张纸，变一个样。', 38, 332);
+    ctx.restore();
+  }
+
+  // 淡边
+  ctx.save();
+  ctx.strokeStyle = 'rgba(59,76,92,.18)'; ctx.lineWidth = 1;
+  ctx.strokeRect(20, 18, W - 40, H - 36);
+  ctx.restore();
+
+  // 收口
+  const endp = k22seg(t, 5.75, 6.0);
+  if (endp > 0) {
+    ctx.save(); ctx.globalAlpha = endp * 0.4; ctx.fillStyle = K22_PAPER; ctx.fillRect(0, 0, W, H); ctx.restore();
+  }
+}
+
+const K22_CREASE_LINES = [
+  [[300 - 90, 196 - 90], [300 + 90, 196 + 90]],
+  [[300 + 90, 196 - 90], [300 - 90, 196 + 90]],
+  [[300 - 90, 196], [300 + 90, 196]],
+  [[300, 196 - 90], [300, 196 + 90]],
+];
+
+  // ===== 共享渲染与署名 =======================================================
+  function watermark() {
+    const text = 'DeepSeek Harness 生成示例';
+    ctx.save();
+    ctx.font = '11px ' + FONT;
+    const w = ctx.measureText(text).width + 14;
+    const x = W - w - 8, y = H - 24;
+    ctx.fillStyle = 'rgba(0,0,0,.46)';
+    ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(x, y, w, 18, 4); else ctx.rect(x, y, w, 18);
+    ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,.82)';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(text, x + 7, y + 9.5);
+    ctx.restore();
+  }
+
+  function paint(t) {
+    ctx.save();
+    ctx.clearRect(0, 0, W, H);
+    try { drawScene(t); } catch (err) { console.error(err); }
+    ctx.restore();
+    watermark();
+  }
+
+  function renderAt(seconds) {
+    const t = ((Number(seconds) % DURATION) + DURATION) % DURATION;
+    paint(t);
+    syncUI(t);
+    return t;
+  }
+  window.renderAt = renderAt;
+
+  // ===== 播放、控制、减少动态 =================================================
+  const playBtn = document.getElementById('play');
+  const timeline = document.getElementById('timeline');
+  const clock = document.getElementById('clock');
+  let playing = false, base = 0, start = 0, current = 0;
+  const reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function syncUI(t) {
+    if (EXPORT) return;
+    current = t;
+    if (timeline) timeline.value = String(t.toFixed(2));
+    if (clock) clock.textContent = t.toFixed(2) + ' / ' + DURATION.toFixed(2) + 's';
+  }
+  function frame(now) {
+    if (!playing) return;
+    const t = ((now - start) / 1000 + base) % DURATION;
+    paint(t);
+    syncUI(t);
+    requestAnimationFrame(frame);
+  }
+  function play() {
+    if (playing) return;
+    playing = true;
+    start = performance.now();
+    base = current;
+    if (playBtn) playBtn.textContent = '暂停';
+    requestAnimationFrame(frame);
+  }
+  function pause() {
+    playing = false;
+    if (playBtn) playBtn.textContent = '播放';
+  }
+  if (playBtn) playBtn.addEventListener('click', () => { playing ? pause() : play(); });
+  document.getElementById('replay')?.addEventListener('click', () => {
+    base = 0; start = performance.now(); paint(0); syncUI(0); play();
+  });
+  timeline?.addEventListener('input', () => {
+    pause(); paint(Number(timeline.value)); syncUI(Number(timeline.value));
+  });
+  window.addEventListener('keydown', e => {
+    if (e.code === 'Space') { e.preventDefault(); playing ? pause() : play(); }
+    if (e.key === 'r' || e.key === 'R') { base = 0; start = performance.now(); paint(0); syncUI(0); play(); }
+  });
+
+  if (EXPORT) {
+    document.body.classList.add('export');
+    renderAt(0);
+  } else if (reduced) {
+    renderAt(2.4);
+    pause();
+  } else {
+    renderAt(0);
+    play();
+  }
+})();
+</script>
+</body>
+</html>

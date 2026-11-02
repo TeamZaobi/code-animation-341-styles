@@ -1,0 +1,657 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Z2 工笔 · DeepSeek Harness 生成示例</title>
+<!--
+  Provenance
+  ----------
+  风格来源：code-animation-styles 目录（《来自俯仰观照博主的动画画风整理》整理稿）
+  catalog commit: 01576924a2b316d1f11ae33f75d3c005e8781451
+  style id: Z2「工笔」
+  license: upstream-custom-noncommercial（俯仰观照整理稿，非商业）
+  本文件：DeepSeek Harness（deepseek-flash）根据该风格提示词新写的候选示例，
+  不是原作者样片，也不是原项目演示；仅用于风格挑选预览。共享的只有时间轴、
+  尺寸、导出接口与页脚署名，画面与动作按本风格重新设计。
+  原文“只输出代码”等语句属于素材的一部分，不覆盖本任务的交付合同。
+-->
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; min-height: 100%; background: #0c0c10; color: #e9e9ee;
+    font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif; }
+  #app { min-height: 100vh; display: flex; flex-direction: column; align-items: center;
+    justify-content: center; gap: 12px; padding: 20px; }
+  #stage { width: min(94vw, 1000px); aspect-ratio: 16 / 9; background: #000;
+    box-shadow: 0 18px 60px rgba(0,0,0,.55); position: relative; overflow: hidden; }
+  canvas { display: block; width: 100%; height: 100%; }
+  #head, #ui { width: min(94vw, 1000px); }
+  #head h1 { margin: 0 0 4px; font-size: 15px; font-weight: 600; letter-spacing: .02em; }
+  #head p { margin: 0; font-size: 12px; line-height: 1.5; color: #9a9aa8; }
+  #ui { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  #ui button { background: #1d1d26; color: #f2f2f6; border: 1px solid #343444;
+    border-radius: 7px; padding: 6px 12px; font-size: 12px; cursor: pointer; }
+  #ui button:hover { background: #272734; }
+  #ui input[type=range] { flex: 1 1 220px; min-width: 150px; accent-color: #7c8cff; }
+  #clock { font-variant-numeric: tabular-nums; font-size: 12px; color: #a9a9ba; min-width: 78px; }
+  #credit { width: min(94vw, 1000px); font-size: 11px; line-height: 1.6; color: #6f6f80; }
+  #credit b { color: #9c9cae; font-weight: 500; }
+  body.export, body.export #app { display: block; width: 640px; height: 360px; min-height: 0;
+    padding: 0; margin: 0; overflow: hidden; background: #000; }
+  body.export #stage { width: 640px; height: 360px; box-shadow: none; }
+  body.export #head, body.export #ui, body.export #credit { display: none; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="head">
+    <h1>Z2 · 工笔</h1>
+    <p>绢本设色工笔牡丹：细线勾瓣、层层分染，彩蝶穿花，右题「工笔」并落朱印。</p>
+  </div>
+  <div id="stage"><canvas id="c" width="640" height="360" aria-label="工笔 风格动画示例"></canvas></div>
+  <div id="ui">
+    <button id="play" type="button">暂停</button>
+    <button id="replay" type="button">重播</button>
+    <input id="timeline" type="range" min="0" max="6" step="0.01" value="0" aria-label="时间轴">
+    <span id="clock">0.00 / 6.00s</span>
+  </div>
+  <div id="credit">
+    <b>DeepSeek Harness 生成示例</b>（非原项目样片）· 来源：来自俯仰观照博主的动画画风整理 ·
+    许可：upstream-custom-noncommercial（俯仰观照整理稿，非商业） · 画面与文字均由代码绘制，静音。
+  </div>
+</div>
+<script>
+(() => {
+  'use strict';
+  // ===== 共享脚手架（可改，但导出合同不要破坏）=================================
+  const W = 640, H = 360, DURATION = 6;
+  const EXPORT = new URLSearchParams(location.search).get('export') === '1';
+  const canvas = document.getElementById('c');
+  const ctx = canvas.getContext('2d');
+  const FONT = '"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",sans-serif';
+
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  const lerp = (a, b, t) => a + (b - a) * t;
+  const smooth = t => t * t * (3 - 2 * t);
+  const easeOut = t => 1 - Math.pow(1 - t, 3);
+  const easeIn = t => t * t * t;
+  function rng(seed) { let s = seed >>> 0; return () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; }; }
+
+  // ===== 场景（每个 ID 独立设计；下面的注释区由构建器替换）===================
+  // DESC: 绢本设色工笔牡丹：细线勾瓣、层层分染，彩蝶穿花，右题「工笔」并落朱印。
+// Z2 工笔 · DeepSeek Harness 生成示例
+
+const Z2_PAPER = '#f7f1e0';
+const Z2_OUTLINE = 'rgba(74,50,36,0.92)';
+
+// 绢本：经纬细线 + 淡茶渍，只在加载时绘制一次
+const Z2_SILK = (() => {
+  const c = document.createElement('canvas'); c.width = W; c.height = H;
+  const g = c.getContext('2d');
+  g.fillStyle = Z2_PAPER; g.fillRect(0, 0, W, H);
+  g.strokeStyle = 'rgba(125,102,70,0.055)'; g.lineWidth = 0.6;
+  for (let x = 0; x < W; x += 2.4) { g.beginPath(); g.moveTo(x, 0); g.lineTo(x, H); g.stroke(); }
+  g.strokeStyle = 'rgba(125,102,70,0.05)';
+  for (let y = 0; y < H; y += 2.2) { g.beginPath(); g.moveTo(0, y); g.lineTo(W, y); g.stroke(); }
+  const r = rng(20261102);
+  for (let i = 0; i < 300; i++) {
+    const x = r() * W, y = r() * H, len = 5 + r() * 24;
+    g.strokeStyle = `rgba(150,126,92,${0.018 + r() * 0.03})`; g.lineWidth = 0.7;
+    g.beginPath(); g.moveTo(x, y); g.lineTo(x + len, y + (r() - 0.5) * 2.4); g.stroke();
+  }
+  const vg = g.createRadialGradient(W * 0.46, H * 0.42, 90, W * 0.46, H * 0.42, 430);
+  vg.addColorStop(0, 'rgba(255,255,255,0)');
+  vg.addColorStop(1, 'rgba(146,116,74,0.13)');
+  g.fillStyle = vg; g.fillRect(0, 0, W, H);
+  return c;
+})();
+
+const Z2_C = { x: 208, y: 168 };
+
+// 牡丹花头：护瓣 / 外瓣 / 中瓣 / 内瓣，宽瓣重叠，不做放射状
+const Z2_PETALS = (() => {
+  const r = rng(7202);
+  const rings = [
+    { count: 6, base: 0, len: 74, w: 40, off: 0.0, pal: 0 },
+    { count: 8, base: 2, len: 60, w: 35, off: 0.42, pal: 1 },
+    { count: 7, base: 1, len: 44, w: 29, off: 0.95, pal: 2 },
+    { count: 6, base: 0, len: 30, w: 22, off: 1.4, pal: 3 },
+    { count: 4, base: 0, len: 19, w: 15, off: 2.1, pal: 4 },
+  ];
+  const out = [];
+  rings.forEach((R, ri) => {
+    for (let i = 0; i < R.count; i++) {
+      out.push({
+        ang: (i / R.count) * Math.PI * 2 + R.off + (r() - 0.5) * 0.3,
+        base: R.base, len: R.len * (0.82 + r() * 0.36), w: R.w * (0.88 + r() * 0.24),
+        seed: r() * 9, pal: R.pal, ring: ri,
+      });
+    }
+  });
+  return out;
+})();
+
+const Z2_BUDS = [
+  { x: 340, y: 208, ang: -0.65, s: 1.0 },
+  { x: 306, y: 252, ang: -1.5, s: 0.78 },
+];
+
+// 叶片：三出复叶
+const Z2_LEAVES = [
+  { x: 92, y: 232, ang: -2.42, len: 74, w: 40, seed: 1.3 },
+  { x: 132, y: 288, ang: -1.98, len: 86, w: 46, seed: 2.7 },
+  { x: 286, y: 268, ang: -0.42, len: 80, w: 44, seed: 3.9 },
+  { x: 206, y: 300, ang: -1.36, len: 62, w: 34, seed: 5.2 },
+];
+
+const Z2_PAL = [
+  ['#96305a', '#c95a7d', '#f0b9c8'],
+  ['#a8365f', '#d76484', '#f5c4d1'],
+  ['#b83c62', '#e27493', '#f9d6df'],
+  ['#c7466a', '#ee8ba4', '#fde3e9'],
+  ['#d4536f', '#f2a3b6', '#fff0f3'],
+];
+
+// 单瓣：base 处起，沿 ang 方向展开；u 是沿瓣轴的采样
+function z2petalPath(px) {
+  const a = px.ang, dx = Math.cos(a), dy = Math.sin(a), nx = -dy, ny = dx;
+  const N = 22;
+  const right = [], left = [];
+  for (let i = 0; i <= N; i++) {
+    const u = i / N;
+    const r = px.base + px.len * u;
+    const hw = px.w * (0.26 + 0.86 * Math.sin(Math.PI * Math.pow(u, 0.72))) * (1 + 0.06 * Math.sin(u * 12 + px.seed));
+    const cx = Z2_C.x + dx * r, cy = Z2_C.y + dy * r;
+    right.push([cx + nx * hw, cy + ny * hw]);
+    left.push([cx - nx * hw, cy - ny * hw]);
+  }
+  // 瓣尖：微微收口成圆头
+  const tipx = Z2_C.x + dx * (px.base + px.len) + dx * px.w * 0.10;
+  const tipy = Z2_C.y + dy * (px.base + px.len) + dy * px.w * 0.10;
+  ctx.beginPath();
+  ctx.moveTo(left[0][0], left[0][1]);
+  for (let i = 1; i <= N; i++) ctx.lineTo(left[i][0], left[i][1]);
+  ctx.quadraticCurveTo(tipx, tipy, right[N][0], right[N][1]);
+  for (let i = N; i >= 0; i--) ctx.lineTo(right[i][0], right[i][1]);
+  ctx.closePath();
+  return { bx: Z2_C.x + dx * px.base, by: Z2_C.y + dy * px.base, tx: tipx, ty: tipy };
+}
+
+function z2petalFill(px, alpha) {
+  const pal = Z2_PAL[px.pal];
+  const g = z2petalPath(px);
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  const grd = ctx.createLinearGradient(g.bx, g.by, g.tx, g.ty);
+  grd.addColorStop(0, pal[0]);
+  grd.addColorStop(0.45, pal[1]);
+  grd.addColorStop(0.9, pal[2]);
+  grd.addColorStop(1, '#fffaf6');
+  ctx.fillStyle = grd;
+  ctx.fill();
+  ctx.clip();
+  // 分染：根部积胭脂
+  const rg = ctx.createRadialGradient(g.bx, g.by, 1, g.bx, g.by, px.len * 0.8);
+  rg.addColorStop(0, 'rgba(112,20,48,0.45)');
+  rg.addColorStop(0.4, 'rgba(168,36,68,0.18)');
+  rg.addColorStop(1, 'rgba(168,36,68,0)');
+  ctx.fillStyle = rg;
+  ctx.fill();
+  // 瓣筋：极细丝理
+  ctx.strokeStyle = 'rgba(146,44,72,0.17)';
+  ctx.lineWidth = 0.5;
+  const a = px.ang, nx = -Math.sin(a), ny = Math.cos(a);
+  for (let k = -2; k <= 2; k++) {
+    const o = (k / 2.4) * px.w;
+    ctx.beginPath();
+    ctx.moveTo(g.bx + nx * o * 0.35, g.by + ny * o * 0.35);
+    ctx.quadraticCurveTo(
+      (g.bx + g.tx) / 2 + nx * o * 1.1, (g.by + g.ty) / 2 + ny * o * 1.1,
+      g.tx + nx * o * 0.25, g.ty + ny * o * 0.25
+    );
+    ctx.stroke();
+  }
+  ctx.restore();
+  // 白粉提亮
+  ctx.save();
+  ctx.globalAlpha = alpha * 0.45;
+  ctx.strokeStyle = '#fffaf6';
+  ctx.lineWidth = 1.2;
+  z2petalPath(px);
+  ctx.stroke();
+  ctx.restore();
+}
+
+// 三出复叶
+function z2lobe(x, y, ang, len, w, seed, alpha) {
+  const dx = Math.cos(ang), dy = Math.sin(ang), nx = -dy, ny = dx;
+  const N = 16;
+  const pts = [];
+  for (let i = 0; i <= N; i++) {
+    const u = i / N;
+    const r = len * u;
+    let hw = w * (0.10 + 0.95 * Math.pow(Math.sin(Math.PI * Math.pow(u, 0.85)), 0.72));
+    hw *= 1 + 0.05 * Math.sin(u * 16 + seed * 5);
+    pts.push([x + dx * r + nx * hw, y + dy * r + ny * hw]);
+  }
+  ctx.beginPath();
+  for (let i = 0; i <= N; i++) {
+    const u = i / N;
+    const r = len * u;
+    let hw = w * (0.10 + 0.95 * Math.pow(Math.sin(Math.PI * Math.pow(u, 0.85)), 0.72));
+    hw *= 1 + 0.05 * Math.sin(u * 16 + seed * 5);
+    const bx = x + dx * r - nx * hw, by = y + dy * r - ny * hw;
+    if (i === 0) ctx.moveTo(bx, by); else ctx.lineTo(bx, by);
+  }
+  for (let i = N; i >= 0; i--) ctx.lineTo(pts[i][0], pts[i][1]);
+  ctx.closePath();
+}
+
+function z2leaf(L, pOutline, pFill, t) {
+  if (pOutline <= 0.02) return;
+  const lobes = [
+    { a: L.ang + 0.62, l: L.len * 0.62, w: L.w * 0.42 },
+    { a: L.ang - 0.62, l: L.len * 0.62, w: L.w * 0.42 },
+    { a: L.ang, l: L.len, w: L.w * 0.5 },
+  ];
+  // 叶柄
+  ctx.save();
+  ctx.globalAlpha = pOutline;
+  ctx.strokeStyle = 'rgba(64,84,48,0.9)';
+  ctx.lineWidth = 1.6;
+  ctx.beginPath();
+  ctx.moveTo(L.x, L.y);
+  ctx.lineTo(L.x + Math.cos(L.ang) * L.len * 0.26, L.y + Math.sin(L.ang) * L.len * 0.26);
+  ctx.stroke();
+  ctx.restore();
+
+  lobes.forEach((lb, k) => {
+    const bx = L.x + Math.cos(L.ang) * L.len * 0.2;
+    const by = L.y + Math.sin(L.ang) * L.len * 0.2;
+    // 罩染
+    if (pFill > 0) {
+      ctx.save();
+      ctx.globalAlpha = pFill;
+      const grd = ctx.createLinearGradient(bx, by, bx + Math.cos(lb.a) * lb.l, by + Math.sin(lb.a) * lb.l);
+      grd.addColorStop(0, '#2c5b40');
+      grd.addColorStop(0.5, '#557f4b');
+      grd.addColorStop(1, '#9cba6a');
+      ctx.fillStyle = grd;
+      z2lobe(bx, by, lb.a, lb.l, lb.w, L.seed + k, pFill);
+      ctx.fill();
+      ctx.restore();
+    }
+    // 勾线
+    ctx.save();
+    ctx.strokeStyle = 'rgba(42,68,40,0.92)';
+    ctx.lineWidth = 0.9;
+    const per = lb.l * 2.4;
+    ctx.setLineDash([per * pOutline, per]);
+    z2lobe(bx, by, lb.a, lb.l, lb.w, L.seed + k, 1);
+    ctx.stroke();
+    ctx.restore();
+    // 叶脉
+    if (pFill > 0.15) {
+      ctx.save();
+      ctx.globalAlpha = clamp((pFill - 0.15) / 0.55, 0, 1) * 0.8;
+      ctx.strokeStyle = 'rgba(30,56,34,0.85)';
+      ctx.lineWidth = 0.9;
+      const dx = Math.cos(lb.a), dy = Math.sin(lb.a), nx = -dy, ny = dx;
+      ctx.beginPath();
+      ctx.moveTo(bx, by);
+      ctx.lineTo(bx + dx * lb.l * 0.95, by + dy * lb.l * 0.95);
+      ctx.stroke();
+      for (let s = 1; s <= 4; s++) {
+        const u = s / 5.2;
+        const mx = bx + dx * lb.l * u, my = by + dy * lb.l * u;
+        for (const side of [-1, 1]) {
+          ctx.beginPath();
+          ctx.moveTo(mx, my);
+          ctx.quadraticCurveTo(mx + dx * 8 + nx * side * 7, my + dy * 8 + ny * side * 7,
+            mx + dx * 14 + nx * side * 13, my + dy * 14 + ny * side * 13);
+          ctx.stroke();
+        }
+      }
+      ctx.restore();
+    }
+  });
+}
+
+function z2bud(B, p) {
+  if (p <= 0) return;
+  const e = easeOut(p);
+  ctx.save();
+  ctx.translate(B.x, B.y);
+  ctx.rotate(B.ang);
+  ctx.scale(B.s, B.s);
+  // 萼片
+  ctx.fillStyle = '#4c7a4a';
+  for (const side of [-1, 1]) {
+    ctx.beginPath();
+    ctx.ellipse(side * 4, 6, 4.5, 12 * e, side * 0.4, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  // 花苞：三片紧裹的花瓣
+  for (let i = 0; i < 3; i++) {
+    const a = -0.5 + i * 0.5;
+    ctx.save();
+    ctx.rotate(a);
+    const grd = ctx.createLinearGradient(0, -2, 0, -30 * e);
+    grd.addColorStop(0, '#9c2f55');
+    grd.addColorStop(1, '#e88fa8');
+    ctx.fillStyle = grd;
+    ctx.strokeStyle = Z2_OUTLINE;
+    ctx.lineWidth = 0.9;
+    ctx.beginPath();
+    ctx.moveTo(0, -1);
+    ctx.bezierCurveTo(-11, -12 * e, -9, -26 * e, 0, -31 * e);
+    ctx.bezierCurveTo(9, -26 * e, 11, -12 * e, 0, -1);
+    ctx.closePath();
+    ctx.fill(); ctx.stroke();
+    ctx.restore();
+  }
+  ctx.restore();
+}
+
+function z2branch(p) {
+  if (p <= 0) return;
+  ctx.save();
+  ctx.strokeStyle = 'rgba(92,62,42,0.94)';
+  ctx.lineCap = 'round';
+  const paths = [
+    { pts: [[30, 356], [74, 320], [122, 290], [168, 258], [196, 240]], w: 6.4 },
+    { pts: [[122, 290], [196, 286], [262, 276], [318, 250]], w: 3.6 },
+  ];
+  paths.forEach((P, pi) => {
+    const pp = clamp(p * 1.15 - pi * 0.2, 0, 1);
+    if (pp <= 0) return;
+    ctx.lineWidth = P.w;
+    ctx.beginPath();
+    ctx.moveTo(P.pts[0][0], P.pts[0][1]);
+    const segs = P.pts.length - 1;
+    for (let i = 1; i <= segs; i++) {
+      const u = clamp((pp - (i - 1) / segs) * segs, 0, 1);
+      const [ax, ay] = P.pts[i - 1], [bx, by] = P.pts[i];
+      if (u <= 0) break;
+      ctx.quadraticCurveTo(lerp(ax, bx, 0.5) + 3, lerp(ay, by, 0.5) - 3, lerp(ax, bx, u), lerp(ay, by, u));
+    }
+    ctx.stroke();
+  });
+  // 枝节
+  ctx.fillStyle = 'rgba(104,72,48,0.95)';
+  ctx.beginPath(); ctx.arc(122, 290, 2.1, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.arc(196, 240, 1.8, 0, Math.PI * 2); ctx.fill();
+  ctx.restore();
+}
+
+function z2stamens(p) {
+  if (p <= 0) return;
+  ctx.save();
+  ctx.translate(Z2_C.x, Z2_C.y + 2);
+  const r = rng(44);
+  ctx.globalAlpha = p;
+  for (let i = 0; i < 30; i++) {
+    const a = (i / 30) * Math.PI * 2 + r() * 0.15;
+    const rad = 9 + r() * 6;
+    const L = (6 + r() * 7) * (0.35 + 0.65 * p);
+    const sx = Math.cos(a) * rad, sy = Math.sin(a) * rad;
+    ctx.strokeStyle = 'rgba(206,158,52,0.95)';
+    ctx.lineWidth = 1.1;
+    ctx.beginPath();
+    ctx.moveTo(sx, sy);
+    ctx.lineTo(sx + Math.cos(a) * L, sy + Math.sin(a) * L);
+    ctx.stroke();
+    ctx.fillStyle = 'rgba(236,190,80,0.96)';
+    ctx.beginPath(); ctx.arc(sx + Math.cos(a) * L, sy + Math.sin(a) * L, 1.7, 0, Math.PI * 2); ctx.fill();
+  }
+  const g = ctx.createRadialGradient(0, 0, 1, 0, 0, 16);
+  g.addColorStop(0, 'rgba(246,224,160,0.95)');
+  g.addColorStop(0.62, 'rgba(228,182,74,0.55)');
+  g.addColorStop(1, 'rgba(222,166,52,0)');
+  ctx.fillStyle = g;
+  ctx.beginPath(); ctx.arc(0, 0, 16, 0, Math.PI * 2); ctx.fill();
+  ctx.restore();
+}
+
+function z2butterfly(x, y, s, flap, rot) {
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(rot);
+  ctx.scale(s, s);
+  const f = 0.42 + 0.58 * Math.abs(Math.cos(flap));
+  for (const side of [-1, 1]) {
+    ctx.save();
+    ctx.scale(1, f);
+    ctx.translate(side * 3, 0);
+    const g = ctx.createLinearGradient(0, -12, side * 20, 0);
+    g.addColorStop(0, '#cf4329');
+    g.addColorStop(0.65, '#e8842f');
+    g.addColorStop(1, '#f3c95f');
+    ctx.fillStyle = g;
+    ctx.strokeStyle = 'rgba(48,32,24,0.95)';
+    ctx.lineWidth = 1.1;
+    ctx.beginPath();
+    ctx.ellipse(side * 12, -7, 12, 8.5, side * -0.5, 0, Math.PI * 2);
+    ctx.fill(); ctx.stroke();
+    ctx.beginPath();
+    ctx.ellipse(side * 9, 6, 8, 6.5, side * 0.35, 0, Math.PI * 2);
+    ctx.fill(); ctx.stroke();
+    ctx.fillStyle = 'rgba(255,248,232,0.92)';
+    ctx.beginPath(); ctx.arc(side * 15, -8, 1.9, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(side * 8, -2, 1.2, 0, Math.PI * 2); ctx.fill();
+    ctx.restore();
+  }
+  ctx.fillStyle = '#382820';
+  ctx.beginPath(); ctx.ellipse(0, 0, 1.7, 9, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.strokeStyle = 'rgba(56,40,30,0.9)';
+  ctx.lineWidth = 0.9;
+  for (const side of [-1, 1]) {
+    ctx.beginPath();
+    ctx.moveTo(side * 0.6, -8);
+    ctx.quadraticCurveTo(side * 5, -15, side * 9, -13);
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+function z2sealAt(x, y, ch, sc) {
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(-0.04);
+  const s = sc || 1;
+  ctx.scale(s, s);
+  ctx.fillStyle = '#a8322a';
+  ctx.fillRect(-12, -12, 24, 24);
+  ctx.fillStyle = 'rgba(247,241,224,0.95)';
+  ctx.font = `700 14px ${FONT}`;
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText(ch, 0, 1);
+  ctx.restore();
+}
+
+function drawScene(t) {
+  ctx.drawImage(Z2_SILK, 0, 0);
+
+  // 白描底稿：全花淡淡的起稿线，首帧即有形
+  ctx.save();
+  ctx.strokeStyle = 'rgba(92,66,46,0.17)';
+  ctx.lineWidth = 0.7;
+  Z2_PETALS.forEach(px => { z2petalPath(px); ctx.stroke(); });
+  ctx.restore();
+
+  z2branch(clamp((t + 0.25) / 1.05, 0, 1));
+
+  // 叶：先勾线，后罩色
+  Z2_LEAVES.forEach((L, i) => {
+    const po = clamp((t + 0.45 - i * 0.13) / 1.2, 0, 1);
+    const pf = clamp((t - 1.15 - i * 0.1) / 1.5, 0, 1);
+    z2leaf(L, po, pf, t);
+  });
+
+  // 花头：细线勾稿 → 层层分染
+  const gOutline = clamp((t + 1.35) / 2.1, 0, 1) * 1.4;
+  Z2_PETALS.forEach((px, i) => {
+    const po = clamp(gOutline - i * 0.045, 0, 1);
+    if (po <= 0) return;
+    ctx.save();
+    ctx.strokeStyle = Z2_OUTLINE;
+    ctx.lineWidth = 0.8;
+    const per = px.len * 2.6;
+    ctx.setLineDash([per * po, per]);
+    z2petalPath(px);
+    ctx.stroke();
+    ctx.restore();
+    const cf = clamp((t - 0.85 - i * 0.05) / 1.5, 0, 1);
+    if (cf > 0 && po > 0.94) z2petalFill(px, cf);
+  });
+
+  z2stamens(clamp((t - 3.0) / 0.9, 0, 1));
+
+  Z2_BUDS.forEach((B, i) => z2bud(B, clamp((t - 2.2 - i * 0.35) / 1.4, 0, 1)));
+
+  // 彩蝶穿花
+  const b1 = clamp((t - 3.35) / 2.65, 0, 1);
+  if (b1 > 0) {
+    const e = easeOut(b1);
+    z2butterfly(lerp(612, 432, e), 76 + Math.sin(t * 2.3) * 8 + e * 24, 1.0, t * 9, 0.1 + Math.sin(t * 1.8) * 0.12);
+  }
+  const b2 = clamp((t - 4.0) / 2.0, 0, 1);
+  if (b2 > 0) {
+    const e = easeOut(b2);
+    z2butterfly(lerp(616, 470, e), 150 + Math.cos(t * 2.0) * 7 + e * 8, 0.72, t * 10.5 + 1.2, -0.12 + Math.cos(t * 1.5) * 0.1);
+  }
+
+  // 题字
+  const tp = clamp((t - 3.15) / 0.9, 0, 1);
+  if (tp > 0) {
+    ctx.save();
+    ctx.globalAlpha = easeOut(tp);
+    ctx.fillStyle = 'rgba(58,42,30,0.9)';
+    ctx.font = `300 29px ${FONT}`;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('工', 572, 78);
+    ctx.fillText('笔', 572, 116);
+    ctx.restore();
+  }
+  const sp = clamp((t - 3.95) / 0.5, 0, 1);
+  if (sp > 0) {
+    ctx.save();
+    ctx.globalAlpha = easeOut(sp) * 0.88;
+    ctx.fillStyle = 'rgba(58,42,30,0.85)';
+    ctx.font = `400 15px ${FONT}`;
+    ctx.textAlign = 'center';
+    ctx.fillText('牡丹', 572, 154);
+    ctx.restore();
+  }
+  const cp = clamp((t - 4.4) / 0.3, 0, 1);
+  if (cp > 0) {
+    ctx.save();
+    ctx.globalAlpha = easeOut(cp);
+    z2sealAt(572, 198, '工', 0.9 + 0.16 * (1 - easeOut(cp)));
+    ctx.restore();
+  }
+  const np = clamp((t - 4.85) / 0.5, 0, 1);
+  if (np > 0) {
+    ctx.save();
+    ctx.globalAlpha = easeOut(np) * 0.75;
+    ctx.fillStyle = 'rgba(58,42,30,0.75)';
+    ctx.font = `400 13px ${FONT}`;
+    ctx.textAlign = 'center';
+    ctx.fillText('绢本设色', 572, 246);
+    ctx.restore();
+  }
+}
+
+  // ===== 共享渲染与署名 =======================================================
+  function watermark() {
+    const text = 'DeepSeek Harness 生成示例';
+    ctx.save();
+    ctx.font = '11px ' + FONT;
+    const w = ctx.measureText(text).width + 14;
+    const x = W - w - 8, y = H - 24;
+    ctx.fillStyle = 'rgba(0,0,0,.46)';
+    ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(x, y, w, 18, 4); else ctx.rect(x, y, w, 18);
+    ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,.82)';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(text, x + 7, y + 9.5);
+    ctx.restore();
+  }
+
+  function paint(t) {
+    ctx.save();
+    ctx.clearRect(0, 0, W, H);
+    try { drawScene(t); } catch (err) { console.error(err); }
+    ctx.restore();
+    watermark();
+  }
+
+  function renderAt(seconds) {
+    const t = ((Number(seconds) % DURATION) + DURATION) % DURATION;
+    paint(t);
+    syncUI(t);
+    return t;
+  }
+  window.renderAt = renderAt;
+
+  // ===== 播放、控制、减少动态 =================================================
+  const playBtn = document.getElementById('play');
+  const timeline = document.getElementById('timeline');
+  const clock = document.getElementById('clock');
+  let playing = false, base = 0, start = 0, current = 0;
+  const reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function syncUI(t) {
+    if (EXPORT) return;
+    current = t;
+    if (timeline) timeline.value = String(t.toFixed(2));
+    if (clock) clock.textContent = t.toFixed(2) + ' / ' + DURATION.toFixed(2) + 's';
+  }
+  function frame(now) {
+    if (!playing) return;
+    const t = ((now - start) / 1000 + base) % DURATION;
+    paint(t);
+    syncUI(t);
+    requestAnimationFrame(frame);
+  }
+  function play() {
+    if (playing) return;
+    playing = true;
+    start = performance.now();
+    base = current;
+    if (playBtn) playBtn.textContent = '暂停';
+    requestAnimationFrame(frame);
+  }
+  function pause() {
+    playing = false;
+    if (playBtn) playBtn.textContent = '播放';
+  }
+  if (playBtn) playBtn.addEventListener('click', () => { playing ? pause() : play(); });
+  document.getElementById('replay')?.addEventListener('click', () => {
+    base = 0; start = performance.now(); paint(0); syncUI(0); play();
+  });
+  timeline?.addEventListener('input', () => {
+    pause(); paint(Number(timeline.value)); syncUI(Number(timeline.value));
+  });
+  window.addEventListener('keydown', e => {
+    if (e.code === 'Space') { e.preventDefault(); playing ? pause() : play(); }
+    if (e.key === 'r' || e.key === 'R') { base = 0; start = performance.now(); paint(0); syncUI(0); play(); }
+  });
+
+  if (EXPORT) {
+    document.body.classList.add('export');
+    renderAt(0);
+  } else if (reduced) {
+    renderAt(2.4);
+    pause();
+  } else {
+    renderAt(0);
+    play();
+  }
+})();
+</script>
+</body>
+</html>

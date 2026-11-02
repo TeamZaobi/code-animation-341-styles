@@ -1,0 +1,324 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>H3 Blue Professional · DeepSeek Harness 生成示例</title>
+<!--
+  Provenance
+  ----------
+  风格来源：code-animation-styles 目录（《来自俯仰观照博主的动画画风整理》整理稿）
+  catalog commit: 01576924a2b316d1f11ae33f75d3c005e8781451
+  style id: H3「Blue Professional」
+  license: upstream-custom-noncommercial（俯仰观照整理稿，非商业）
+  本文件：DeepSeek Harness（deepseek-flash）根据该风格提示词新写的候选示例，
+  不是原作者样片，也不是原项目演示；仅用于风格挑选预览。共享的只有时间轴、
+  尺寸、导出接口与页脚署名，画面与动作按本风格重新设计。
+  原文“只输出代码”等语句属于素材的一部分，不覆盖本任务的交付合同。
+-->
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; min-height: 100%; background: #0c0c10; color: #e9e9ee;
+    font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif; }
+  #app { min-height: 100vh; display: flex; flex-direction: column; align-items: center;
+    justify-content: center; gap: 12px; padding: 20px; }
+  #stage { width: min(94vw, 1000px); aspect-ratio: 16 / 9; background: #000;
+    box-shadow: 0 18px 60px rgba(0,0,0,.55); position: relative; overflow: hidden; }
+  canvas { display: block; width: 100%; height: 100%; }
+  #head, #ui { width: min(94vw, 1000px); }
+  #head h1 { margin: 0 0 4px; font-size: 15px; font-weight: 600; letter-spacing: .02em; }
+  #head p { margin: 0; font-size: 12px; line-height: 1.5; color: #9a9aa8; }
+  #ui { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  #ui button { background: #1d1d26; color: #f2f2f6; border: 1px solid #343444;
+    border-radius: 7px; padding: 6px 12px; font-size: 12px; cursor: pointer; }
+  #ui button:hover { background: #272734; }
+  #ui input[type=range] { flex: 1 1 220px; min-width: 150px; accent-color: #7c8cff; }
+  #clock { font-variant-numeric: tabular-nums; font-size: 12px; color: #a9a9ba; min-width: 78px; }
+  #credit { width: min(94vw, 1000px); font-size: 11px; line-height: 1.6; color: #6f6f80; }
+  #credit b { color: #9c9cae; font-weight: 500; }
+  body.export, body.export #app { display: block; width: 640px; height: 360px; min-height: 0;
+    padding: 0; margin: 0; overflow: hidden; background: #000; }
+  body.export #stage { width: 640px; height: 360px; box-shadow: none; }
+  body.export #head, body.export #ui, body.export #credit { display: none; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="head">
+    <h1>H3 · Blue Professional</h1>
+    <p>钴蓝档案式排版：羊皮纸底上标题分行立起，右侧钴蓝规格板展开，三栏细线清单逐行落位。</p>
+  </div>
+  <div id="stage"><canvas id="c" width="640" height="360" aria-label="Blue Professional 风格动画示例"></canvas></div>
+  <div id="ui">
+    <button id="play" type="button">暂停</button>
+    <button id="replay" type="button">重播</button>
+    <input id="timeline" type="range" min="0" max="6" step="0.01" value="0" aria-label="时间轴">
+    <span id="clock">0.00 / 6.00s</span>
+  </div>
+  <div id="credit">
+    <b>DeepSeek Harness 生成示例</b>（非原项目样片）· 来源：来自俯仰观照博主的动画画风整理 ·
+    许可：upstream-custom-noncommercial（俯仰观照整理稿，非商业） · 画面与文字均由代码绘制，静音。
+  </div>
+</div>
+<script>
+(() => {
+  'use strict';
+  // ===== 共享脚手架（可改，但导出合同不要破坏）=================================
+  const W = 640, H = 360, DURATION = 6;
+  const EXPORT = new URLSearchParams(location.search).get('export') === '1';
+  const canvas = document.getElementById('c');
+  const ctx = canvas.getContext('2d');
+  const FONT = '"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",sans-serif';
+
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  const lerp = (a, b, t) => a + (b - a) * t;
+  const smooth = t => t * t * (3 - 2 * t);
+  const easeOut = t => 1 - Math.pow(1 - t, 3);
+  const easeIn = t => t * t * t;
+  function rng(seed) { let s = seed >>> 0; return () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; }; }
+
+  // ===== 场景（每个 ID 独立设计；下面的注释区由构建器替换）===================
+  // DESC: 钴蓝档案式排版：羊皮纸底上标题分行立起，右侧钴蓝规格板展开，三栏细线清单逐行落位。
+// H3 Blue Professional · DeepSeek Harness 生成示例
+const H3_PAPER = '#f4ecda', H3_COBALT = '#1b3bc4', H3_INK = '#0e1730';
+const H3_MUTED = '#6d7893', H3_SOFT = '#dbe2f6';
+
+function h3seg(t, a, b) { return clamp((t - a) / (b - a), 0, 1); }
+function h3ease(t) { return 1 - Math.pow(1 - t, 3); }
+function h3track(text, x, y, gap, size, weight, color, align) {
+  ctx.save();
+  ctx.font = `${weight || 700} ${size}px ${FONT}`;
+  ctx.fillStyle = color; ctx.textBaseline = 'alphabetic';
+  let total = 0;
+  for (const ch of text) total += ctx.measureText(ch).width + gap;
+  total -= gap;
+  let cx = x;
+  if (align === 'right') cx = x - total;
+  else if (align === 'center') cx = x - total / 2;
+  ctx.textAlign = 'left';
+  for (const ch of text) {
+    ctx.fillText(ch, cx, y);
+    cx += ctx.measureText(ch).width + gap;
+  }
+  ctx.restore();
+}
+function h3rule(x1, y, x2, color, w, p) {
+  if (p <= 0) return;
+  ctx.save();
+  ctx.strokeStyle = color; ctx.lineWidth = w || 1;
+  ctx.beginPath(); ctx.moveTo(x1, y); ctx.lineTo(lerp(x1, x2, h3ease(p)), y); ctx.stroke();
+  ctx.restore();
+}
+function h3clipText(text, x, y, size, weight, color, p) {
+  if (p <= 0) return;
+  const e = h3ease(clamp(p, 0, 1));
+  ctx.save();
+  ctx.font = `${weight} ${size}px ${FONT}`;
+  ctx.beginPath(); ctx.rect(x - 4, y - size, (ctx.measureText(text).width + 8) * e, size * 1.32); ctx.clip();
+  ctx.fillStyle = color; ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+  ctx.fillText(text, x, y);
+  ctx.restore();
+}
+
+function drawScene(t) {
+  // 纸张与裁切标记
+  ctx.fillStyle = H3_PAPER; ctx.fillRect(0, 0, W, H);
+  ctx.save();
+  ctx.strokeStyle = 'rgba(27,59,196,.22)'; ctx.lineWidth = 1;
+  [[24, 24], [616, 24], [24, 318], [616, 318]].forEach(([x, y]) => {
+    ctx.beginPath();
+    ctx.moveTo(x - 6, y); ctx.lineTo(x + 6, y);
+    ctx.moveTo(x, y - 6); ctx.lineTo(x, y + 6);
+    ctx.stroke();
+  });
+  ctx.restore();
+
+  // 页眉
+  const headP = h3seg(t, 0.05, 0.6);
+  ctx.save(); ctx.globalAlpha = h3ease(headP);
+  h3track('BLUE PROFESSIONAL', 40, 27, 2.4, 10, 800, H3_COBALT);
+  h3track('DOSSIER / 03', 600, 27, 1.8, 10, 600, H3_MUTED, 'right');
+  ctx.restore();
+  h3rule(40, 38, 600, 'rgba(27,59,196,.55)', 1, h3seg(t, -0.2, 0.55));
+  h3rule(40, 38, 600, 'rgba(14,23,48,.12)', 1, h3seg(t, 0.55, 1.1)); // 细暗线补足
+
+  // 右侧钴蓝规格板：从上往下展开
+  const panelH = 190 * h3ease(h3seg(t, -0.55, 0.55));
+  const panelX = 448, panelY = 52, panelW = 156;
+  if (panelH > 1) {
+    ctx.save();
+    ctx.beginPath(); ctx.rect(panelX, panelY, panelW, panelH); ctx.clip();
+    ctx.fillStyle = H3_COBALT; ctx.fillRect(panelX, panelY, panelW, 190);
+    const cp = h3seg(t, 0.45, 1.0);
+    ctx.globalAlpha = h3ease(cp);
+    h3track('SPEC / 规格', panelX + 16, panelY + 24, 1.6, 9, 700, 'rgba(255,255,255,.7)');
+    ctx.fillStyle = '#ffffff'; ctx.font = `800 62px ${FONT}`; ctx.textAlign = 'left';
+    ctx.fillText('01', panelX + 14, panelY + 92);
+    ctx.font = `600 10px ${FONT}`; ctx.fillStyle = 'rgba(255,255,255,.86)';
+    ['目标清晰', '结构可拆', '交付能用'].forEach((s, i) => {
+      const y = panelY + 120 + i * 22;
+      ctx.fillStyle = 'rgba(255,255,255,.32)'; ctx.fillRect(panelX + 16, y - 11, 124, 1);
+      ctx.fillStyle = 'rgba(255,255,255,.9)'; ctx.fillText('0' + (i + 1) + '  ' + s, panelX + 16, y + 2);
+    });
+    ctx.restore();
+    // 面板左侧竖线，强调档案边
+    h3rule(panelX - 8, panelY, panelX - 8, 'rgba(27,59,196,.35)', 1, h3seg(t, 0, 0.8));
+  }
+
+  // 标题
+  h3track('IDEA → SYSTEM', 40, 74, 2.2, 10, 700, H3_MUTED);
+  h3clipText('把想法', 40, 118, 44, 800, H3_INK, h3seg(t, -0.45, 0.35));
+  h3clipText('做成系统', 40, 166, 44, 800, H3_COBALT, h3seg(t, -0.15, 0.65));
+  // 标题下的短红线
+  h3rule(40, 180, 220, H3_COBALT, 3, h3seg(t, 0.9, 1.5));
+
+  // 副题
+  const subP = h3seg(t, 1.0, 1.6);
+  if (subP > 0) {
+    ctx.save(); ctx.globalAlpha = h3ease(subP);
+    ctx.fillStyle = H3_MUTED; ctx.font = `500 13px ${FONT}`; ctx.textAlign = 'left';
+    ctx.fillText('从一句模糊的念头，到一份能执行的清单。', 40, 205);
+    ctx.restore();
+  }
+
+  // 三栏清单
+  const cols = [
+    ['01 / 定位', '先写清楚', '为谁解决什么'],
+    ['02 / 结构', '把大词拆成', '可以动手的步骤'],
+    ['03 / 交付', '留下一份', '别人能接着做的东西'],
+  ];
+  cols.forEach((c, i) => {
+    const x = 40 + i * 158;
+    const p = h3seg(t, 1.45 + i * 0.28, 2.05 + i * 0.28);
+    if (p <= 0) return;
+    const rise = (1 - h3ease(p)) * 9;
+    h3track(c[0], x, 240 - rise, 1.2, 9, 700, H3_COBALT);
+    h3rule(x, 248 - rise, x + 136, 'rgba(27,59,196,.35)', 1, p);
+    ctx.save(); ctx.globalAlpha = h3ease(p);
+    ctx.fillStyle = H3_INK; ctx.textAlign = 'left';
+    ctx.font = `700 14px ${FONT}`; ctx.fillText(c[1], x, 270 - rise);
+    ctx.font = `400 13px ${FONT}`; ctx.fillStyle = H3_MUTED; ctx.fillText(c[2], x, 291 - rise);
+    ctx.restore();
+  });
+
+  // 右下钴蓝小章
+  const sp = h3seg(t, 3.05, 3.55);
+  if (sp > 0) {
+    const e = h3ease(sp);
+    ctx.save();
+    ctx.globalAlpha = e;
+    ctx.strokeStyle = H3_COBALT; ctx.lineWidth = 1.4;
+    ctx.strokeRect(510, 262, 90, 34);
+    h3track('READY', 526, 285, 1.6, 11, 800, H3_COBALT);
+    ctx.fillStyle = H3_COBALT; ctx.fillRect(588, 262, 12, 34);
+    ctx.restore();
+  }
+
+  // 页脚
+  ctx.save();
+  ctx.fillStyle = 'rgba(14,23,48,.4)';
+  ctx.font = `600 9px ${FONT}`; ctx.textAlign = 'left';
+  ctx.fillText('DEEPSEEK HARNESS · 生成示例', 40, 326);
+  ctx.restore();
+
+  // 页面右缘竖向编号
+  ctx.save();
+  ctx.translate(626, 300); ctx.rotate(-Math.PI / 2);
+  ctx.fillStyle = 'rgba(27,59,196,.5)'; ctx.font = `700 9px ${FONT}`; ctx.textAlign = 'left';
+  ctx.fillText('PAGE 03 — 640 × 360', 0, 0);
+  ctx.restore();
+}
+
+  // ===== 共享渲染与署名 =======================================================
+  function watermark() {
+    const text = 'DeepSeek Harness 生成示例';
+    ctx.save();
+    ctx.font = '11px ' + FONT;
+    const w = ctx.measureText(text).width + 14;
+    const x = W - w - 8, y = H - 24;
+    ctx.fillStyle = 'rgba(0,0,0,.46)';
+    ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(x, y, w, 18, 4); else ctx.rect(x, y, w, 18);
+    ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,.82)';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(text, x + 7, y + 9.5);
+    ctx.restore();
+  }
+
+  function paint(t) {
+    ctx.save();
+    ctx.clearRect(0, 0, W, H);
+    try { drawScene(t); } catch (err) { console.error(err); }
+    ctx.restore();
+    watermark();
+  }
+
+  function renderAt(seconds) {
+    const t = ((Number(seconds) % DURATION) + DURATION) % DURATION;
+    paint(t);
+    syncUI(t);
+    return t;
+  }
+  window.renderAt = renderAt;
+
+  // ===== 播放、控制、减少动态 =================================================
+  const playBtn = document.getElementById('play');
+  const timeline = document.getElementById('timeline');
+  const clock = document.getElementById('clock');
+  let playing = false, base = 0, start = 0, current = 0;
+  const reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function syncUI(t) {
+    if (EXPORT) return;
+    current = t;
+    if (timeline) timeline.value = String(t.toFixed(2));
+    if (clock) clock.textContent = t.toFixed(2) + ' / ' + DURATION.toFixed(2) + 's';
+  }
+  function frame(now) {
+    if (!playing) return;
+    const t = ((now - start) / 1000 + base) % DURATION;
+    paint(t);
+    syncUI(t);
+    requestAnimationFrame(frame);
+  }
+  function play() {
+    if (playing) return;
+    playing = true;
+    start = performance.now();
+    base = current;
+    if (playBtn) playBtn.textContent = '暂停';
+    requestAnimationFrame(frame);
+  }
+  function pause() {
+    playing = false;
+    if (playBtn) playBtn.textContent = '播放';
+  }
+  if (playBtn) playBtn.addEventListener('click', () => { playing ? pause() : play(); });
+  document.getElementById('replay')?.addEventListener('click', () => {
+    base = 0; start = performance.now(); paint(0); syncUI(0); play();
+  });
+  timeline?.addEventListener('input', () => {
+    pause(); paint(Number(timeline.value)); syncUI(Number(timeline.value));
+  });
+  window.addEventListener('keydown', e => {
+    if (e.code === 'Space') { e.preventDefault(); playing ? pause() : play(); }
+    if (e.key === 'r' || e.key === 'R') { base = 0; start = performance.now(); paint(0); syncUI(0); play(); }
+  });
+
+  if (EXPORT) {
+    document.body.classList.add('export');
+    renderAt(0);
+  } else if (reduced) {
+    renderAt(2.4);
+    pause();
+  } else {
+    renderAt(0);
+    play();
+  }
+})();
+</script>
+</body>
+</html>

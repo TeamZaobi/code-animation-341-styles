@@ -1,0 +1,449 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>K19 厚涂 · DeepSeek Harness 生成示例</title>
+<!--
+  Provenance
+  ----------
+  风格来源：code-animation-styles 目录（《来自俯仰观照博主的动画画风整理》整理稿）
+  catalog commit: 01576924a2b316d1f11ae33f75d3c005e8781451
+  style id: K19「厚涂」
+  license: upstream-custom-noncommercial（俯仰观照整理稿，非商业）
+  本文件：DeepSeek Harness（deepseek-flash）根据该风格提示词新写的候选示例，
+  不是原作者样片，也不是原项目演示；仅用于风格挑选预览。共享的只有时间轴、
+  尺寸、导出接口与页脚署名，画面与动作按本风格重新设计。
+  原文“只输出代码”等语句属于素材的一部分，不覆盖本任务的交付合同。
+-->
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; min-height: 100%; background: #0c0c10; color: #e9e9ee;
+    font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif; }
+  #app { min-height: 100vh; display: flex; flex-direction: column; align-items: center;
+    justify-content: center; gap: 12px; padding: 20px; }
+  #stage { width: min(94vw, 1000px); aspect-ratio: 16 / 9; background: #000;
+    box-shadow: 0 18px 60px rgba(0,0,0,.55); position: relative; overflow: hidden; }
+  canvas { display: block; width: 100%; height: 100%; }
+  #head, #ui { width: min(94vw, 1000px); }
+  #head h1 { margin: 0 0 4px; font-size: 15px; font-weight: 600; letter-spacing: .02em; }
+  #head p { margin: 0; font-size: 12px; line-height: 1.5; color: #9a9aa8; }
+  #ui { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  #ui button { background: #1d1d26; color: #f2f2f6; border: 1px solid #343444;
+    border-radius: 7px; padding: 6px 12px; font-size: 12px; cursor: pointer; }
+  #ui button:hover { background: #272734; }
+  #ui input[type=range] { flex: 1 1 220px; min-width: 150px; accent-color: #7c8cff; }
+  #clock { font-variant-numeric: tabular-nums; font-size: 12px; color: #a9a9ba; min-width: 78px; }
+  #credit { width: min(94vw, 1000px); font-size: 11px; line-height: 1.6; color: #6f6f80; }
+  #credit b { color: #9c9cae; font-weight: 500; }
+  body.export, body.export #app { display: block; width: 640px; height: 360px; min-height: 0;
+    padding: 0; margin: 0; overflow: hidden; background: #000; }
+  body.export #stage { width: 640px; height: 360px; box-shadow: none; }
+  body.export #head, body.export #ui, body.export #credit { display: none; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="head">
+    <h1>K19 · 厚涂</h1>
+    <p>厚涂油画：深青底上短促笔触一层层堆出橘狐，暖光里浮起一枚发亮的想法，眼睛最后点睛。</p>
+  </div>
+  <div id="stage"><canvas id="c" width="640" height="360" aria-label="厚涂 风格动画示例"></canvas></div>
+  <div id="ui">
+    <button id="play" type="button">暂停</button>
+    <button id="replay" type="button">重播</button>
+    <input id="timeline" type="range" min="0" max="6" step="0.01" value="0" aria-label="时间轴">
+    <span id="clock">0.00 / 6.00s</span>
+  </div>
+  <div id="credit">
+    <b>DeepSeek Harness 生成示例</b>（非原项目样片）· 来源：来自俯仰观照博主的动画画风整理 ·
+    许可：upstream-custom-noncommercial（俯仰观照整理稿，非商业） · 画面与文字均由代码绘制，静音。
+  </div>
+</div>
+<script>
+(() => {
+  'use strict';
+  // ===== 共享脚手架（可改，但导出合同不要破坏）=================================
+  const W = 640, H = 360, DURATION = 6;
+  const EXPORT = new URLSearchParams(location.search).get('export') === '1';
+  const canvas = document.getElementById('c');
+  const ctx = canvas.getContext('2d');
+  const FONT = '"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",sans-serif';
+
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  const lerp = (a, b, t) => a + (b - a) * t;
+  const smooth = t => t * t * (3 - 2 * t);
+  const easeOut = t => 1 - Math.pow(1 - t, 3);
+  const easeIn = t => t * t * t;
+  function rng(seed) { let s = seed >>> 0; return () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; }; }
+
+  // ===== 场景（每个 ID 独立设计；下面的注释区由构建器替换）===================
+  // DESC: 厚涂油画：深青底上短促笔触一层层堆出橘狐，暖光里浮起一枚发亮的想法，眼睛最后点睛。
+const K19_BG_DARK = '#18302f';
+const K19_CREAM = '#f2d9a6';
+const K19_OCHRE = '#e0a04a';
+
+const K19_GRAIN = (() => {
+  const r = rng(1919);
+  return Array.from({ length: 520 }, () => ({ x: r() * W, y: r() * H, s: 0.5 + r() * 1.6, a: 0.02 + r() * 0.06 }));
+})();
+
+function k19seg(t, a, b) { return clamp((t - a) / (b - a), 0, 1); }
+function k19ease(p) { return 1 - Math.pow(1 - p, 3); }
+
+function k19InEllipse(x, y, cx, cy, rx, ry) {
+  const dx = (x - cx) / rx, dy = (y - cy) / ry;
+  return dx * dx + dy * dy <= 1;
+}
+function k19InTri(px, py, ax, ay, bx, by, cx, cy) {
+  const d1 = (px - bx) * (ay - by) - (ax - bx) * (py - by);
+  const d2 = (px - cx) * (by - cy) - (bx - cx) * (py - cy);
+  const d3 = (px - ax) * (cy - ay) - (cx - ax) * (py - ay);
+  const neg = d1 < 0 || d2 < 0 || d3 < 0;
+  const pos = d1 > 0 || d2 > 0 || d3 > 0;
+  return !(neg && pos);
+}
+// 尾巴：到二次贝塞尔采样点的最近距离
+const K19_TAIL_PTS = (() => {
+  const out = [];
+  for (let i = 0; i <= 24; i++) {
+    const u = i / 24;
+    const x = (1 - u) * (1 - u) * 276 + 2 * (1 - u) * u * 332 + u * u * 392;
+    const y = (1 - u) * (1 - u) * 268 + 2 * (1 - u) * u * 236 + u * u * 292;
+    out.push([x, y]);
+  }
+  return out;
+})();
+function k19InTail(x, y) {
+  for (const p of K19_TAIL_PTS) if ((x - p[0]) ** 2 + (y - p[1]) ** 2 < 24 * 24) return true;
+  return false;
+}
+function k19TailAngle(x, y) {
+  let best = 0, bd = 1e9;
+  for (let i = 1; i < K19_TAIL_PTS.length; i++) {
+    const p = K19_TAIL_PTS[i], q = K19_TAIL_PTS[i - 1];
+    const d = (x - p[0]) ** 2 + (y - p[1]) ** 2;
+    if (d < bd) { bd = d; best = Math.atan2(p[1] - q[1], p[0] - q[0]); }
+  }
+  return best;
+}
+
+function k19Set(count, seed, box, inside, dirAt, colors, len0, len1, w0, w1, ta, tb) {
+  const r = rng(seed);
+  const out = [];
+  let guard = 0;
+  while (out.length < count && guard < count * 60) {
+    guard++;
+    const x = box[0] + r() * (box[2] - box[0]);
+    const y = box[1] + r() * (box[3] - box[1]);
+    if (!inside(x, y)) continue;
+    out.push({
+      x, y, ang: dirAt(x, y) + (r() - 0.5) * 0.55,
+      len: len0 + r() * (len1 - len0), w: w0 + r() * (w1 - w0),
+      color: colors[Math.floor(r() * colors.length)],
+      bend: (r() - 0.5) * 12,
+      t0: ta + r() * (tb - ta),
+    });
+  }
+  return out;
+}
+
+const K19_BG = (() => {
+  const c = document.createElement('canvas'); c.width = W; c.height = H;
+  const g = c.getContext('2d');
+  g.fillStyle = K19_BG_DARK; g.fillRect(0, 0, W, H);
+  const r = rng(1957);
+  const cols = ['#1d3b39', '#244a45', '#2d5750', '#16302f', '#2a4f4a', '#1b3a40', '#3a5f52'];
+  for (let i = 0; i < 300; i++) {
+    const x = r() * W, y = r() * H;
+    const ang = -0.5 + r() * 0.7;
+    const len = 30 + r() * 70, w = 5 + r() * 12;
+    g.strokeStyle = cols[Math.floor(r() * cols.length)];
+    g.lineWidth = w; g.lineCap = 'round';
+    g.beginPath(); g.moveTo(x, y);
+    g.quadraticCurveTo(x + Math.cos(ang) * len * 0.5 + (r() - 0.5) * 8, y + Math.sin(ang) * len * 0.5,
+      x + Math.cos(ang) * len, y + Math.sin(ang) * len);
+    g.stroke();
+  }
+  // 右上暖光底
+  const lg = g.createRadialGradient(496, 92, 10, 496, 92, 320);
+  lg.addColorStop(0, 'rgba(224,160,74,.28)');
+  lg.addColorStop(0.5, 'rgba(180,110,60,.10)');
+  lg.addColorStop(1, 'rgba(180,110,60,0)');
+  g.fillStyle = lg; g.fillRect(0, 0, W, H);
+  return c;
+})();
+
+// 狐狸笔触
+const K19_HEAD = k19Set(150, 3301, [176, 90, 336, 224],
+  (x, y) => k19InEllipse(x, y, 250, 160, 70, 61),
+  (x, y) => Math.atan2(y - 160, x - 250) + Math.PI * 0.5,
+  ['#c65a2a', '#d97a37', '#e0893f', '#b94f26', '#e89b4f', '#cf6b30'], 10, 26, 5, 12, 0.35, 3.6);
+const K19_BODY = k19Set(110, 3302, [172, 182, 316, 320],
+  (x, y) => k19InEllipse(x, y, 242, 254, 66, 62),
+  (x, y) => Math.PI * 0.5 + (x - 242) * 0.006,
+  ['#c65a2a', '#d97a37', '#b94f26', '#e0893f', '#a94824'], 12, 28, 6, 13, 0.3, 3.2);
+const K19_TAIL = k19Set(70, 3303, [260, 220, 420, 320], k19InTail, k19TailAngle,
+  ['#c65a2a', '#d97a37', '#e89b4f', '#f2d9a6', '#b94f26'], 14, 30, 6, 12, 0.4, 3.8);
+const K19_EARS = k19Set(46, 3304, [172, 50, 330, 128],
+  (x, y) => k19InTri(x, y, 205, 118, 182, 64, 232, 90) || k19InTri(x, y, 295, 118, 318, 62, 268, 90),
+  () => -Math.PI * 0.5, ['#b94f26', '#c65a2a', '#e0893f', '#38211a'], 8, 18, 4, 9, 0.3, 2.6);
+const K19_FACE = k19Set(55, 3305, [262, 158, 336, 206],
+  (x, y) => k19InEllipse(x, y, 300, 179, 35, 24),
+  () => 0.05, ['#f2d9a6', '#f7e5bd', '#e8c98e'], 8, 18, 4, 9, 1.0, 4.0);
+const K19_BIB = k19Set(42, 3306, [212, 190, 288, 282],
+  (x, y) => k19InEllipse(x, y, 250, 226, 34, 42),
+  () => Math.PI * 0.5, ['#e8c98e', '#f2d9a6', '#d9b877'], 8, 20, 4, 10, 1.2, 4.2);
+
+const K19_FOX = K19_HEAD.concat(K19_BODY, K19_TAIL, K19_EARS, K19_FACE, K19_BIB);
+
+function k19Paint(s, t) {
+  const p = k19ease(clamp((t - s.t0) / 0.55, 0, 1));
+  if (p <= 0.001) return;
+  const L = s.len * p;
+  const ex = s.x + Math.cos(s.ang) * L, ey = s.y + Math.sin(s.ang) * L;
+  const mx = (s.x + ex) / 2 - Math.sin(s.ang) * s.bend;
+  const my = (s.y + ey) / 2 + Math.cos(s.ang) * s.bend;
+  // 下方暗边，制造颜料的厚度
+  ctx.strokeStyle = 'rgba(30,18,12,.30)';
+  ctx.lineWidth = s.w + 2;
+  ctx.beginPath(); ctx.moveTo(s.x + 1.4, s.y + 1.8); ctx.quadraticCurveTo(mx + 1.4, my + 1.8, ex + 1.4, ey + 1.8); ctx.stroke();
+  // 主体色
+  ctx.strokeStyle = s.color; ctx.lineWidth = s.w;
+  ctx.beginPath(); ctx.moveTo(s.x, s.y); ctx.quadraticCurveTo(mx, my, ex, ey); ctx.stroke();
+  // 笔尖高光
+  if (s.w > 6) {
+    ctx.strokeStyle = 'rgba(255,235,190,.14)'; ctx.lineWidth = Math.max(1, s.w * 0.22);
+    ctx.beginPath(); ctx.moveTo(s.x - Math.sin(s.ang) * 1.2, s.y + Math.cos(s.ang) * 1.2);
+    ctx.quadraticCurveTo(mx - Math.sin(s.ang) * 1.2, my + Math.cos(s.ang) * 1.2, ex - Math.sin(s.ang) * 1.2, ey + Math.cos(s.ang) * 1.2);
+    ctx.stroke();
+  }
+}
+
+function k19BaseFox() {
+  ctx.save();
+  ctx.fillStyle = 'rgba(185,79,38,.72)';
+  // 尾巴
+  ctx.strokeStyle = 'rgba(185,79,38,.72)'; ctx.lineWidth = 42; ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.moveTo(276, 268); ctx.quadraticCurveTo(332, 236, 392, 292); ctx.stroke();
+  // 身体、头
+  ctx.beginPath(); ctx.ellipse(242, 254, 66, 62, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(250, 160, 70, 61, 0, 0, Math.PI * 2); ctx.fill();
+  // 耳朵
+  ctx.beginPath(); ctx.moveTo(205, 118); ctx.lineTo(182, 64); ctx.lineTo(232, 90); ctx.closePath(); ctx.fill();
+  ctx.beginPath(); ctx.moveTo(295, 118); ctx.lineTo(318, 62); ctx.lineTo(268, 90); ctx.closePath(); ctx.fill();
+  // 白胸
+  ctx.fillStyle = 'rgba(232,201,142,.85)';
+  ctx.beginPath(); ctx.ellipse(250, 228, 34, 42, 0, 0, Math.PI * 2); ctx.fill();
+  // 吻部
+  ctx.beginPath(); ctx.ellipse(300, 179, 35, 24, 0, 0, Math.PI * 2); ctx.fill();
+  // 爪
+  ctx.beginPath(); ctx.ellipse(214, 306, 24, 15, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(272, 308, 22, 14, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.restore();
+}
+
+function drawScene(t) {
+  ctx.drawImage(K19_BG, 0, 0);
+
+  // 底稿轮廓：首帧也能看出狐狸
+  ctx.save();
+  ctx.globalAlpha = 0.5;
+  k19BaseFox();
+  ctx.restore();
+
+  // 笔触逐层出现
+  for (const s of K19_FOX) k19Paint(s, t);
+
+  // 眼睛、鼻子：最后点睛
+  const ep = k19ease(k19seg(t, 3.4, 3.9));
+  if (ep > 0) {
+    ctx.save();
+    ctx.globalAlpha = ep;
+    // 眼
+    ctx.fillStyle = '#2a1710';
+    ctx.beginPath(); ctx.ellipse(277, 150, 7.5, 9.5, -0.12, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(305, 153, 7.5, 9.5, 0.1, 0, Math.PI * 2); ctx.fill();
+    // 高光
+    ctx.fillStyle = 'rgba(255,240,205,.9)';
+    ctx.beginPath(); ctx.arc(279.5, 146.5, 2.2, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(307.5, 149.5, 2.2, 0, Math.PI * 2); ctx.fill();
+    // 鼻
+    ctx.fillStyle = '#2a1710';
+    ctx.beginPath(); ctx.ellipse(328, 174, 7, 5.4, 0.15, 0, Math.PI * 2); ctx.fill();
+    // 胡须
+    ctx.strokeStyle = 'rgba(242,217,166,.55)'; ctx.lineWidth = 1.6; ctx.lineCap = 'round';
+    for (let i = 0; i < 3; i++) {
+      ctx.beginPath(); ctx.moveTo(320, 174 + i * 4); ctx.lineTo(352, 168 + i * 6); ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  // 暖光与氛围
+  const lp = k19ease(k19seg(t, 1.4, 2.6));
+  const glow = ctx.createRadialGradient(486, 104, 6, 486, 104, 90 + Math.sin(t * 2) * 6);
+  glow.addColorStop(0, `rgba(255,214,140,${0.55 * lp})`);
+  glow.addColorStop(0.4, `rgba(224,160,74,${0.22 * lp})`);
+  glow.addColorStop(1, 'rgba(224,160,74,0)');
+  ctx.fillStyle = glow; ctx.fillRect(0, 0, W, H);
+
+  // 悬浮的「想法」：一枚厚涂的亮点
+  const op = k19ease(k19seg(t, 1.6, 2.7));
+  if (op > 0.01) {
+    const oy = 108 + Math.sin(t * 1.6) * 5;
+    ctx.save();
+    ctx.translate(486, oy);
+    ctx.scale(op, op);
+    // 光核
+    ctx.fillStyle = '#f6d68d';
+    ctx.beginPath(); ctx.arc(0, 0, 26, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#fff2cb';
+    ctx.beginPath(); ctx.arc(-5, -5, 15, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#e0a04a';
+    ctx.beginPath(); ctx.arc(7, 6, 9, 0, Math.PI * 2); ctx.fill();
+    // 环绕笔触
+    ctx.strokeStyle = 'rgba(246,214,141,.8)'; ctx.lineWidth = 4; ctx.lineCap = 'round';
+    for (let i = 0; i < 10; i++) {
+      const a = (i / 10) * Math.PI * 2 + t * 0.25;
+      const r0 = 34 + Math.sin(t * 2 + i) * 3, r1 = r0 + 9 + (i % 3) * 4;
+      ctx.beginPath();
+      ctx.moveTo(Math.cos(a) * r0, Math.sin(a) * r0);
+      ctx.lineTo(Math.cos(a) * r1, Math.sin(a) * r1);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  // 颗粒与暗角
+  ctx.save();
+  for (const g of K19_GRAIN) {
+    ctx.fillStyle = `rgba(10,20,20,${g.a})`;
+    ctx.fillRect(g.x, g.y, g.s, g.s);
+  }
+  ctx.restore();
+  const vg = ctx.createRadialGradient(W / 2, H / 2, 140, W / 2, H / 2, 400);
+  vg.addColorStop(0, 'rgba(8,18,18,0)');
+  vg.addColorStop(1, 'rgba(8,18,18,.5)');
+  ctx.fillStyle = vg; ctx.fillRect(0, 0, W, H);
+
+  // 标题
+  ctx.save();
+  ctx.fillStyle = K19_CREAM;
+  ctx.font = `800 34px ${FONT}`; ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+  ctx.fillText('一笔一笔', 34, 68);
+  ctx.fillStyle = 'rgba(224,160,74,.9)';
+  ctx.font = `700 13px ${FONT}`;
+  ctx.fillText('厚涂  ·  看得见笔触', 36, 92);
+  ctx.restore();
+
+  // 字幕
+  const cp = k19ease(k19seg(t, 4.0, 4.8));
+  if (cp > 0) {
+    ctx.save();
+    ctx.globalAlpha = cp;
+    ctx.fillStyle = K19_CREAM;
+    ctx.font = `600 15px ${FONT}`; ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+    ctx.fillText('先铺大色，再点亮眼睛。', 34, 330);
+    ctx.restore();
+  }
+
+  // 收口
+  const fp = k19seg(t, 5.75, 6.0);
+  if (fp > 0) {
+    ctx.save(); ctx.globalAlpha = fp * 0.45; ctx.fillStyle = '#0f2222'; ctx.fillRect(0, 0, W, H); ctx.restore();
+  }
+}
+
+  // ===== 共享渲染与署名 =======================================================
+  function watermark() {
+    const text = 'DeepSeek Harness 生成示例';
+    ctx.save();
+    ctx.font = '11px ' + FONT;
+    const w = ctx.measureText(text).width + 14;
+    const x = W - w - 8, y = H - 24;
+    ctx.fillStyle = 'rgba(0,0,0,.46)';
+    ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(x, y, w, 18, 4); else ctx.rect(x, y, w, 18);
+    ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,.82)';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(text, x + 7, y + 9.5);
+    ctx.restore();
+  }
+
+  function paint(t) {
+    ctx.save();
+    ctx.clearRect(0, 0, W, H);
+    try { drawScene(t); } catch (err) { console.error(err); }
+    ctx.restore();
+    watermark();
+  }
+
+  function renderAt(seconds) {
+    const t = ((Number(seconds) % DURATION) + DURATION) % DURATION;
+    paint(t);
+    syncUI(t);
+    return t;
+  }
+  window.renderAt = renderAt;
+
+  // ===== 播放、控制、减少动态 =================================================
+  const playBtn = document.getElementById('play');
+  const timeline = document.getElementById('timeline');
+  const clock = document.getElementById('clock');
+  let playing = false, base = 0, start = 0, current = 0;
+  const reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function syncUI(t) {
+    if (EXPORT) return;
+    current = t;
+    if (timeline) timeline.value = String(t.toFixed(2));
+    if (clock) clock.textContent = t.toFixed(2) + ' / ' + DURATION.toFixed(2) + 's';
+  }
+  function frame(now) {
+    if (!playing) return;
+    const t = ((now - start) / 1000 + base) % DURATION;
+    paint(t);
+    syncUI(t);
+    requestAnimationFrame(frame);
+  }
+  function play() {
+    if (playing) return;
+    playing = true;
+    start = performance.now();
+    base = current;
+    if (playBtn) playBtn.textContent = '暂停';
+    requestAnimationFrame(frame);
+  }
+  function pause() {
+    playing = false;
+    if (playBtn) playBtn.textContent = '播放';
+  }
+  if (playBtn) playBtn.addEventListener('click', () => { playing ? pause() : play(); });
+  document.getElementById('replay')?.addEventListener('click', () => {
+    base = 0; start = performance.now(); paint(0); syncUI(0); play();
+  });
+  timeline?.addEventListener('input', () => {
+    pause(); paint(Number(timeline.value)); syncUI(Number(timeline.value));
+  });
+  window.addEventListener('keydown', e => {
+    if (e.code === 'Space') { e.preventDefault(); playing ? pause() : play(); }
+    if (e.key === 'r' || e.key === 'R') { base = 0; start = performance.now(); paint(0); syncUI(0); play(); }
+  });
+
+  if (EXPORT) {
+    document.body.classList.add('export');
+    renderAt(0);
+  } else if (reduced) {
+    renderAt(2.4);
+    pause();
+  } else {
+    renderAt(0);
+    play();
+  }
+})();
+</script>
+</body>
+</html>

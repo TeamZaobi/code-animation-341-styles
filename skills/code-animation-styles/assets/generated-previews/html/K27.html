@@ -1,0 +1,486 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>K27 低多边形 · DeepSeek Harness 生成示例</title>
+<!--
+  Provenance
+  ----------
+  风格来源：code-animation-styles 目录（《来自俯仰观照博主的动画画风整理》整理稿）
+  catalog commit: 01576924a2b316d1f11ae33f75d3c005e8781451
+  style id: K27「低多边形」
+  license: upstream-custom-noncommercial（俯仰观照整理稿，非商业）
+  本文件：DeepSeek Harness（deepseek-flash）根据该风格提示词新写的候选示例，
+  不是原作者样片，也不是原项目演示；仅用于风格挑选预览。共享的只有时间轴、
+  尺寸、导出接口与页脚署名，画面与动作按本风格重新设计。
+  原文“只输出代码”等语句属于素材的一部分，不覆盖本任务的交付合同。
+-->
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; min-height: 100%; background: #0c0c10; color: #e9e9ee;
+    font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif; }
+  #app { min-height: 100vh; display: flex; flex-direction: column; align-items: center;
+    justify-content: center; gap: 12px; padding: 20px; }
+  #stage { width: min(94vw, 1000px); aspect-ratio: 16 / 9; background: #000;
+    box-shadow: 0 18px 60px rgba(0,0,0,.55); position: relative; overflow: hidden; }
+  canvas { display: block; width: 100%; height: 100%; }
+  #head, #ui { width: min(94vw, 1000px); }
+  #head h1 { margin: 0 0 4px; font-size: 15px; font-weight: 600; letter-spacing: .02em; }
+  #head p { margin: 0; font-size: 12px; line-height: 1.5; color: #9a9aa8; }
+  #ui { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  #ui button { background: #1d1d26; color: #f2f2f6; border: 1px solid #343444;
+    border-radius: 7px; padding: 6px 12px; font-size: 12px; cursor: pointer; }
+  #ui button:hover { background: #272734; }
+  #ui input[type=range] { flex: 1 1 220px; min-width: 150px; accent-color: #7c8cff; }
+  #clock { font-variant-numeric: tabular-nums; font-size: 12px; color: #a9a9ba; min-width: 78px; }
+  #credit { width: min(94vw, 1000px); font-size: 11px; line-height: 1.6; color: #6f6f80; }
+  #credit b { color: #9c9cae; font-weight: 500; }
+  body.export, body.export #app { display: block; width: 640px; height: 360px; min-height: 0;
+    padding: 0; margin: 0; overflow: hidden; background: #000; }
+  body.export #stage { width: 640px; height: 360px; box-shadow: none; }
+  body.export #head, body.export #ui, body.export #credit { display: none; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="head">
+    <h1>K27 · 低多边形</h1>
+    <p>低多边形山谷里，一个少面的小人举起手，一颗棱形晶体由散片拼合、升起并折射出冷光。</p>
+  </div>
+  <div id="stage"><canvas id="c" width="640" height="360" aria-label="低多边形 风格动画示例"></canvas></div>
+  <div id="ui">
+    <button id="play" type="button">暂停</button>
+    <button id="replay" type="button">重播</button>
+    <input id="timeline" type="range" min="0" max="6" step="0.01" value="0" aria-label="时间轴">
+    <span id="clock">0.00 / 6.00s</span>
+  </div>
+  <div id="credit">
+    <b>DeepSeek Harness 生成示例</b>（非原项目样片）· 来源：来自俯仰观照博主的动画画风整理 ·
+    许可：upstream-custom-noncommercial（俯仰观照整理稿，非商业） · 画面与文字均由代码绘制，静音。
+  </div>
+</div>
+<script>
+(() => {
+  'use strict';
+  // ===== 共享脚手架（可改，但导出合同不要破坏）=================================
+  const W = 640, H = 360, DURATION = 6;
+  const EXPORT = new URLSearchParams(location.search).get('export') === '1';
+  const canvas = document.getElementById('c');
+  const ctx = canvas.getContext('2d');
+  const FONT = '"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",sans-serif';
+
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  const lerp = (a, b, t) => a + (b - a) * t;
+  const smooth = t => t * t * (3 - 2 * t);
+  const easeOut = t => 1 - Math.pow(1 - t, 3);
+  const easeIn = t => t * t * t;
+  function rng(seed) { let s = seed >>> 0; return () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; }; }
+
+  // ===== 场景（每个 ID 独立设计；下面的注释区由构建器替换）===================
+  // DESC: 低多边形山谷里，一个少面的小人举起手，一颗棱形晶体由散片拼合、升起并折射出冷光。
+// K27 低多边形 · DeepSeek Harness 生成示例
+const K27_INK = '#181430';
+
+function k27mix(a, b, p) {
+  const pa = parseInt(a.slice(1), 16), pb = parseInt(b.slice(1), 16);
+  const ar = pa >> 16, ag = (pa >> 8) & 255, ab = pa & 255;
+  const br = pb >> 16, bg = (pb >> 8) & 255, bb = pb & 255;
+  const q = clamp(p, 0, 1);
+  return `rgb(${Math.round(ar + (br - ar) * q)},${Math.round(ag + (bg - ag) * q)},${Math.round(ab + (bb - ab) * q)})`;
+}
+const k27seg = (t, a, b) => clamp((t - a) / (b - a), 0, 1);
+const k27ease = p => 1 - Math.pow(1 - p, 3);
+
+function k27Tri(p, fill) {
+  ctx.beginPath(); ctx.moveTo(p[0], p[1]); ctx.lineTo(p[2], p[3]); ctx.lineTo(p[4], p[5]); ctx.closePath();
+  ctx.fillStyle = fill; ctx.fill();
+}
+function k27Quad(p, cA, cB) {
+  k27Tri([p[0], p[1], p[2], p[3], p[4], p[5]], cA);
+  k27Tri([p[0], p[1], p[4], p[5], p[6], p[7]], cB);
+}
+function k27Limb(x1, y1, x2, y2, w1, w2, cA, cB) {
+  const dx = x2 - x1, dy = y2 - y1, L = Math.hypot(dx, dy) || 1;
+  const nx = -dy / L, ny = dx / L;
+  k27Quad([
+    x1 + nx * w1 / 2, y1 + ny * w1 / 2,
+    x2 + nx * w2 / 2, y2 + ny * w2 / 2,
+    x2 - nx * w2 / 2, y2 - ny * w2 / 2,
+    x1 - nx * w1 / 2, y1 - ny * w1 / 2,
+  ], cA, cB);
+}
+
+// 天空：低多边形三角面（加载时预计算一次）
+const K27_SKY = (() => {
+  const r = rng(2701);
+  const cols = 8, rows = 4, top = -30, bottom = 216;
+  const pts = [];
+  for (let j = 0; j <= rows; j++) {
+    for (let i = 0; i <= cols; i++) {
+      const jitterX = (i > 0 && i < cols) ? (r() - 0.5) * 46 : 0;
+      const jitterY = (j > 0 && j < rows) ? (r() - 0.5) * 30 : 0;
+      pts.push([(i / cols) * W + jitterX, top + (j / rows) * (bottom - top) + jitterY]);
+    }
+  }
+  const id = (i, j) => j * (cols + 1) + i;
+  const tris = [];
+  for (let j = 0; j < rows; j++) {
+    for (let i = 0; i < cols; i++) {
+      const a = pts[id(i, j)], b = pts[id(i + 1, j)], c = pts[id(i + 1, j + 1)], d = pts[id(i, j + 1)];
+      tris.push([a, b, c], [a, c, d]);
+    }
+  }
+  return tris.map(tr => {
+    const y = (tr[0][1] + tr[1][1] + tr[2][1]) / 3;
+    const k = clamp((y - top) / (bottom - top), 0, 1);
+    let col;
+    if (k < 0.55) col = k27mix('#101a44', '#3a2a66', k / 0.55);
+    else col = k27mix('#3a2a66', '#ff8f5c', (k - 0.55) / 0.45);
+    const lum = 0.94 + r() * 0.12;
+    return { pts: tr, col, lum };
+  });
+})();
+
+// 地面三角面
+const K27_GROUND = (() => {
+  const r = rng(2755);
+  const cols = 9, rows = 3, top = 246, bottom = 380;
+  const pts = [];
+  for (let j = 0; j <= rows; j++) {
+    for (let i = 0; i <= cols; i++) {
+      const jitterX = (i > 0 && i < cols) ? (r() - 0.5) * 52 : 0;
+      const jitterY = (j > 0 && j < rows) ? (r() - 0.5) * 16 : 0;
+      pts.push([(i / cols) * W + jitterX, top + (j / rows) * (bottom - top) + jitterY]);
+    }
+  }
+  const id = (i, j) => j * (cols + 1) + i;
+  const tris = [];
+  for (let j = 0; j < rows; j++) {
+    for (let i = 0; i < cols; i++) {
+      const a = pts[id(i, j)], b = pts[id(i + 1, j)], c = pts[id(i + 1, j + 1)], d = pts[id(i, j + 1)];
+      tris.push([a, b, c], [a, c, d]);
+    }
+  }
+  return tris.map(tr => {
+    const y = (tr[0][1] + tr[1][1] + tr[2][1]) / 3;
+    const k = clamp((y - top) / (bottom - top), 0, 1);
+    const kk = clamp(k * 0.85 + (r() - 0.5) * 0.2, 0, 1);
+    const col = k27mix('#3c8a7c', '#123236', kk);
+    return { pts: tr, col };
+  });
+})();
+
+// 晶体散片：从外部飞入的位置
+const K27_SHARDS = (() => {
+  const r = rng(2719);
+  return Array.from({ length: 6 }, () => ({
+    dx: (r() - 0.5) * 260, dy: -60 - r() * 150, rot: (r() - 0.5) * 2.4,
+  }));
+})();
+
+const K27_SPARKS = (() => {
+  const r = rng(2733);
+  return Array.from({ length: 12 }, (_, i) => ({
+    a: (i / 12) * Math.PI * 2 + r() * 0.3, d: 40 + r() * 46, s: 4 + r() * 6, spin: r() * 6,
+  }));
+})();
+
+function k27Sun(t) {
+  const cx = 548, cy = 82, R = 33;
+  // 光晕：两层低透明度多边形
+  for (let ring = 2; ring >= 1; ring--) {
+    ctx.save(); ctx.globalAlpha = ring === 2 ? 0.10 : 0.16;
+    ctx.fillStyle = '#ffcf9a'; ctx.beginPath();
+    for (let i = 0; i < 10; i++) {
+      const a = (i / 10) * Math.PI * 2, rr = R + ring * 17 + Math.sin(t * 1.2 + i) * 2;
+      const x = cx + Math.cos(a) * rr, y = cy + Math.sin(a) * rr;
+      i ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
+    }
+    ctx.closePath(); ctx.fill(); ctx.restore();
+  }
+  // 低多边形太阳：扇面三角
+  for (let i = 0; i < 10; i++) {
+    const a0 = (i / 10) * Math.PI * 2, a1 = ((i + 1) / 10) * Math.PI * 2;
+    const lit = (i + Math.floor(t * 0.6)) % 4;
+    const col = ['#ffe6b0', '#ffcf83', '#ffad61', '#ff8f56'][lit];
+    k27Tri([cx, cy, cx + Math.cos(a0) * R, cy + Math.sin(a0) * R, cx + Math.cos(a1) * R, cy + Math.sin(a1) * R], col);
+  }
+}
+
+function k27Mountain(cx, baseY, w, h, lit, shade) {
+  k27Tri([cx - w, baseY, cx, baseY - h, cx + w * 0.06, baseY], lit);
+  k27Tri([cx - w * 0.06, baseY, cx, baseY - h, cx + w, baseY], shade);
+}
+
+function k27FacetHead(cx, cy, R, base, t) {
+  const pts = [];
+  for (let i = 0; i < 8; i++) {
+    const a = -Math.PI / 2 + (i / 8) * Math.PI * 2;
+    const rr = R * (i % 2 ? 0.93 : 1);
+    pts.push([cx + Math.cos(a) * rr, cy + Math.sin(a) * rr * 1.05]);
+  }
+  for (let i = 1; i <= 7; i++) {
+    const p0 = pts[i], p1 = pts[(i + 1) % 8];
+    const front = Math.cos((i / 8) * Math.PI * 2 - Math.PI / 2);
+    k27Tri([cx, cy, p0[0], p0[1], p1[0], p1[1]], k27mix(base, '#20182f', 0.34 - front * 0.22));
+  }
+}
+
+function k27Gem(cx, cy, p, t) {
+  if (p <= 0.01) return;
+  const sc = 0.55 + 0.45 * p;
+  const phase = t * 0.9;
+  // 八面体轮廓
+  const top = [cx, cy - 44 * sc], bot = [cx, cy + 46 * sc];
+  const l = [cx - 32 * sc, cy + 2 * sc], r = [cx + 32 * sc, cy + 2 * sc];
+  const mid = [cx, cy + 6 * sc];
+  const faces = [
+    [top, l, mid], [top, mid, r], [l, bot, mid], [mid, bot, r],
+  ];
+  const cols = ['#8ff2df', '#d9fff7', '#31c2b2', '#6fe6d4'];
+  faces.forEach((f, i) => {
+    const sh = K27_SHARDS[i % K27_SHARDS.length];
+    const k = 1 - p;
+    const shift = Math.sin(phase + i) * 0.12 + 0.5;
+    const pts = [];
+    for (const v of f) {
+      // 围绕中心做轻微旋转，制造面在转的感觉
+      const rx = v[0] - cx, ry = v[1] - cy;
+      const ang = Math.sin(phase + i * 1.3) * 0.1;
+      const px = cx + rx * Math.cos(ang) - ry * Math.sin(ang) * 0.4;
+      const py = cy + ry * Math.cos(ang) + rx * Math.sin(ang) * 0.4;
+      pts.push([px + sh.dx * k, py + sh.dy * k]);
+    }
+    k27Tri([pts[0][0], pts[0][1], pts[1][0], pts[1][1], pts[2][0], pts[2][1]],
+      k27mix(cols[i], '#2b4a8a', 0.16 + shift * 0.28));
+  });
+  // 高光棱线
+  ctx.save();
+  ctx.globalAlpha = 0.55 * p;
+  ctx.strokeStyle = '#f2fffc'; ctx.lineWidth = 1.6;
+  ctx.beginPath(); ctx.moveTo(top[0], top[1]); ctx.lineTo(l[0], l[1]); ctx.lineTo(bot[0], bot[1]); ctx.stroke();
+  ctx.restore();
+}
+
+function baseScene(t) {
+  // 天空
+  for (const tr of K27_SKY) {
+    ctx.fillStyle = tr.col;
+    k27Tri([tr.pts[0][0], tr.pts[0][1], tr.pts[1][0], tr.pts[1][1], tr.pts[2][0], tr.pts[2][1]], tr.col);
+  }
+  // 太阳与远山
+  k27Sun(t);
+  const drift = Math.sin(t * 0.35) * 3;
+  ctx.save();
+  ctx.translate(drift, 0);
+  k27Mountain(120, 246, 132, 118, '#372a5f', '#241d44');
+  k27Mountain(300, 246, 160, 146, '#453473', '#2c2350');
+  k27Mountain(500, 246, 176, 122, '#3b2c63', '#251d46');
+  k27Mountain(628, 246, 96, 86, '#2f2552', '#1f1938');
+
+  // 地面
+  for (const tr of K27_GROUND) {
+    k27Tri([tr.pts[0][0], tr.pts[0][1], tr.pts[1][0], tr.pts[1][1], tr.pts[2][0], tr.pts[2][1]], tr.col);
+  }
+  // 地面点状纹理
+  ctx.save();
+  ctx.fillStyle = 'rgba(180,255,235,.16)';
+  for (let i = 0; i < 26; i++) {
+    const g = i * 37 % 640, gy = 258 + (i * 53 % 96);
+    ctx.beginPath(); ctx.moveTo(g, gy); ctx.lineTo(g + 5, gy - 3); ctx.lineTo(g + 3, gy + 5); ctx.closePath(); ctx.fill();
+  }
+  ctx.restore();
+  ctx.restore();
+
+  // 人物：少面小人
+  const bob = Math.sin(t * 1.5) * 1.6;
+  const bx = 206, by = 316 + bob;
+  // 影子
+  ctx.save(); ctx.globalAlpha = 0.3; ctx.fillStyle = '#0c2226';
+  ctx.beginPath(); ctx.ellipse(bx + 12, by - 2, 52, 9, 0, 0, Math.PI * 2); ctx.fill(); ctx.restore();
+
+  const armUp = k27ease(k27seg(t, 0.55, 1.5));
+  const hipY = by - 62, shoY = by - 106;
+  // 腿
+  k27Limb(bx - 8, hipY, bx - 15, by, 17, 13, '#2c4a86', '#1c3060');
+  k27Limb(bx + 10, hipY, bx + 19, by, 17, 13, '#35589a', '#223a70');
+  // 身体
+  k27Quad([bx - 22, shoY, bx + 22, shoY, bx + 16, hipY + 4, bx - 18, hipY + 4], '#ffb257', '#c9761f');
+  k27Tri([bx - 22, shoY, bx + 22, shoY, bx + 3, shoY + 10], '#ffd08a');
+  // 左臂下垂
+  k27Limb(bx - 20, shoY + 6, bx - 30, shoY + 46, 12, 9, '#e89a3c', '#a85f19');
+  // 右臂举起
+  const hx = bx + 20 + 34 * armUp, hy = shoY + 6 - 58 * armUp;
+  k27Limb(bx + 20, shoY + 6, hx, hy, 12, 9, '#ffc46b', '#b96c1d');
+  // 手
+  k27Tri([hx - 5, hy - 2, hx + 6, hy - 5, hx + 7, hy + 5], '#f7c8a4');
+  k27Tri([hx - 5, hy - 2, hx + 7, hy + 5, hx - 3, hy + 6], '#d99a72');
+  // 头
+  k27FacetHead(bx + 2, shoY - 24, 23, '#f9cea9', t);
+  // 头发：少面帽形（只盖住上三分之一）
+  const hy0 = shoY - 46;
+  k27Tri([bx - 24, hy0 + 14, bx + 2, hy0 - 4, bx + 26, hy0 + 16], '#241a33');
+  k27Tri([bx - 24, hy0 + 14, bx - 2, hy0 + 9, bx + 26, hy0 + 16], '#3f2d55');
+  k27Tri([bx - 24, hy0 + 14, bx - 22, hy0 + 24, bx - 2, hy0 + 10], '#1a1226');
+  // 眼
+  ctx.fillStyle = '#241a33';
+  ctx.fillRect(bx + 3, shoY - 22, 2.8, 4.2);
+  ctx.fillRect(bx + 12, shoY - 22, 2.8, 4.2);
+  // 嘴
+  ctx.strokeStyle = '#9c5f45'; ctx.lineWidth = 1.6; ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.moveTo(bx + 8, shoY - 11); ctx.lineTo(bx + 14, shoY - 11); ctx.stroke();
+
+  // 晶体
+  const gemP = k27ease(k27seg(t, 0.05, 1.35));
+  const gemY = shoY - 24 - 60 - Math.sin(t * 1.3) * 3 - 6 * k27ease(k27seg(t, 2.0, 3.4));
+  const gemX = hx + 6;
+  k27Gem(gemX, gemY, gemP, t);
+
+  // 晶体高光星芒
+  const sparkP = k27seg(t, 2.6, 4.2);
+  if (sparkP > 0) {
+    for (const s of K27_SPARKS) {
+      const d = s.d * k27ease(sparkP);
+      const x = gemX + Math.cos(s.a) * d, y = gemY + Math.sin(s.a) * d;
+      const sz = s.s * (1 - sparkP * 0.55);
+      ctx.save();
+      ctx.globalAlpha = (1 - sparkP) * 0.9;
+      k27Tri([x, y - sz, x + sz * 0.6, y, x, y + sz], 'rgba(210,255,246,.9)');
+      k27Tri([x, y + sz, x - sz * 0.6, y, x, y - sz], 'rgba(120,230,215,.75)');
+      ctx.restore();
+    }
+  }
+
+  // 地面低多边形石块
+  k27Tri([470, 344, 496, 312, 526, 344], '#2f7d70');
+  k27Tri([496, 312, 526, 344, 500, 344], '#43a08f');
+  k27Tri([96, 352, 118, 330, 140, 352], '#2c6f66');
+  k27Tri([118, 330, 140, 352, 112, 352], '#3d9186');
+
+  // 左下角低多边形装饰：小晶体堆
+  k27Tri([56, 336, 74, 292, 92, 336], '#2b6f66');
+  k27Tri([74, 292, 92, 336, 62, 336], '#3d9186');
+  k27Tri([96, 336, 108, 308, 120, 336], '#25605a');
+
+  // 文字
+  ctx.save();
+  ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+  ctx.fillStyle = '#fdf6ec';
+  ctx.font = `800 27px ${FONT}`;
+  ctx.fillText('低多边形', 26, 44);
+  ctx.fillStyle = 'rgba(220,255,247,.72)';
+  ctx.font = `600 13px ${FONT}`;
+  ctx.fillText('LOW POLY · 少面 3D', 27, 63);
+  ctx.fillStyle = 'rgba(255,240,226,.92)';
+  ctx.font = `500 13px ${FONT}`;
+  ctx.fillText('用很少的面，拼一个念头', 28, 332);
+  ctx.restore();
+}
+
+
+// 极轻的镜头呼吸：整段画面持续有变化，循环回到起点
+function drawScene(t) {
+  const a = t / 6 * Math.PI * 2;
+  ctx.save();
+  ctx.translate(320, 180);
+  const z = 1.022 + 0.012 * Math.sin(a + 0.9);
+  ctx.scale(z, z);
+  ctx.translate(-320 + 2.6 * Math.sin(a), -180 + 2.0 * Math.cos(a + 0.4));
+  baseScene(t);
+  ctx.restore();
+}
+
+  // ===== 共享渲染与署名 =======================================================
+  function watermark() {
+    const text = 'DeepSeek Harness 生成示例';
+    ctx.save();
+    ctx.font = '11px ' + FONT;
+    const w = ctx.measureText(text).width + 14;
+    const x = W - w - 8, y = H - 24;
+    ctx.fillStyle = 'rgba(0,0,0,.46)';
+    ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(x, y, w, 18, 4); else ctx.rect(x, y, w, 18);
+    ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,.82)';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(text, x + 7, y + 9.5);
+    ctx.restore();
+  }
+
+  function paint(t) {
+    ctx.save();
+    ctx.clearRect(0, 0, W, H);
+    try { drawScene(t); } catch (err) { console.error(err); }
+    ctx.restore();
+    watermark();
+  }
+
+  function renderAt(seconds) {
+    const t = ((Number(seconds) % DURATION) + DURATION) % DURATION;
+    paint(t);
+    syncUI(t);
+    return t;
+  }
+  window.renderAt = renderAt;
+
+  // ===== 播放、控制、减少动态 =================================================
+  const playBtn = document.getElementById('play');
+  const timeline = document.getElementById('timeline');
+  const clock = document.getElementById('clock');
+  let playing = false, base = 0, start = 0, current = 0;
+  const reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function syncUI(t) {
+    if (EXPORT) return;
+    current = t;
+    if (timeline) timeline.value = String(t.toFixed(2));
+    if (clock) clock.textContent = t.toFixed(2) + ' / ' + DURATION.toFixed(2) + 's';
+  }
+  function frame(now) {
+    if (!playing) return;
+    const t = ((now - start) / 1000 + base) % DURATION;
+    paint(t);
+    syncUI(t);
+    requestAnimationFrame(frame);
+  }
+  function play() {
+    if (playing) return;
+    playing = true;
+    start = performance.now();
+    base = current;
+    if (playBtn) playBtn.textContent = '暂停';
+    requestAnimationFrame(frame);
+  }
+  function pause() {
+    playing = false;
+    if (playBtn) playBtn.textContent = '播放';
+  }
+  if (playBtn) playBtn.addEventListener('click', () => { playing ? pause() : play(); });
+  document.getElementById('replay')?.addEventListener('click', () => {
+    base = 0; start = performance.now(); paint(0); syncUI(0); play();
+  });
+  timeline?.addEventListener('input', () => {
+    pause(); paint(Number(timeline.value)); syncUI(Number(timeline.value));
+  });
+  window.addEventListener('keydown', e => {
+    if (e.code === 'Space') { e.preventDefault(); playing ? pause() : play(); }
+    if (e.key === 'r' || e.key === 'R') { base = 0; start = performance.now(); paint(0); syncUI(0); play(); }
+  });
+
+  if (EXPORT) {
+    document.body.classList.add('export');
+    renderAt(0);
+  } else if (reduced) {
+    renderAt(2.4);
+    pause();
+  } else {
+    renderAt(0);
+    play();
+  }
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,454 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>M4 一个元素串全片 · DeepSeek Harness 生成示例</title>
+<!--
+  Provenance
+  ----------
+  风格来源：code-animation-styles 目录（《来自俯仰观照博主的动画画风整理》整理稿）
+  catalog commit: 01576924a2b316d1f11ae33f75d3c005e8781451
+  style id: M4「一个元素串全片」
+  license: upstream-custom-noncommercial（俯仰观照整理稿，非商业）
+  本文件：DeepSeek Harness（deepseek-flash）根据该风格提示词新写的候选示例，
+  不是原作者样片，也不是原项目演示；仅用于风格挑选预览。共享的只有时间轴、
+  尺寸、导出接口与页脚署名，画面与动作按本风格重新设计。
+  原文“只输出代码”等语句属于素材的一部分，不覆盖本任务的交付合同。
+-->
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; min-height: 100%; background: #0c0c10; color: #e9e9ee;
+    font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif; }
+  #app { min-height: 100vh; display: flex; flex-direction: column; align-items: center;
+    justify-content: center; gap: 12px; padding: 20px; }
+  #stage { width: min(94vw, 1000px); aspect-ratio: 16 / 9; background: #000;
+    box-shadow: 0 18px 60px rgba(0,0,0,.55); position: relative; overflow: hidden; }
+  canvas { display: block; width: 100%; height: 100%; }
+  #head, #ui { width: min(94vw, 1000px); }
+  #head h1 { margin: 0 0 4px; font-size: 15px; font-weight: 600; letter-spacing: .02em; }
+  #head p { margin: 0; font-size: 12px; line-height: 1.5; color: #9a9aa8; }
+  #ui { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  #ui button { background: #1d1d26; color: #f2f2f6; border: 1px solid #343444;
+    border-radius: 7px; padding: 6px 12px; font-size: 12px; cursor: pointer; }
+  #ui button:hover { background: #272734; }
+  #ui input[type=range] { flex: 1 1 220px; min-width: 150px; accent-color: #7c8cff; }
+  #clock { font-variant-numeric: tabular-nums; font-size: 12px; color: #a9a9ba; min-width: 78px; }
+  #credit { width: min(94vw, 1000px); font-size: 11px; line-height: 1.6; color: #6f6f80; }
+  #credit b { color: #9c9cae; font-weight: 500; }
+  body.export, body.export #app { display: block; width: 640px; height: 360px; min-height: 0;
+    padding: 0; margin: 0; overflow: hidden; background: #000; }
+  body.export #stage { width: 640px; height: 360px; box-shadow: none; }
+  body.export #head, body.export #ui, body.export #credit { display: none; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="head">
+    <h1>M4 · 一个元素串全片</h1>
+    <p>一个橙色小圆点换四个角色串完全片：开关的钮、字母上的点、曲线上的珠子、圆环的中心，最后回到开头。</p>
+  </div>
+  <div id="stage"><canvas id="c" width="640" height="360" aria-label="一个元素串全片 风格动画示例"></canvas></div>
+  <div id="ui">
+    <button id="play" type="button">暂停</button>
+    <button id="replay" type="button">重播</button>
+    <input id="timeline" type="range" min="0" max="6" step="0.01" value="0" aria-label="时间轴">
+    <span id="clock">0.00 / 6.00s</span>
+  </div>
+  <div id="credit">
+    <b>DeepSeek Harness 生成示例</b>（非原项目样片）· 来源：来自俯仰观照博主的动画画风整理 ·
+    许可：upstream-custom-noncommercial（俯仰观照整理稿，非商业） · 画面与文字均由代码绘制，静音。
+  </div>
+</div>
+<script>
+(() => {
+  'use strict';
+  // ===== 共享脚手架（可改，但导出合同不要破坏）=================================
+  const W = 640, H = 360, DURATION = 6;
+  const EXPORT = new URLSearchParams(location.search).get('export') === '1';
+  const canvas = document.getElementById('c');
+  const ctx = canvas.getContext('2d');
+  const FONT = '"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",sans-serif';
+
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  const lerp = (a, b, t) => a + (b - a) * t;
+  const smooth = t => t * t * (3 - 2 * t);
+  const easeOut = t => 1 - Math.pow(1 - t, 3);
+  const easeIn = t => t * t * t;
+  function rng(seed) { let s = seed >>> 0; return () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; }; }
+
+  // ===== 场景（每个 ID 独立设计；下面的注释区由构建器替换）===================
+  // DESC: 一个橙色小圆点换四个角色串完全片：开关的钮、字母上的点、曲线上的珠子、圆环的中心，最后回到开头。
+// M4 一个元素串全片 · DeepSeek Harness 生成示例
+const M4_BG = '#f3f0e8', M4_INK = '#17171b', M4_ORANGE = '#ff5c1f';
+const M4_DIM = 'rgba(23,23,27,.28)', M4_HAIR = 'rgba(23,23,27,.16)';
+
+function m4p(t, a, b) { return clamp((t - a) / (b - a), 0, 1); }
+function m4s(t) { return smooth(clamp(t, 0, 1)); }
+function m4waveY(x) { return 250 + Math.sin((x - 330) / 34) * 14; }
+
+const M4_LEGS = [
+  [0.00, 0.70, 'line', 86, 146, 136, 146],
+  [0.70, 1.00, 'hold', 136, 146, 136, 146],
+  [1.00, 1.42, 'arc', 136, 146, 512, 96],
+  [1.42, 1.80, 'hold', 512, 96, 512, 96],
+  [1.80, 2.12, 'arc', 512, 96, 596, 264],
+  [2.12, 3.05, 'wave', 596, 264, 340, 254],
+  [3.05, 3.40, 'arc', 340, 254, 150, 262],
+  [3.40, 4.05, 'hold', 150, 262, 150, 262],
+  [4.05, 4.55, 'arc', 150, 262, 320, 222],
+  [4.55, 5.55, 'hold', 320, 222, 320, 222],
+  [5.55, 6.00, 'arc', 320, 222, 86, 146]
+];
+
+function m4dot(t) {
+  for (const L of M4_LEGS) {
+    const [t0, t1, mode, x0, y0, x1, y1] = L;
+    if (t <= t1 + 1e-9) {
+      const p = clamp((t - t0) / (t1 - t0), 0, 1);
+      if (mode === 'hold') return { x: x0, y: y0 };
+      if (mode === 'line') {
+        const e = 1 - Math.pow(1 - p, 3);
+        const jitter = p > 0.55 && p < 0.8 ? -1.6 : 0; // 拨到位时那一下回弹
+        return { x: lerp(x0, x1, e), y: y0 + jitter };
+      }
+      if (mode === 'wave') {
+        const x = lerp(x0, x1, smooth(p));
+        return { x, y: m4waveY(x) };
+      }
+      const e = 1 - Math.pow(1 - p, 3);
+      const dx = x1 - x0, dy = y1 - y0, len = Math.hypot(dx, dy) || 1;
+      const nx = -dy / len, ny = dx / len;
+      const bow = Math.min(52, len * 0.16);
+      const cx = (x0 + x1) / 2 - nx * bow, cy = (y0 + y1) / 2 - ny * bow;
+      const q = 1 - e;
+      return { x: q * q * x0 + 2 * q * e * cx + e * e * x1, y: q * q * y0 + 2 * q * e * cy + e * e * y1 };
+    }
+  }
+  return { x: 86, y: 146 };
+}
+
+const M4_PATH = (() => {
+  const a = [];
+  for (let i = 0; i <= 300; i++) { const tt = i / 300 * 6; const d = m4dot(tt); a.push([tt, d.x, d.y]); }
+  return a;
+})();
+
+function m4bg() {
+  ctx.fillStyle = M4_BG; ctx.fillRect(0, 0, W, H);
+  ctx.fillStyle = 'rgba(23,23,27,.055)';
+  for (let y = 18; y < H; y += 14) for (let x = 18; x < W; x += 14) ctx.fillRect(x, y, 1.4, 1.4);
+  ctx.strokeStyle = 'rgba(23,23,27,.16)'; ctx.lineWidth = 1;
+  ctx.strokeRect(15.5, 15.5, W - 31, H - 31);
+}
+
+function m4path(t) {
+  ctx.save();
+  ctx.lineWidth = 1.5; ctx.lineCap = 'round';
+  // 已走过的路
+  ctx.strokeStyle = 'rgba(255,92,31,.34)';
+  ctx.beginPath();
+  let started = false;
+  for (const [tt, x, y] of M4_PATH) {
+    if (tt > t) break;
+    if (!started) { ctx.moveTo(x, y); started = true; } else ctx.lineTo(x, y);
+  }
+  ctx.stroke();
+  // 还没走的路
+  ctx.strokeStyle = 'rgba(23,23,27,.10)';
+  ctx.setLineDash([2, 7]);
+  ctx.beginPath(); started = false;
+  for (const [tt, x, y] of M4_PATH) {
+    if (tt < t) continue;
+    if (!started) { ctx.moveTo(x, y); started = true; } else ctx.lineTo(x, y);
+  }
+  ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.restore();
+}
+
+function m4label(text, x, y, alpha) {
+  if (alpha <= 0.01) return;
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  ctx.fillStyle = M4_INK; ctx.font = `500 13px ${FONT}`;
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText(text, x, y);
+  ctx.restore();
+}
+
+// A. 开关：圆点是钮
+function m4Switch(w) {
+  if (w <= 0.01) return;
+  ctx.save();
+  ctx.globalAlpha = w;
+  ctx.fillStyle = '#fffdf7';
+  ctx.strokeStyle = M4_INK; ctx.lineWidth = 2;
+  ctx.beginPath();
+  if (ctx.roundRect) ctx.roundRect(63, 105, 96, 54, 12); else ctx.rect(63, 105, 96, 54);
+  ctx.fill(); ctx.stroke();
+  ctx.strokeStyle = 'rgba(23,23,27,.35)'; ctx.lineWidth = 3;
+  ctx.beginPath(); ctx.moveTo(86, 132); ctx.lineTo(136, 132); ctx.stroke();
+  ctx.strokeStyle = 'rgba(23,23,27,.2)'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(74, 148); ctx.lineTo(148, 148); ctx.stroke();
+  ctx.fillStyle = M4_ORANGE;
+  ctx.beginPath(); ctx.arc(146, 115, 3, 0, Math.PI * 2); ctx.fill();
+  ctx.restore();
+  m4label('开关', 111, 182, w * 0.95);
+}
+
+// B. 字母 i：圆点是 i 上面的点
+function m4Letter(w, p) {
+  if (w <= 0.01) return;
+  const grow = 1 - Math.pow(1 - clamp(p, 0, 1), 3);
+  ctx.save();
+  ctx.globalAlpha = w;
+  const h = 122 * grow;
+  // 笔画
+  ctx.fillStyle = M4_INK;
+  ctx.beginPath();
+  if (ctx.roundRect) ctx.roundRect(503, 112, 18, h, 9); else ctx.rect(503, 112, 18, h);
+  ctx.fill();
+  // 基线刻度
+  ctx.strokeStyle = 'rgba(23,23,27,.55)'; ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(494, 112 + h + 8); ctx.lineTo(530, 112 + h + 8);
+  ctx.stroke();
+  // 点离开后留下的虚线圆：i 还认得出来
+  ctx.setLineDash([3, 4]);
+  ctx.strokeStyle = 'rgba(23,23,27,.40)'; ctx.lineWidth = 1.4;
+  ctx.beginPath(); ctx.arc(512, 96, 11, 0, Math.PI * 2); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.restore();
+  m4label('字母上的点', 512, 252, w * 0.95);
+}
+
+// C. 曲线：圆点是珠子
+function m4Curve(w, p) {
+  if (w <= 0.01) return;
+  const draw = 1 - Math.pow(1 - clamp(p, 0, 1), 3);
+  ctx.save();
+  ctx.globalAlpha = w;
+  ctx.strokeStyle = M4_INK; ctx.lineWidth = 2; ctx.lineCap = 'round';
+  ctx.beginPath();
+  let first = true;
+  const xEnd = lerp(330, 606, draw);
+  for (let x = 330; x <= xEnd; x += 3) {
+    const y = m4waveY(x);
+    if (first) { ctx.moveTo(x, y); first = false; } else ctx.lineTo(x, y);
+  }
+  ctx.stroke();
+  // 刻度，像工程曲线
+  ctx.strokeStyle = 'rgba(23,23,27,.30)'; ctx.lineWidth = 1;
+  for (let x = 348; x <= Math.min(606, xEnd); x += 48) {
+    const y = m4waveY(x);
+    ctx.beginPath(); ctx.moveTo(x, y - 6); ctx.lineTo(x, y + 6); ctx.stroke();
+  }
+  ctx.restore();
+  m4label('一条曲线', 476, 300, w * 0.95);
+}
+
+// D. 形状：圆点变成圆环的中心
+function m4Ring(w, p) {
+  if (w <= 0.01) return;
+  const e = 1 - Math.pow(1 - clamp(p, 0, 1), 3);
+  ctx.save();
+  ctx.globalAlpha = w;
+  ctx.translate(150, 262);
+  const R = 40 * e, rot = (1 - e) * 0.9;
+  ctx.strokeStyle = M4_INK; ctx.lineWidth = 3.2; ctx.lineCap = 'round';
+  const segs = p > 0.62 ? 4 : 1;
+  const gap = p > 0.62 ? 0.16 : 0;
+  for (let i = 0; i < segs; i++) {
+    const a0 = rot + i * Math.PI * 2 / segs + gap / 2;
+    const a1 = rot + (i + 1) * Math.PI * 2 / segs - gap / 2;
+    ctx.beginPath(); ctx.arc(0, 0, R, a0, a1); ctx.stroke();
+  }
+  // 四个短柄
+  const bp = m4p(p, 0.7, 1);
+  if (bp > 0) {
+    ctx.strokeStyle = 'rgba(23,23,27,.55)'; ctx.lineWidth = 2;
+    for (let i = 0; i < 4; i++) {
+      const a = rot + i * Math.PI / 2;
+      ctx.beginPath();
+      ctx.moveTo(Math.cos(a) * (R + 4), Math.sin(a) * (R + 4));
+      ctx.lineTo(Math.cos(a) * (R + 4 + 9 * bp), Math.sin(a) * (R + 4 + 9 * bp));
+      ctx.stroke();
+    }
+  }
+  ctx.restore();
+  m4label('一个形状', 150, 318, w * 0.95);
+}
+
+// E. 结尾卡片
+function m4Card(p) {
+  if (p <= 0) return;
+  const e = 1 - Math.pow(1 - clamp(p, 0, 1), 3);
+  ctx.save();
+  ctx.translate(320, 222);
+  ctx.scale(0.72 + 0.28 * e, 0.72 + 0.28 * e);
+  ctx.globalAlpha = clamp(p * 1.5, 0, 1);
+  ctx.fillStyle = 'rgba(23,23,27,.11)';
+  ctx.beginPath();
+  if (ctx.roundRect) ctx.roundRect(-143, -102, 300, 128, 14); else ctx.rect(-143, -102, 300, 128);
+  ctx.fill();
+  ctx.fillStyle = '#fffdf7';
+  ctx.strokeStyle = M4_INK; ctx.lineWidth = 2;
+  ctx.beginPath();
+  if (ctx.roundRect) ctx.roundRect(-150, -108, 300, 128, 14); else ctx.rect(-150, -108, 300, 128);
+  ctx.fill(); ctx.stroke();
+  ctx.fillStyle = M4_INK; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.font = `800 34px ${FONT}`;
+  ctx.fillText('一个小点', 0, -64);
+  ctx.font = `500 13px ${FONT}`;
+  ctx.fillStyle = 'rgba(23,23,27,.62)';
+  ctx.fillText('开关 · 字母 · 曲线 · 形状', 0, -38);
+  ctx.restore();
+}
+
+function drawScene(t) {
+  m4bg();
+
+  // 顶部标识
+  ctx.save();
+  ctx.fillStyle = M4_ORANGE; ctx.fillRect(36, 36, 16, 2.4);
+  ctx.fillStyle = 'rgba(23,23,27,.55)'; ctx.font = `500 13px ${FONT}`;
+  ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+  ctx.fillText('一个元素串全片', 60, 42);
+  ctx.fillStyle = M4_INK; ctx.font = `800 24px ${FONT}`;
+  ctx.fillText('从头到尾，一个小点', 36, 76);
+  ctx.restore();
+
+  m4path(t);
+
+  // 各场景的权重：到达时亮，离开时退到背景
+  const wA = Math.max(1 - 0.84 * m4s(m4p(t, 1.0, 1.45)), m4s(m4p(t, 5.62, 5.98)));
+  const wB = m4s(m4p(t, 1.06, 1.42)) * (1 - 0.84 * m4s(m4p(t, 2.15, 2.6)));
+  const wC = m4s(m4p(t, 1.84, 2.2)) * (1 - 0.84 * m4s(m4p(t, 3.2, 3.7)));
+  const wD = m4s(m4p(t, 3.15, 3.5)) * (1 - 0.84 * m4s(m4p(t, 4.2, 4.7)));
+  const wE = m4s(m4p(t, 4.45, 4.85)) * (1 - 0.9 * m4s(m4p(t, 5.5, 5.85)));
+
+  m4Switch(wA);
+  m4Letter(wB, m4p(t, 1.15, 1.75));
+  m4Curve(wC, m4p(t, 1.95, 2.35));
+  m4Ring(wD, m4p(t, 3.4, 4.15));
+  m4Card(wE);
+
+  // 圆点：带一小段拖尾
+  const d = m4dot(t);
+  for (let k = 4; k >= 1; k--) {
+    const dd = m4dot(Math.max(0, t - k * 0.028));
+    ctx.save();
+    ctx.globalAlpha = 0.20 - k * 0.035;
+    ctx.fillStyle = M4_ORANGE;
+    ctx.beginPath(); ctx.arc(dd.x, dd.y, 11 - k * 1.2, 0, Math.PI * 2); ctx.fill();
+    ctx.restore();
+  }
+  ctx.save();
+  ctx.fillStyle = M4_ORANGE;
+  ctx.beginPath(); ctx.arc(d.x, d.y, 11, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = 'rgba(255,255,255,.55)';
+  ctx.beginPath(); ctx.arc(d.x - 3.4, d.y - 3.6, 3, 0, Math.PI * 2); ctx.fill();
+  ctx.restore();
+
+  // 结尾轻轻一收，接回开头
+  const endP = m4p(t, 5.86, 6.0);
+  if (endP > 0) {
+    ctx.save(); ctx.globalAlpha = easeIn(endP) * 0.14;
+    ctx.fillStyle = M4_ORANGE; ctx.fillRect(0, 0, W, H); ctx.restore();
+  }
+}
+
+  // ===== 共享渲染与署名 =======================================================
+  function watermark() {
+    const text = 'DeepSeek Harness 生成示例';
+    ctx.save();
+    ctx.font = '11px ' + FONT;
+    const w = ctx.measureText(text).width + 14;
+    const x = W - w - 8, y = H - 24;
+    ctx.fillStyle = 'rgba(0,0,0,.46)';
+    ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(x, y, w, 18, 4); else ctx.rect(x, y, w, 18);
+    ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,.82)';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(text, x + 7, y + 9.5);
+    ctx.restore();
+  }
+
+  function paint(t) {
+    ctx.save();
+    ctx.clearRect(0, 0, W, H);
+    try { drawScene(t); } catch (err) { console.error(err); }
+    ctx.restore();
+    watermark();
+  }
+
+  function renderAt(seconds) {
+    const t = ((Number(seconds) % DURATION) + DURATION) % DURATION;
+    paint(t);
+    syncUI(t);
+    return t;
+  }
+  window.renderAt = renderAt;
+
+  // ===== 播放、控制、减少动态 =================================================
+  const playBtn = document.getElementById('play');
+  const timeline = document.getElementById('timeline');
+  const clock = document.getElementById('clock');
+  let playing = false, base = 0, start = 0, current = 0;
+  const reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function syncUI(t) {
+    if (EXPORT) return;
+    current = t;
+    if (timeline) timeline.value = String(t.toFixed(2));
+    if (clock) clock.textContent = t.toFixed(2) + ' / ' + DURATION.toFixed(2) + 's';
+  }
+  function frame(now) {
+    if (!playing) return;
+    const t = ((now - start) / 1000 + base) % DURATION;
+    paint(t);
+    syncUI(t);
+    requestAnimationFrame(frame);
+  }
+  function play() {
+    if (playing) return;
+    playing = true;
+    start = performance.now();
+    base = current;
+    if (playBtn) playBtn.textContent = '暂停';
+    requestAnimationFrame(frame);
+  }
+  function pause() {
+    playing = false;
+    if (playBtn) playBtn.textContent = '播放';
+  }
+  if (playBtn) playBtn.addEventListener('click', () => { playing ? pause() : play(); });
+  document.getElementById('replay')?.addEventListener('click', () => {
+    base = 0; start = performance.now(); paint(0); syncUI(0); play();
+  });
+  timeline?.addEventListener('input', () => {
+    pause(); paint(Number(timeline.value)); syncUI(Number(timeline.value));
+  });
+  window.addEventListener('keydown', e => {
+    if (e.code === 'Space') { e.preventDefault(); playing ? pause() : play(); }
+    if (e.key === 'r' || e.key === 'R') { base = 0; start = performance.now(); paint(0); syncUI(0); play(); }
+  });
+
+  if (EXPORT) {
+    document.body.classList.add('export');
+    renderAt(0);
+  } else if (reduced) {
+    renderAt(2.4);
+    pause();
+  } else {
+    renderAt(0);
+    play();
+  }
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,465 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>M36 破框 · DeepSeek Harness 生成示例</title>
+<!--
+  Provenance
+  ----------
+  风格来源：code-animation-styles 目录（《来自俯仰观照博主的动画画风整理》整理稿）
+  catalog commit: 01576924a2b316d1f11ae33f75d3c005e8781451
+  style id: M36「破框」
+  license: upstream-custom-noncommercial（俯仰观照整理稿，非商业）
+  本文件：DeepSeek Harness（deepseek-flash）根据该风格提示词新写的候选示例，
+  不是原作者样片，也不是原项目演示；仅用于风格挑选预览。共享的只有时间轴、
+  尺寸、导出接口与页脚署名，画面与动作按本风格重新设计。
+  原文“只输出代码”等语句属于素材的一部分，不覆盖本任务的交付合同。
+-->
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; min-height: 100%; background: #0c0c10; color: #e9e9ee;
+    font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif; }
+  #app { min-height: 100vh; display: flex; flex-direction: column; align-items: center;
+    justify-content: center; gap: 12px; padding: 20px; }
+  #stage { width: min(94vw, 1000px); aspect-ratio: 16 / 9; background: #000;
+    box-shadow: 0 18px 60px rgba(0,0,0,.55); position: relative; overflow: hidden; }
+  canvas { display: block; width: 100%; height: 100%; }
+  #head, #ui { width: min(94vw, 1000px); }
+  #head h1 { margin: 0 0 4px; font-size: 15px; font-weight: 600; letter-spacing: .02em; }
+  #head p { margin: 0; font-size: 12px; line-height: 1.5; color: #9a9aa8; }
+  #ui { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  #ui button { background: #1d1d26; color: #f2f2f6; border: 1px solid #343444;
+    border-radius: 7px; padding: 6px 12px; font-size: 12px; cursor: pointer; }
+  #ui button:hover { background: #272734; }
+  #ui input[type=range] { flex: 1 1 220px; min-width: 150px; accent-color: #7c8cff; }
+  #clock { font-variant-numeric: tabular-nums; font-size: 12px; color: #a9a9ba; min-width: 78px; }
+  #credit { width: min(94vw, 1000px); font-size: 11px; line-height: 1.6; color: #6f6f80; }
+  #credit b { color: #9c9cae; font-weight: 500; }
+  body.export, body.export #app { display: block; width: 640px; height: 360px; min-height: 0;
+    padding: 0; margin: 0; overflow: hidden; background: #000; }
+  body.export #stage { width: 640px; height: 360px; box-shadow: none; }
+  body.export #head, body.export #ui, body.export #credit { display: none; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="head">
+    <h1>M36 · 破框</h1>
+    <p>墙上一张海报，印着的红球鼓起来撕开纸面、冲破海报右边框滚到墙上，边框缺口留在原地，最后落一句「冲出去」。</p>
+  </div>
+  <div id="stage"><canvas id="c" width="640" height="360" aria-label="破框 风格动画示例"></canvas></div>
+  <div id="ui">
+    <button id="play" type="button">暂停</button>
+    <button id="replay" type="button">重播</button>
+    <input id="timeline" type="range" min="0" max="6" step="0.01" value="0" aria-label="时间轴">
+    <span id="clock">0.00 / 6.00s</span>
+  </div>
+  <div id="credit">
+    <b>DeepSeek Harness 生成示例</b>（非原项目样片）· 来源：来自俯仰观照博主的动画画风整理 ·
+    许可：upstream-custom-noncommercial（俯仰观照整理稿，非商业） · 画面与文字均由代码绘制，静音。
+  </div>
+</div>
+<script>
+(() => {
+  'use strict';
+  // ===== 共享脚手架（可改，但导出合同不要破坏）=================================
+  const W = 640, H = 360, DURATION = 6;
+  const EXPORT = new URLSearchParams(location.search).get('export') === '1';
+  const canvas = document.getElementById('c');
+  const ctx = canvas.getContext('2d');
+  const FONT = '"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",sans-serif';
+
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  const lerp = (a, b, t) => a + (b - a) * t;
+  const smooth = t => t * t * (3 - 2 * t);
+  const easeOut = t => 1 - Math.pow(1 - t, 3);
+  const easeIn = t => t * t * t;
+  function rng(seed) { let s = seed >>> 0; return () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; }; }
+
+  // ===== 场景（每个 ID 独立设计；下面的注释区由构建器替换）===================
+  // DESC: 墙上一张海报，印着的红球鼓起来撕开纸面、冲破海报右边框滚到墙上，边框缺口留在原地，最后落一句「冲出去」。
+// M36 破框 · DeepSeek Harness 生成示例
+const M36_WALL0 = '#efe9df', M36_WALL1 = '#d9d0c2';
+const M36_INK = '#221f1c', M36_RED = '#e2472f', M36_PAPER = '#faf6ec';
+const M36_POSTER = { x: 180, y: 56, w: 280, h: 236 };
+const M36_SPECKS = (() => {
+  const r = rng(3636);
+  return Array.from({ length: 260 }, () => ({ x: r() * W, y: r() * H, s: 0.5 + r() * 1.6, a: 0.02 + r() * 0.05 }));
+})();
+
+function m36seg(t, a, b) { return clamp((t - a) / (b - a), 0, 1); }
+function m36e(t) { return 1 - Math.pow(1 - t, 3); }
+function m36spring(p) {
+  if (p <= 0) return 0;
+  if (p >= 1) return 1;
+  return 1 - Math.exp(-6 * p) * Math.cos(9 * p) * (1 - p * 0.35);
+}
+
+function m36Wall() {
+  const g = ctx.createLinearGradient(0, 0, 0, H);
+  g.addColorStop(0, '#d5cbba');
+  g.addColorStop(0.42, '#e2dacb');
+  g.addColorStop(1, '#bdb2a0');
+  ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  // 一处聚光，把海报托起来
+  const sp = ctx.createRadialGradient(300, 150, 40, 300, 150, 380);
+  sp.addColorStop(0, 'rgba(255,253,246,.50)');
+  sp.addColorStop(0.42, 'rgba(255,250,240,.10)');
+  sp.addColorStop(1, 'rgba(96,80,62,.28)');
+  ctx.fillStyle = sp; ctx.fillRect(0, 0, W, H);
+  for (const s of M36_SPECKS) {
+    ctx.fillStyle = `rgba(90,74,58,${s.a})`;
+    ctx.fillRect(s.x, s.y, s.s, s.s);
+  }
+}
+
+// 海报：纸面 + 印刷内容 + 边框
+function m36Poster(maskHole) {
+  const P = M36_POSTER;
+  ctx.save();
+  // 纸张投影
+  ctx.shadowColor = 'rgba(80,58,40,.28)';
+  ctx.shadowBlur = 26;
+  ctx.shadowOffsetY = 12;
+  ctx.fillStyle = M36_PAPER;
+  ctx.fillRect(P.x, P.y, P.w, P.h);
+  ctx.restore();
+
+  // 印刷内容（被撕开的部分不画）
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(P.x, P.y, P.w, P.h);
+  if (maskHole) ctx.arc(maskHole[0], maskHole[1], maskHole[2], 0, Math.PI * 2, true);
+  ctx.clip();
+  ctx.fillStyle = 'rgba(34,31,28,.72)';
+  ctx.font = `600 10px ${FONT}`;
+  ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+  ctx.fillText('POSTER  /  NO.01', P.x + 20, P.y + 26);
+  ctx.fillStyle = M36_INK;
+  ctx.font = `800 40px ${FONT}`;
+  ctx.fillText('边界', P.x + 20, P.y + 92);
+  ctx.font = `800 40px ${FONT}`;
+  ctx.fillText('之内', P.x + 20, P.y + 136);
+  ctx.fillStyle = 'rgba(34,31,28,.34)';
+  ctx.fillRect(P.x + 20, P.y + 160, 96, 3);
+  ctx.fillRect(P.x + 20, P.y + 170, 64, 3);
+  // 印刷的红圆
+  ctx.fillStyle = M36_RED;
+  ctx.beginPath(); ctx.arc(360, 196, 34, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = 'rgba(250,246,236,.55)';
+  ctx.beginPath(); ctx.arc(350, 186, 9, 0, Math.PI * 2); ctx.fill();
+  // 底部条码
+  ctx.fillStyle = 'rgba(34,31,28,.55)';
+  for (let i = 0; i < 18; i++) ctx.fillRect(P.x + 20 + i * 6, P.y + 208, i % 3 ? 2 : 4, 18);
+  ctx.restore();
+
+  // 边框：被突破的位置留缺口
+  const gapY = maskHole ? maskHole[1] : -100;
+  const gapH = maskHole ? maskHole[2] * 1.5 : 0;
+  ctx.save();
+  ctx.strokeStyle = M36_INK; ctx.lineWidth = 3;
+  // 上 / 下 / 左
+  ctx.beginPath();
+  ctx.moveTo(P.x, P.y + P.h); ctx.lineTo(P.x, P.y); ctx.lineTo(P.x + P.w, P.y);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(P.x, P.y + P.h); ctx.lineTo(P.x + P.w, P.y + P.h);
+  ctx.stroke();
+  // 右边框：断开
+  ctx.beginPath();
+  ctx.moveTo(P.x + P.w, P.y);
+  ctx.lineTo(P.x + P.w, Math.max(P.y, gapY - gapH));
+  ctx.moveTo(P.x + P.w, Math.min(P.y + P.h, gapY + gapH));
+  ctx.lineTo(P.x + P.w, P.y + P.h);
+  ctx.stroke();
+  ctx.restore();
+  // 纸边缘翘起
+  if (maskHole) {
+    ctx.save();
+    ctx.fillStyle = 'rgba(255,252,244,.92)';
+    ctx.beginPath();
+    ctx.moveTo(P.x + P.w - 2, gapY - gapH);
+    ctx.quadraticCurveTo(P.x + P.w + 12, gapY - gapH * 0.4, P.x + P.w - 2, gapY + gapH);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+  }
+}
+
+// 撕开的纸洞：不规则但圆润，边缘一圈纸白
+function m36Hole(cx, cy, r, alpha) {
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  const pts = [];
+  const n = 16;
+  for (let i = 0; i < n; i++) {
+    const a = (i / n) * Math.PI * 2;
+    const rr = r * (1 + 0.09 * Math.sin(i * 2.3) + 0.05 * Math.sin(i * 4.7 + 1.2));
+    pts.push([cx + Math.cos(a) * rr, cy + Math.sin(a) * rr * 0.94]);
+  }
+  ctx.beginPath();
+  ctx.moveTo((pts[n - 1][0] + pts[0][0]) / 2, (pts[n - 1][1] + pts[0][1]) / 2);
+  for (let i = 0; i < n; i++) {
+    const p1 = pts[i], p2 = pts[(i + 1) % n];
+    ctx.quadraticCurveTo(p1[0], p1[1], (p1[0] + p2[0]) / 2, (p1[1] + p2[1]) / 2);
+  }
+  ctx.closePath();
+  const hg = ctx.createRadialGradient(cx - r * 0.2, cy - r * 0.25, 2, cx, cy, r * 1.05);
+  hg.addColorStop(0, 'rgba(74,56,42,.96)');
+  hg.addColorStop(0.7, 'rgba(44,32,23,.97)');
+  hg.addColorStop(1, 'rgba(28,20,14,.98)');
+  ctx.fillStyle = hg;
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(255,252,244,.92)';
+  ctx.lineWidth = 3;
+  ctx.stroke();
+  ctx.restore();
+}
+
+function m36Ball(x, y, r, t) {
+  // 墙上的投影
+  ctx.save();
+  ctx.globalAlpha = 0.28;
+  ctx.fillStyle = '#6b4a30';
+  ctx.filter = 'blur(7px)';
+  ctx.beginPath(); ctx.ellipse(x + r * 0.5, y + r * 1.05, r * 0.95, r * 0.30, 0.1, 0, Math.PI * 2); ctx.fill();
+  ctx.restore();
+  ctx.save();
+  const g = ctx.createRadialGradient(x - r * 0.34, y - r * 0.4, r * 0.1, x, y, r);
+  g.addColorStop(0, '#ff8a6b');
+  g.addColorStop(0.45, M36_RED);
+  g.addColorStop(1, '#a92314');
+  ctx.fillStyle = g;
+  ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill();
+  // 高光
+  ctx.fillStyle = 'rgba(255,240,228,.75)';
+  ctx.beginPath(); ctx.ellipse(x - r * 0.34, y - r * 0.4, r * 0.24, r * 0.16, -0.5, 0, Math.PI * 2); ctx.fill();
+  // 小脸：破框的东西是有生命的
+  ctx.fillStyle = 'rgba(60,20,14,.85)';
+  ctx.beginPath(); ctx.ellipse(x - r * 0.2, y - r * 0.02, r * 0.06, r * 0.1, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(x + r * 0.2, y - r * 0.02, r * 0.06, r * 0.1, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.strokeStyle = 'rgba(60,20,14,.85)'; ctx.lineWidth = Math.max(1.6, r * 0.06);
+  ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.arc(x, y + r * 0.12, r * 0.16, 0.3, Math.PI - 0.3); ctx.stroke();
+  ctx.restore();
+}
+
+function drawScene(t) {
+  // 镜头：缓慢推近，突破那一下带一点震动
+  const push = 1 + 0.035 * m36e(m36seg(t, 0.2, 5.2));
+  const jolt = t > 3.05 && t < 3.35 ? Math.sin((t - 3.05) * 90) * 2.2 * (1 - (t - 3.05) / 0.3) : 0;
+  ctx.save();
+  ctx.translate(W / 2 + jolt, H / 2);
+  ctx.scale(push, push);
+  ctx.translate(-W / 2, -H / 2);
+
+  m36Wall();
+
+  const P = M36_POSTER;
+  // 球的轨迹：先在纸里鼓起来，再压出纸面，最后滚到墙上
+  const bulge = m36spring(m36seg(t, 0.9, 2.3));
+  const out = m36spring(m36seg(t, 2.55, 3.45));
+  const settle = m36spring(m36seg(t, 3.4, 4.4));
+  const bx = lerp(360, 470, out * 0.85 + settle * 0.15);
+  const by = lerp(196, 132, out * 0.8 + settle * 0.2) + Math.sin(t * 2.2) * 2 * settle;
+  const br = lerp(34, 68, out * 0.75 + settle * 0.25) * (0.9 + 0.1 * bulge);
+  const holeR = 26 + 5 * bulge + 16 * out;
+  const torn = m36seg(t, 1.6, 2.6);
+  const holeAlpha = torn > 0 ? torn : 0;
+  const outside = t > 3.0;
+
+  // 先画海报（带洞）
+  m36Poster(torn > 0.02 ? [360 + out * 6, 186, holeR] : null);
+  // 洞
+  if (holeAlpha > 0.01) m36Hole(360 + out * 8, 186, holeR, holeAlpha);
+  // 纸里的球影
+  ctx.save();
+  ctx.globalAlpha = 0.25 * torn;
+  ctx.fillStyle = '#3a2418';
+  ctx.beginPath(); ctx.ellipse(360, 200, holeR * 0.9, holeR * 0.4, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.restore();
+
+  // 球：一半还在纸里时，先被纸洞裁掉一部分
+  if (!outside) {
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(0, 0, W, H);
+    ctx.clip();
+    // 未破出前，球在纸面内
+    const scaleIn = 0.55 + 0.45 * bulge;
+    if (t > 1.0) {
+      ctx.save();
+      ctx.globalAlpha = Math.min(1, bulge);
+      m36Ball(lerp(360, bx, out), lerp(196, by, out), br * scaleIn + (1 - scaleIn) * 12, t);
+      ctx.restore();
+    }
+    ctx.restore();
+  } else {
+    m36Ball(bx, by, br, t);
+    // 破口飞出的碎纸
+    const fly = m36seg(t, 3.0, 4.2);
+    if (fly > 0 && fly < 1) {
+      ctx.save();
+      for (let i = 0; i < 7; i++) {
+        const a = -0.7 + i * 0.28;
+        const d = 40 + fly * (60 + i * 9);
+        ctx.globalAlpha = (1 - fly) * 0.9;
+        ctx.fillStyle = M36_PAPER;
+        ctx.save();
+        ctx.translate(360 + Math.cos(a) * d, 186 + Math.sin(a) * d - fly * 20);
+        ctx.rotate(a + fly * 3);
+        ctx.fillRect(-4, -3, 8, 6);
+        ctx.restore();
+      }
+      ctx.restore();
+    }
+    // 「啪」一下的爆点
+    const pop = m36seg(t, 2.95, 3.3);
+    if (pop > 0 && pop < 1) {
+      ctx.save();
+      ctx.globalAlpha = (1 - pop) * 0.9;
+      ctx.strokeStyle = M36_RED; ctx.lineWidth = 3;
+      for (let i = 0; i < 9; i++) {
+        const a = i * Math.PI * 2 / 9 + 0.2;
+        ctx.beginPath();
+        ctx.moveTo(360 + Math.cos(a) * (30 + pop * 26), 186 + Math.sin(a) * (30 + pop * 26));
+        ctx.lineTo(360 + Math.cos(a) * (44 + pop * 46), 186 + Math.sin(a) * (44 + pop * 46));
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+  }
+
+  // 速度线：从海报里冲出来的方向
+  const sp = m36seg(t, 2.7, 3.6);
+  if (sp > 0 && sp < 1) {
+    ctx.save();
+    ctx.globalAlpha = (1 - sp) * 0.55;
+    ctx.strokeStyle = M36_INK; ctx.lineWidth = 2;
+    for (let i = 0; i < 6; i++) {
+      const y = 140 + i * 20;
+      const len = 40 + i * 6;
+      ctx.beginPath();
+      ctx.moveTo(360 - len * sp, y);
+      ctx.lineTo(360 - 8, y);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+  ctx.restore();
+
+  // 文字：落在海报下方
+  const tp = m36e(m36seg(t, 4.35, 4.9));
+  if (tp > 0) {
+    ctx.save();
+    ctx.globalAlpha = tp;
+    ctx.fillStyle = M36_INK;
+    ctx.font = `800 32px ${FONT}`;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('冲出去。', 320, 330 + (1 - tp) * 8);
+    ctx.restore();
+  }
+  // 左上角小标
+  ctx.save();
+  ctx.globalAlpha = 0.55;
+  ctx.fillStyle = M36_INK;
+  ctx.font = `600 10px ${FONT}`;
+  ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+  ctx.fillText('POSTER BREAKOUT  /  01', 24, 24);
+  ctx.restore();
+}
+
+  // ===== 共享渲染与署名 =======================================================
+  function watermark() {
+    const text = 'DeepSeek Harness 生成示例';
+    ctx.save();
+    ctx.font = '11px ' + FONT;
+    const w = ctx.measureText(text).width + 14;
+    const x = W - w - 8, y = H - 24;
+    ctx.fillStyle = 'rgba(0,0,0,.46)';
+    ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(x, y, w, 18, 4); else ctx.rect(x, y, w, 18);
+    ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,.82)';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(text, x + 7, y + 9.5);
+    ctx.restore();
+  }
+
+  function paint(t) {
+    ctx.save();
+    ctx.clearRect(0, 0, W, H);
+    try { drawScene(t); } catch (err) { console.error(err); }
+    ctx.restore();
+    watermark();
+  }
+
+  function renderAt(seconds) {
+    const t = ((Number(seconds) % DURATION) + DURATION) % DURATION;
+    paint(t);
+    syncUI(t);
+    return t;
+  }
+  window.renderAt = renderAt;
+
+  // ===== 播放、控制、减少动态 =================================================
+  const playBtn = document.getElementById('play');
+  const timeline = document.getElementById('timeline');
+  const clock = document.getElementById('clock');
+  let playing = false, base = 0, start = 0, current = 0;
+  const reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function syncUI(t) {
+    if (EXPORT) return;
+    current = t;
+    if (timeline) timeline.value = String(t.toFixed(2));
+    if (clock) clock.textContent = t.toFixed(2) + ' / ' + DURATION.toFixed(2) + 's';
+  }
+  function frame(now) {
+    if (!playing) return;
+    const t = ((now - start) / 1000 + base) % DURATION;
+    paint(t);
+    syncUI(t);
+    requestAnimationFrame(frame);
+  }
+  function play() {
+    if (playing) return;
+    playing = true;
+    start = performance.now();
+    base = current;
+    if (playBtn) playBtn.textContent = '暂停';
+    requestAnimationFrame(frame);
+  }
+  function pause() {
+    playing = false;
+    if (playBtn) playBtn.textContent = '播放';
+  }
+  if (playBtn) playBtn.addEventListener('click', () => { playing ? pause() : play(); });
+  document.getElementById('replay')?.addEventListener('click', () => {
+    base = 0; start = performance.now(); paint(0); syncUI(0); play();
+  });
+  timeline?.addEventListener('input', () => {
+    pause(); paint(Number(timeline.value)); syncUI(Number(timeline.value));
+  });
+  window.addEventListener('keydown', e => {
+    if (e.code === 'Space') { e.preventDefault(); playing ? pause() : play(); }
+    if (e.key === 'r' || e.key === 'R') { base = 0; start = performance.now(); paint(0); syncUI(0); play(); }
+  });
+
+  if (EXPORT) {
+    document.body.classList.add('export');
+    renderAt(0);
+  } else if (reduced) {
+    renderAt(2.4);
+    pause();
+  } else {
+    renderAt(0);
+    play();
+  }
+})();
+</script>
+</body>
+</html>

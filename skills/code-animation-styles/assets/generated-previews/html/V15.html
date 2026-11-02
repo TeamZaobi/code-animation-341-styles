@@ -1,0 +1,420 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>V15 综艺花字 · DeepSeek Harness 生成示例</title>
+<!--
+  Provenance
+  ----------
+  风格来源：code-animation-styles 目录（《来自俯仰观照博主的动画画风整理》整理稿）
+  catalog commit: 01576924a2b316d1f11ae33f75d3c005e8781451
+  style id: V15「综艺花字」
+  license: MIT（mg-styles-15，Copyright (c) 2026 Vincentwei1021）
+  本文件：DeepSeek Harness（deepseek-flash）根据该风格提示词新写的候选示例，
+  不是原作者样片，也不是原项目演示；仅用于风格挑选预览。共享的只有时间轴、
+  尺寸、导出接口与页脚署名，画面与动作按本风格重新设计。
+  原文“只输出代码”等语句属于素材的一部分，不覆盖本任务的交付合同。
+-->
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; min-height: 100%; background: #0c0c10; color: #e9e9ee;
+    font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif; }
+  #app { min-height: 100vh; display: flex; flex-direction: column; align-items: center;
+    justify-content: center; gap: 12px; padding: 20px; }
+  #stage { width: min(94vw, 1000px); aspect-ratio: 16 / 9; background: #000;
+    box-shadow: 0 18px 60px rgba(0,0,0,.55); position: relative; overflow: hidden; }
+  canvas { display: block; width: 100%; height: 100%; }
+  #head, #ui { width: min(94vw, 1000px); }
+  #head h1 { margin: 0 0 4px; font-size: 15px; font-weight: 600; letter-spacing: .02em; }
+  #head p { margin: 0; font-size: 12px; line-height: 1.5; color: #9a9aa8; }
+  #ui { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  #ui button { background: #1d1d26; color: #f2f2f6; border: 1px solid #343444;
+    border-radius: 7px; padding: 6px 12px; font-size: 12px; cursor: pointer; }
+  #ui button:hover { background: #272734; }
+  #ui input[type=range] { flex: 1 1 220px; min-width: 150px; accent-color: #7c8cff; }
+  #clock { font-variant-numeric: tabular-nums; font-size: 12px; color: #a9a9ba; min-width: 78px; }
+  #credit { width: min(94vw, 1000px); font-size: 11px; line-height: 1.6; color: #6f6f80; }
+  #credit b { color: #9c9cae; font-weight: 500; }
+  body.export, body.export #app { display: block; width: 640px; height: 360px; min-height: 0;
+    padding: 0; margin: 0; overflow: hidden; background: #000; }
+  body.export #stage { width: 640px; height: 360px; box-shadow: none; }
+  body.export #head, body.export #ui, body.export #credit { display: none; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="head">
+    <h1>V15 · 综艺花字</h1>
+    <p>综艺花字：多层描边的胖体字逐字弹跳入场，爆炸框、汗滴、闪光符号轮番上阵，整块字带轻微 wiggle 保持活性。</p>
+  </div>
+  <div id="stage"><canvas id="c" width="640" height="360" aria-label="综艺花字 风格动画示例"></canvas></div>
+  <div id="ui">
+    <button id="play" type="button">暂停</button>
+    <button id="replay" type="button">重播</button>
+    <input id="timeline" type="range" min="0" max="6" step="0.01" value="0" aria-label="时间轴">
+    <span id="clock">0.00 / 6.00s</span>
+  </div>
+  <div id="credit">
+    <b>DeepSeek Harness 生成示例</b>（非原项目样片）· 来源：来自俯仰观照博主的动画画风整理 ·
+    许可：MIT（mg-styles-15，Copyright (c) 2026 Vincentwei1021） · 画面与文字均由代码绘制，静音。
+  </div>
+</div>
+<script>
+(() => {
+  'use strict';
+  // ===== 共享脚手架（可改，但导出合同不要破坏）=================================
+  const W = 640, H = 360, DURATION = 6;
+  const EXPORT = new URLSearchParams(location.search).get('export') === '1';
+  const canvas = document.getElementById('c');
+  const ctx = canvas.getContext('2d');
+  const FONT = '"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",sans-serif';
+
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  const lerp = (a, b, t) => a + (b - a) * t;
+  const smooth = t => t * t * (3 - 2 * t);
+  const easeOut = t => 1 - Math.pow(1 - t, 3);
+  const easeIn = t => t * t * t;
+  function rng(seed) { let s = seed >>> 0; return () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; }; }
+
+  // ===== 场景（每个 ID 独立设计；下面的注释区由构建器替换）===================
+  // DESC: 综艺花字：多层描边的胖体字逐字弹跳入场，爆炸框、汗滴、闪光符号轮番上阵，整块字带轻微 wiggle 保持活性。
+// V15 综艺花字 · DeepSeek Harness 生成示例
+const V15_INK = '#3A1140';
+const V15_COLS = ['#FFC800', '#FF8AC1', '#FF3D7F', '#35D0FF', '#FFE173', '#FFC800', '#FF6FA5'];
+const V15_MAIN = '今天也要开心呀';
+const V15_SUB = '快乐加倍！';
+
+function v15seg(t, a, b) { return clamp((t - a) / (b - a), 0, 1); }
+// 弹性 pop：阻尼弹簧，0 → 1.1 过冲 → 1
+function v15pop(p) {
+  if (p <= 0) return 0;
+  if (p >= 1) return 1;
+  return 1 - Math.exp(-5.5 * p) * Math.cos(9 * p);
+}
+function v15spark(x, y, r, color, rot) {
+  ctx.save();
+  ctx.translate(x, y); ctx.rotate(rot || 0);
+  ctx.beginPath();
+  for (let i = 0; i < 8; i++) {
+    const a = i * Math.PI / 4;
+    const rr = i % 2 ? r * 0.34 : r;
+    const px = Math.cos(a) * rr, py = Math.sin(a) * rr;
+    i ? ctx.lineTo(px, py) : ctx.moveTo(px, py);
+  }
+  ctx.closePath();
+  ctx.fillStyle = color; ctx.fill();
+  ctx.lineJoin = 'round';
+  ctx.strokeStyle = '#FFFFFF'; ctx.lineWidth = r * 0.22; ctx.stroke();
+  ctx.restore();
+}
+// 爆炸框：多尖角星，白粗边 + 撞色填充
+function v15Burst(x, y, r, color, rot, alpha) {
+  ctx.save();
+  ctx.translate(x, y); ctx.rotate(rot || 0);
+  ctx.globalAlpha = alpha;
+  ctx.beginPath();
+  const spikes = 14;
+  for (let i = 0; i < spikes * 2; i++) {
+    const a = i * Math.PI / spikes;
+    const rr = i % 2 ? r * 0.74 : r;
+    const px = Math.cos(a) * rr, py = Math.sin(a) * rr;
+    i ? ctx.lineTo(px, py) : ctx.moveTo(px, py);
+  }
+  ctx.closePath();
+  ctx.shadowColor = 'rgba(58,17,64,.35)'; ctx.shadowBlur = 12; ctx.shadowOffsetY = 6;
+  ctx.fillStyle = color; ctx.fill();
+  ctx.shadowColor = 'transparent';
+  ctx.lineJoin = 'round';
+  ctx.strokeStyle = '#FFFFFF'; ctx.lineWidth = 7; ctx.stroke();
+  ctx.strokeStyle = V15_INK; ctx.lineWidth = 2; ctx.stroke();
+  // 内圈虚线
+  ctx.beginPath(); ctx.arc(0, 0, r * 0.52, 0, Math.PI * 2);
+  ctx.strokeStyle = 'rgba(255,255,255,.55)'; ctx.lineWidth = 2; ctx.setLineDash([6, 8]); ctx.stroke();
+  ctx.restore();
+}
+function v15DropShape(x, y, s, color) {
+  ctx.save();
+  ctx.translate(x, y); ctx.scale(s, s);
+  ctx.beginPath();
+  ctx.moveTo(0, -13);
+  ctx.bezierCurveTo(9, -2, 12, 4, 12, 8);
+  ctx.bezierCurveTo(12, 15, 6, 19, 0, 19);
+  ctx.bezierCurveTo(-6, 19, -12, 15, -12, 8);
+  ctx.bezierCurveTo(-12, 4, -9, -2, 0, -13);
+  ctx.closePath();
+  ctx.fillStyle = color; ctx.fill();
+  ctx.lineJoin = 'round';
+  ctx.strokeStyle = V15_INK; ctx.lineWidth = 3.4; ctx.stroke();
+  ctx.fillStyle = 'rgba(255,255,255,.75)';
+  ctx.beginPath(); ctx.ellipse(-4, 6, 3, 5, -0.3, 0, Math.PI * 2); ctx.fill();
+  ctx.restore();
+}
+
+// 多层描边胖体字：外描边 → 白描边 → 填充 → 顶部高光
+function v15Char(ch, x, y, size, fill, sx, sy, rot) {
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(rot || 0);
+  ctx.scale(sx, sy);
+  ctx.font = `800 ${size}px ${FONT}`;
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.lineJoin = 'round'; ctx.miterLimit = 2;
+  ctx.shadowColor = 'rgba(58,17,64,.45)';
+  ctx.shadowBlur = 10; ctx.shadowOffsetY = 8;
+  ctx.strokeStyle = V15_INK; ctx.lineWidth = size * 0.30;
+  ctx.strokeText(ch, 0, 0);
+  ctx.shadowColor = 'transparent';
+  ctx.strokeStyle = '#FFFFFF'; ctx.lineWidth = size * 0.19;
+  ctx.strokeText(ch, 0, 0);
+  // 主体：上浅下深的糖果渐变
+  const g = ctx.createLinearGradient(0, -size * 0.5, 0, size * 0.5);
+  g.addColorStop(0, '#FFFFFF');
+  g.addColorStop(0.28, fill);
+  g.addColorStop(1, fill);
+  ctx.fillStyle = g;
+  ctx.fillText(ch, 0, 0);
+  // 顶部高光条
+  ctx.save();
+  ctx.globalAlpha = 0.16;
+  ctx.fillStyle = '#FFFFFF';
+  ctx.beginPath();
+  if (ctx.roundRect) ctx.roundRect(-size * 0.26, -size * 0.40, size * 0.52, size * 0.09, size * 0.05);
+  else ctx.rect(-size * 0.26, -size * 0.40, size * 0.52, size * 0.09);
+  ctx.fill();
+  ctx.restore();
+  ctx.restore();
+}
+
+function drawScene(t) {
+  // 背景：暖色渐变 + 放射光 + 波点
+  const bg = ctx.createLinearGradient(0, 0, W, H);
+  bg.addColorStop(0, '#FFE173');
+  bg.addColorStop(0.5, '#FFA45B');
+  bg.addColorStop(1, '#FF6FA5');
+  ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+  // 放射光
+  ctx.save();
+  ctx.translate(320, 176);
+  ctx.globalAlpha = 0.16;
+  for (let i = 0; i < 18; i++) {
+    const a = i / 18 * Math.PI * 2 + t * 0.06;
+    ctx.fillStyle = i % 2 ? '#FFFFFF' : '#FFE173';
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.arc(0, 0, 420, a, a + Math.PI / 18);
+    ctx.closePath(); ctx.fill();
+  }
+  ctx.restore();
+  // 波点
+  ctx.save();
+  ctx.globalAlpha = 0.14;
+  ctx.fillStyle = '#FFFFFF';
+  const r = rng(1515);
+  for (let i = 0; i < 26; i++) {
+    const x = r() * W, y = r() * H, rr = 3 + r() * 9;
+    ctx.beginPath(); ctx.arc((x + t * 12) % W, y, rr, 0, Math.PI * 2); ctx.fill();
+  }
+  ctx.restore();
+
+  // 主句：逐字弹跳入场（每字错 2 帧 = 0.066s）
+  const size = 44;
+  const n = V15_MAIN.length;
+  ctx.font = `800 ${size}px ${FONT}`;
+  const gap = ctx.measureText(V15_MAIN).width / n + 4;
+  const totalW = gap * n;
+  const startX = 320 - totalW / 2 + gap / 2;
+  const wob = Math.sin(t * 3.4) * 0.016;
+  for (let i = 0; i < n; i++) {
+    const p = v15seg(t, -0.42 + i * 0.066, -0.42 + i * 0.066 + 0.34);
+    if (p <= 0) continue;
+    const s = v15pop(p);
+    const yy = 150 + Math.sin(t * 3.2 + i * 0.7) * 2.6 + (i % 2 ? 5 : -3);
+    v15Char(V15_MAIN[i], startX + i * gap, yy, size, V15_COLS[i % V15_COLS.length], s, s * (1.04 - 0.04 * (i % 2)), wob + (i % 2 ? 0.05 : -0.03));
+  }
+
+  // 爆炸框 + 第二句
+  const bp = v15seg(t, 2.2, 2.6);
+  if (bp > 0) {
+    const be = v15pop(bp);
+    v15Burst(320, 258, 104 * be, '#FF3D7F', Math.sin(t * 1.2) * 0.06, clamp(bp * 1.5, 0, 1));
+  }
+  const subP = v15seg(t, 2.34, 2.8);
+  if (subP > 0) {
+    const size2 = 40;
+    ctx.font = `800 ${size2}px ${FONT}`;
+    const gap2 = ctx.measureText(V15_SUB).width / V15_SUB.length + 3;
+    const x0 = 320 - (gap2 * V15_SUB.length) / 2 + gap2 / 2;
+    for (let i = 0; i < V15_SUB.length; i++) {
+      const p = clamp(subP * 1.6 - i * 0.14, 0, 1);
+      if (p <= 0) continue;
+      const s = v15pop(p);
+      v15Char(V15_SUB[i], x0 + i * gap2, 258 + Math.sin(t * 4 + i) * 2.4, size2, i === 3 ? '#FFE173' : '#FFC800', s, s, Math.sin(t * 5 + i) * 0.05);
+    }
+  }
+
+  // 手绘装饰：汗滴、闪光、箭头
+  const dp = v15seg(t, 1.5, 1.9);
+  if (dp > 0) {
+    const s = v15pop(dp);
+    v15DropShape(566, 96 + Math.sin(t * 2.6) * 5, 1.15 * s, '#35D0FF');
+  }
+  const sp1 = v15seg(t, 0.9, 1.3);
+  if (sp1 > 0) {
+    const s = v15pop(sp1);
+    v15spark(96, 92, 22 * s, '#FFC800', t * 0.8);
+    v15spark(548, 300, 15 * s, '#35D0FF', -t * 0.6);
+  }
+  const sp2 = v15seg(t, 3.0, 3.4);
+  if (sp2 > 0) {
+    const s = v15pop(sp2);
+    v15spark(160, 268, 18 * s, '#FFFFFF', t * 0.9);
+    v15spark(492, 112, 13 * s, '#FF3D7F', -t * 0.7);
+    v15spark(246, 84, 11 * s, '#FFFFFF', t * 1.1);
+  }
+  // 小箭头指向文字
+  const ap = v15seg(t, 3.5, 3.9);
+  if (ap > 0) {
+    ctx.save();
+    ctx.globalAlpha = clamp(ap, 0, 1);
+    ctx.strokeStyle = '#FFFFFF'; ctx.lineWidth = 7; ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(470, 62);
+    ctx.quadraticCurveTo(500, 76, 486, 106);
+    ctx.stroke();
+    ctx.strokeStyle = V15_INK; ctx.lineWidth = 2;
+    ctx.stroke();
+    // 箭头
+    ctx.fillStyle = '#FFFFFF';
+    ctx.beginPath();
+    ctx.moveTo(480, 122); ctx.lineTo(500, 100); ctx.lineTo(462, 100);
+    ctx.closePath(); ctx.fill();
+    ctx.strokeStyle = V15_INK; ctx.lineWidth = 2.4; ctx.stroke();
+    ctx.restore();
+  }
+
+  // 底部小字：综艺字幕条
+  const cp = v15seg(t, 3.9, 4.3);
+  if (cp > 0) {
+    const e = v15pop(cp);
+    ctx.save();
+    ctx.translate(320, 34);
+    ctx.scale(e, e);
+    ctx.globalAlpha = clamp(cp * 2, 0, 1);
+    ctx.fillStyle = 'rgba(58,17,64,.55)';
+    if (ctx.roundRect) { ctx.beginPath(); ctx.roundRect(-110, -15, 220, 30, 15); ctx.fill(); } else ctx.fillRect(-110, -15, 220, 30);
+    ctx.strokeStyle = 'rgba(255,255,255,.85)'; ctx.lineWidth = 2;
+    if (ctx.roundRect) { ctx.beginPath(); ctx.roundRect(-110, -15, 220, 30, 15); ctx.stroke(); }
+    ctx.fillStyle = '#FFFFFF';
+    ctx.font = `700 15px ${FONT}`;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('今日份快乐 / 请查收', 0, 1);
+    ctx.restore();
+  }
+
+  // 整块字轻微 wiggle 的外发光，保持活性
+  ctx.save();
+  ctx.globalAlpha = 0.10 + 0.04 * Math.sin(t * 6);
+  ctx.fillStyle = '#FFF3B0';
+  ctx.fillRect(0, 0, W, H);
+  ctx.restore();
+  // 暗角
+  const vg = ctx.createRadialGradient(320, 180, 150, 320, 180, 400);
+  vg.addColorStop(0, 'rgba(0,0,0,0)');
+  vg.addColorStop(1, 'rgba(90,20,60,.28)');
+  ctx.fillStyle = vg; ctx.fillRect(0, 0, W, H);
+}
+
+  // ===== 共享渲染与署名 =======================================================
+  function watermark() {
+    const text = 'DeepSeek Harness 生成示例';
+    ctx.save();
+    ctx.font = '11px ' + FONT;
+    const w = ctx.measureText(text).width + 14;
+    const x = W - w - 8, y = H - 24;
+    ctx.fillStyle = 'rgba(0,0,0,.46)';
+    ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(x, y, w, 18, 4); else ctx.rect(x, y, w, 18);
+    ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,.82)';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(text, x + 7, y + 9.5);
+    ctx.restore();
+  }
+
+  function paint(t) {
+    ctx.save();
+    ctx.clearRect(0, 0, W, H);
+    try { drawScene(t); } catch (err) { console.error(err); }
+    ctx.restore();
+    watermark();
+  }
+
+  function renderAt(seconds) {
+    const t = ((Number(seconds) % DURATION) + DURATION) % DURATION;
+    paint(t);
+    syncUI(t);
+    return t;
+  }
+  window.renderAt = renderAt;
+
+  // ===== 播放、控制、减少动态 =================================================
+  const playBtn = document.getElementById('play');
+  const timeline = document.getElementById('timeline');
+  const clock = document.getElementById('clock');
+  let playing = false, base = 0, start = 0, current = 0;
+  const reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function syncUI(t) {
+    if (EXPORT) return;
+    current = t;
+    if (timeline) timeline.value = String(t.toFixed(2));
+    if (clock) clock.textContent = t.toFixed(2) + ' / ' + DURATION.toFixed(2) + 's';
+  }
+  function frame(now) {
+    if (!playing) return;
+    const t = ((now - start) / 1000 + base) % DURATION;
+    paint(t);
+    syncUI(t);
+    requestAnimationFrame(frame);
+  }
+  function play() {
+    if (playing) return;
+    playing = true;
+    start = performance.now();
+    base = current;
+    if (playBtn) playBtn.textContent = '暂停';
+    requestAnimationFrame(frame);
+  }
+  function pause() {
+    playing = false;
+    if (playBtn) playBtn.textContent = '播放';
+  }
+  if (playBtn) playBtn.addEventListener('click', () => { playing ? pause() : play(); });
+  document.getElementById('replay')?.addEventListener('click', () => {
+    base = 0; start = performance.now(); paint(0); syncUI(0); play();
+  });
+  timeline?.addEventListener('input', () => {
+    pause(); paint(Number(timeline.value)); syncUI(Number(timeline.value));
+  });
+  window.addEventListener('keydown', e => {
+    if (e.code === 'Space') { e.preventDefault(); playing ? pause() : play(); }
+    if (e.key === 'r' || e.key === 'R') { base = 0; start = performance.now(); paint(0); syncUI(0); play(); }
+  });
+
+  if (EXPORT) {
+    document.body.classList.add('export');
+    renderAt(0);
+  } else if (reduced) {
+    renderAt(2.4);
+    pause();
+  } else {
+    renderAt(0);
+    play();
+  }
+})();
+</script>
+</body>
+</html>

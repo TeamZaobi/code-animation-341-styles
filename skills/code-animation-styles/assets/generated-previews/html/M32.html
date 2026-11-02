@@ -1,0 +1,526 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>M32 竖屏快节奏 POV · DeepSeek Harness 生成示例</title>
+<!--
+  Provenance
+  ----------
+  风格来源：code-animation-styles 目录（《来自俯仰观照博主的动画画风整理》整理稿）
+  catalog commit: 01576924a2b316d1f11ae33f75d3c005e8781451
+  style id: M32「竖屏快节奏 POV」
+  license: upstream-custom-noncommercial（俯仰观照整理稿，非商业）
+  本文件：DeepSeek Harness（deepseek-flash）根据该风格提示词新写的候选示例，
+  不是原作者样片，也不是原项目演示；仅用于风格挑选预览。共享的只有时间轴、
+  尺寸、导出接口与页脚署名，画面与动作按本风格重新设计。
+  原文“只输出代码”等语句属于素材的一部分，不覆盖本任务的交付合同。
+-->
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; min-height: 100%; background: #0c0c10; color: #e9e9ee;
+    font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif; }
+  #app { min-height: 100vh; display: flex; flex-direction: column; align-items: center;
+    justify-content: center; gap: 12px; padding: 20px; }
+  #stage { width: min(94vw, 1000px); aspect-ratio: 16 / 9; background: #000;
+    box-shadow: 0 18px 60px rgba(0,0,0,.55); position: relative; overflow: hidden; }
+  canvas { display: block; width: 100%; height: 100%; }
+  #head, #ui { width: min(94vw, 1000px); }
+  #head h1 { margin: 0 0 4px; font-size: 15px; font-weight: 600; letter-spacing: .02em; }
+  #head p { margin: 0; font-size: 12px; line-height: 1.5; color: #9a9aa8; }
+  #ui { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  #ui button { background: #1d1d26; color: #f2f2f6; border: 1px solid #343444;
+    border-radius: 7px; padding: 6px 12px; font-size: 12px; cursor: pointer; }
+  #ui button:hover { background: #272734; }
+  #ui input[type=range] { flex: 1 1 220px; min-width: 150px; accent-color: #7c8cff; }
+  #clock { font-variant-numeric: tabular-nums; font-size: 12px; color: #a9a9ba; min-width: 78px; }
+  #credit { width: min(94vw, 1000px); font-size: 11px; line-height: 1.6; color: #6f6f80; }
+  #credit b { color: #9c9cae; font-weight: 500; }
+  body.export, body.export #app { display: block; width: 640px; height: 360px; min-height: 0;
+    padding: 0; margin: 0; overflow: hidden; background: #000; }
+  body.export #stage { width: 640px; height: 360px; box-shadow: none; }
+  body.export #head, body.export #ui, body.export #credit { display: none; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="head">
+    <h1>M32 · 竖屏快节奏 POV</h1>
+    <p>竖屏 9:16 画框里第一人称快剪：抓杯、灌咖啡、拿钥匙、关门、下楼、上街、按门锁、坐下，每 0.75 秒硬切一次。</p>
+  </div>
+  <div id="stage"><canvas id="c" width="640" height="360" aria-label="竖屏快节奏 POV 风格动画示例"></canvas></div>
+  <div id="ui">
+    <button id="play" type="button">暂停</button>
+    <button id="replay" type="button">重播</button>
+    <input id="timeline" type="range" min="0" max="6" step="0.01" value="0" aria-label="时间轴">
+    <span id="clock">0.00 / 6.00s</span>
+  </div>
+  <div id="credit">
+    <b>DeepSeek Harness 生成示例</b>（非原项目样片）· 来源：来自俯仰观照博主的动画画风整理 ·
+    许可：upstream-custom-noncommercial（俯仰观照整理稿，非商业） · 画面与文字均由代码绘制，静音。
+  </div>
+</div>
+<script>
+(() => {
+  'use strict';
+  // ===== 共享脚手架（可改，但导出合同不要破坏）=================================
+  const W = 640, H = 360, DURATION = 6;
+  const EXPORT = new URLSearchParams(location.search).get('export') === '1';
+  const canvas = document.getElementById('c');
+  const ctx = canvas.getContext('2d');
+  const FONT = '"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",sans-serif';
+
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  const lerp = (a, b, t) => a + (b - a) * t;
+  const smooth = t => t * t * (3 - 2 * t);
+  const easeOut = t => 1 - Math.pow(1 - t, 3);
+  const easeIn = t => t * t * t;
+  function rng(seed) { let s = seed >>> 0; return () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; }; }
+
+  // ===== 场景（每个 ID 独立设计；下面的注释区由构建器替换）===================
+  // DESC: 竖屏 9:16 画框里第一人称快剪：抓杯、灌咖啡、拿钥匙、关门、下楼、上街、按门锁、坐下，每 0.75 秒硬切一次。
+// M32 竖屏快节奏 POV · DeepSeek Harness 生成示例
+const M32_PH = { x: 220, y: 2, w: 200, h: 356 };
+const M32_ACC = '#ff4d6d', M32_LIME = '#c8ff5a', M32_CYAN = '#5ce1e6';
+const M32_CUT = 0.75;
+const M32_CAPTIONS = ['07:40', '醒了', '走', '砰', '两步', '9:00', '到', '开工'];
+const M32_TAGS = ['抓杯子', '灌咖啡', '拿钥匙', '关门', '下楼', '上街', '开锁', '坐下'];
+
+function m32seg(t, a, b) { return clamp((t - a) / (b - a), 0, 1); }
+function m32e(t) { return 1 - Math.pow(1 - t, 3); }
+function m32hash(n) { const s = Math.sin(n * 127.1 + 311.7) * 43758.5453; return s - Math.floor(s); }
+
+function m32BG(c1, c2) {
+  const g = ctx.createLinearGradient(0, 0, 0, 356);
+  g.addColorStop(0, c2);
+  g.addColorStop(1, c1);
+  ctx.fillStyle = g;
+  ctx.fillRect(-40, -40, 280, 440);
+}
+function m32Hand(x, y, rot, scale) {
+  ctx.save();
+  ctx.translate(x, y); ctx.rotate(rot); ctx.scale(scale, scale);
+  ctx.fillStyle = '#f0c1a4';
+  ctx.strokeStyle = 'rgba(90,50,30,.35)'; ctx.lineWidth = 2;
+  // 手掌
+  ctx.beginPath();
+  if (ctx.roundRect) ctx.roundRect(-26, -10, 52, 52, 16); else ctx.rect(-26, -10, 52, 52);
+  ctx.fill(); ctx.stroke();
+  // 四指
+  for (let i = 0; i < 4; i++) {
+    const fx = -20 + i * 12;
+    ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(fx, -44 + (i === 0 || i === 3 ? 8 : 0), 10, 42, 5);
+    else ctx.rect(fx, -44, 10, 42);
+    ctx.fill(); ctx.stroke();
+  }
+  // 拇指
+  ctx.beginPath();
+  ctx.ellipse(-30, 12, 10, 16, -0.5, 0, Math.PI * 2);
+  ctx.fill(); ctx.stroke();
+  ctx.restore();
+}
+function m32Caption(txt, sub, color) {
+  ctx.save();
+  // 字幕底：压暗一条，保证字在手上也读得清
+  const sc = ctx.createLinearGradient(0, 224, 0, 302);
+  sc.addColorStop(0, 'rgba(0,0,0,0)');
+  sc.addColorStop(0.4, 'rgba(0,0,0,.38)');
+  sc.addColorStop(1, 'rgba(0,0,0,.52)');
+  ctx.fillStyle = sc;
+  ctx.fillRect(-10, 224, 220, 80);
+  ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
+  ctx.fillStyle = color || '#ffffff';
+  ctx.font = `800 34px ${FONT}`;
+  ctx.fillText(txt, 100, 262);
+  if (sub) {
+    ctx.fillStyle = 'rgba(255,255,255,.62)';
+    ctx.font = `600 13px ${FONT}`;
+    ctx.fillText(sub, 100, 284);
+  }
+  ctx.restore();
+}
+
+// ---- 8 个快剪镜头（局部坐标 0..200 × 0..356）----
+function m32Shot(i, lt) {
+  const p = m32e(m32seg(lt, 0, 0.22));
+  ctx.save();
+  // 手持晃动 + 切点推镜
+  const sh = i * 7 + Math.floor(lt * 24);
+  ctx.translate(100 + (m32hash(sh) - 0.5) * 5, 178 + (m32hash(sh + 1) - 0.5) * 5);
+  ctx.rotate((m32hash(sh + 2) - 0.5) * 0.02);
+  const punch = 1.1 - 0.08 * p;
+  ctx.scale(punch, punch);
+  ctx.translate(-100, -178);
+
+  if (i === 0) {                       // 抓杯子
+    m32BG('#20323a', '#456a72');
+    ctx.fillStyle = 'rgba(0,0,0,.25)'; ctx.fillRect(0, 250, 200, 106);
+    ctx.fillStyle = '#f4ede2';
+    ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(58, 168, 84, 72, 12); else ctx.rect(58, 168, 84, 72);
+    ctx.fill();
+    ctx.fillStyle = '#57301f';
+    ctx.beginPath(); ctx.ellipse(100, 172, 40, 9, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,.55)'; ctx.lineWidth = 2.5;
+    ctx.beginPath(); ctx.arc(142, 202, 16, -1.2, 1.2); ctx.stroke();
+    m32Hand(118, 236, -0.22, 1.0);
+    m32Caption('07:40', '第一口还没喝');
+  } else if (i === 1) {                // 灌咖啡
+    m32BG('#3a2118', '#7a4327');
+    // 咖啡杯特写
+    ctx.fillStyle = '#f4ede2';
+    ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(52, 158, 96, 84, 14); else ctx.rect(52, 158, 96, 84);
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(120,70,40,.25)'; ctx.lineWidth = 2; ctx.stroke();
+    ctx.fillStyle = '#57301f';
+    ctx.beginPath(); ctx.ellipse(100, 160, 46, 10, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = 'rgba(255,210,160,.35)';
+    ctx.beginPath(); ctx.ellipse(92, 159, 16, 3, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = '#f4ede2'; ctx.lineWidth = 9;
+    ctx.beginPath(); ctx.arc(150, 200, 18, -1.2, 1.2); ctx.stroke();
+    // 热气
+    ctx.strokeStyle = 'rgba(255,244,232,.55)'; ctx.lineWidth = 2.4; ctx.lineCap = 'round';
+    for (const side of [-1, 1]) {
+      ctx.beginPath();
+      for (let k = 0; k <= 12; k++) {
+        const pp = k / 12;
+        const y = 146 - pp * 58;
+        const x = 100 + side * (8 + pp * 12) + Math.sin(pp * 6 + lt * 6) * 5;
+        if (k === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+    }
+    m32Hand(150, 262, 0.25, 1.05);
+    m32Caption('醒了', '一口顶三小时', M32_LIME);
+  } else if (i === 2) {                // 拿钥匙
+    m32BG('#243036', '#141c22');
+    // 挂钩与钥匙
+    ctx.fillStyle = '#6b7a80'; ctx.fillRect(96, 96, 5, 22);
+    ctx.beginPath(); ctx.arc(98, 120, 7, 0, Math.PI * 2); ctx.stroke();
+    for (let k = 0; k < 3; k++) {
+      const ang = -0.38 + k * 0.38;
+      ctx.save();
+      ctx.translate(98, 126); ctx.rotate(ang);
+      ctx.strokeStyle = '#d9c06a'; ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.arc(0, 0, 9, 0, Math.PI * 2); ctx.stroke();
+      ctx.fillStyle = '#d9c06a';
+      ctx.fillRect(-2, 8, 4, 32);
+      ctx.fillRect(-1, 26, 11, 4);
+      ctx.fillRect(-1, 34, 8, 4);
+      ctx.restore();
+    }
+    m32Hand(112, 276, -0.05, 1.0);
+    m32Caption('走', '钥匙在第三格', '#ffd166');
+  } else if (i === 3) {                // 关门
+    m32BG('#2a1c18', '#5d3a2c');
+    ctx.save();
+    ctx.translate(0, 0);
+    ctx.fillStyle = '#3b241b';
+    ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(150, 0); ctx.lineTo(96, 356); ctx.lineTo(0, 356); ctx.closePath(); ctx.fill();
+    ctx.strokeStyle = '#8a5f45'; ctx.lineWidth = 5;
+    ctx.beginPath(); ctx.moveTo(150, 0); ctx.lineTo(96, 356); ctx.stroke();
+    ctx.fillStyle = '#e3bd7a';
+    ctx.beginPath(); ctx.arc(120, 196, 10, 0, Math.PI * 2); ctx.fill();
+    ctx.restore();
+    m32Hand(146, 250, -0.15, 1.05);
+    m32Caption('砰', '门带上了', '#ffffff');
+  } else if (i === 4) {                // 下楼
+    m32BG('#1b2230', '#0d121b');
+    for (let sN = 0; sN < 4; sN++) {
+      ctx.fillStyle = sN % 2 ? '#2b3444' : '#39465c';
+      const y = 150 + sN * 48;
+      const inset = 26 - sN * 7;
+      ctx.beginPath();
+      ctx.moveTo(inset, y); ctx.lineTo(200 - inset, y);
+      ctx.lineTo(214 - inset + 8, y + 34); ctx.lineTo(-14 + inset, y + 34);
+      ctx.closePath(); ctx.fill();
+      ctx.fillStyle = 'rgba(255,255,255,.14)';
+      ctx.fillRect(inset + 6, y, 188 - inset * 2, 2);
+    }
+    // 两只鞋
+    const shoe = (x, y, rot) => {
+      ctx.save(); ctx.translate(x, y); ctx.rotate(rot);
+      ctx.fillStyle = '#e8e4dc';
+      ctx.beginPath();
+      if (ctx.roundRect) ctx.roundRect(-24, -12, 48, 24, 10); else ctx.rect(-24, -12, 48, 24);
+      ctx.fill();
+      ctx.fillStyle = M32_ACC;
+      ctx.fillRect(-22, 4, 44, 5);
+      ctx.restore();
+    };
+    shoe(80, 196, -0.12);
+    shoe(126, 232, 0.1);
+    // 速度线
+    ctx.strokeStyle = 'rgba(190,220,255,.25)'; ctx.lineWidth = 2;
+    for (let k = 0; k < 4; k++) {
+      const x = 50 + k * 26;
+      ctx.beginPath(); ctx.moveTo(x, 60); ctx.lineTo(x - 18, 108); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(200 - x, 60); ctx.lineTo(218 - x, 108); ctx.stroke();
+    }
+    m32Caption('两步', '一步两个台阶', M32_ACC);
+  } else if (i === 5) {                // 上街
+    m32BG('#101826', '#2b3a55');
+    for (let b = 0; b < 9; b++) {
+      const x = 20 + ((b * 47 + lt * 260) % 200);
+      const y = 120 + (b % 4) * 42;
+      const r = 8 + (b % 3) * 6;
+      const g = ctx.createRadialGradient(x, y, 0, x, y, r);
+      g.addColorStop(0, 'rgba(255,214,150,.75)');
+      g.addColorStop(1, 'rgba(255,180,120,0)');
+      ctx.fillStyle = g;
+      ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill();
+    }
+    ctx.strokeStyle = 'rgba(190,230,255,.28)'; ctx.lineWidth = 2;
+    for (let s = 0; s < 5; s++) {
+      const y = 60 + s * 52;
+      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(200, y - 14); ctx.stroke();
+    }
+    m32Caption('9:00', '街上都是赶时间的人', M32_CYAN);
+  } else if (i === 6) {                // 按门锁
+    m32BG('#1d2028', '#3a3f4c');
+    ctx.fillStyle = '#0f1319';
+    ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(52, 96, 96, 150, 16); else ctx.rect(52, 96, 96, 150);
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(200,220,255,.25)'; ctx.lineWidth = 1.6;
+    ctx.stroke();
+    for (let k = 0; k < 4; k++) {
+      ctx.fillStyle = k < 3 ? M32_LIME : 'rgba(200,255,90,.2)';
+      ctx.beginPath(); ctx.arc(74 + k * 18, 148, 7, 0, Math.PI * 2); ctx.fill();
+    }
+    ctx.fillStyle = 'rgba(200,220,255,.35)';
+    ctx.beginPath(); ctx.arc(100, 196, 22, 0, Math.PI * 2); ctx.fill();
+    m32Hand(150, 236, 0.35, 0.95);
+    m32Caption('到', '锁开的那一下', M32_LIME);
+  } else {                             // 坐下
+    m32BG('#332619', '#6b4a2c');
+    ctx.fillStyle = '#241a12';
+    ctx.beginPath();
+    ctx.moveTo(28, 250); ctx.lineTo(172, 250); ctx.lineTo(184, 300); ctx.lineTo(16, 300); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = '#c8d3da';
+    ctx.beginPath();
+    ctx.moveTo(52, 196); ctx.lineTo(148, 196); ctx.lineTo(158, 250); ctx.lineTo(42, 250); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = '#1c2733';
+    ctx.fillRect(60, 204, 80, 38);
+    ctx.fillStyle = M32_LIME;
+    ctx.fillRect(66, 212, 34, 3); ctx.fillRect(66, 220, 52, 3); ctx.fillRect(66, 228, 24, 3);
+    // 咖啡
+    ctx.fillStyle = '#f4ede2';
+    ctx.beginPath(); ctx.arc(170, 282, 16, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#57301f';
+    ctx.beginPath(); ctx.arc(170, 282, 11, 0, Math.PI * 2); ctx.fill();
+    m32Caption('开工', '今天的活儿，开始', M32_LIME);
+  }
+
+  // 切点白闪 + 速度线
+  const flash = i === 0 ? 0 : 1 - m32seg(lt, 0, 0.07);
+  if (flash > 0) {
+    ctx.save();
+    ctx.globalAlpha = flash * 0.34;
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(-40, -40, 280, 440);
+    ctx.restore();
+  }
+  if (i > 0 && lt < 0.13) {
+    ctx.save();
+    ctx.globalAlpha = (1 - lt / 0.13) * 0.32;
+    ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 2;
+    for (let i2 = 0; i2 < 6; i2++) {
+      const y = 40 + i2 * 56;
+      ctx.beginPath(); ctx.moveTo(-20, y + i2 * 5); ctx.lineTo(220, y - 20 + i2 * 5); ctx.stroke();
+    }
+    ctx.restore();
+  }
+  // 顶部/底部暖冷偏差：更像短视频
+  const grade = ctx.createLinearGradient(0, 0, 0, 356);
+  grade.addColorStop(0, 'rgba(90,180,255,.12)');
+  grade.addColorStop(1, 'rgba(255,120,80,.12)');
+  ctx.fillStyle = grade; ctx.fillRect(0, 0, 200, 356);
+  ctx.restore();
+}
+
+function drawScene(t) {
+  // 外场：暗色，压住两侧
+  ctx.fillStyle = '#07080c'; ctx.fillRect(0, 0, W, H);
+  const side = ctx.createLinearGradient(0, 0, W, 0);
+  side.addColorStop(0, 'rgba(30,40,52,.6)');
+  side.addColorStop(0.5, 'rgba(12,14,20,0)');
+  side.addColorStop(1, 'rgba(30,40,52,.6)');
+  ctx.fillStyle = side; ctx.fillRect(0, 0, W, H);
+  // 两侧的竖向刻度，暗示 9:16
+  ctx.save();
+  ctx.strokeStyle = 'rgba(255,255,255,.08)'; ctx.lineWidth = 1;
+  for (let i = 0; i < 9; i++) {
+    ctx.beginPath(); ctx.moveTo(112, 20 + i * 40); ctx.lineTo(122, 20 + i * 40); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(518, 20 + i * 40); ctx.lineTo(528, 20 + i * 40); ctx.stroke();
+  }
+  ctx.fillStyle = 'rgba(255,255,255,.30)';
+  ctx.font = `600 10px ${FONT}`;
+  ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+  ctx.fillText('9:16  ·  640×360 PREVIEW', 40, 148);
+  ctx.textAlign = 'left';
+  ctx.fillStyle = 'rgba(255,255,255,.26)';
+  ctx.font = `600 9px ${FONT}`;
+  ctx.fillText('FIRST PERSON  /  8 SHOTS', 40, 168);
+  ctx.restore();
+
+  const idx = Math.min(7, Math.floor(t / M32_CUT));
+  const lt = t - idx * M32_CUT;
+
+  // 手机框
+  ctx.save();
+  const R = 18;
+  ctx.beginPath();
+  if (ctx.roundRect) ctx.roundRect(M32_PH.x, M32_PH.y, M32_PH.w, M32_PH.h, R);
+  else ctx.rect(M32_PH.x, M32_PH.y, M32_PH.w, M32_PH.h);
+  ctx.save();
+  ctx.clip();
+  ctx.translate(M32_PH.x, M32_PH.y);
+  m32Shot(idx, lt);
+
+  // 机内 UI：顶部状态条
+  ctx.fillStyle = 'rgba(0,0,0,.45)';
+  ctx.fillRect(0, 0, 200, 30);
+  ctx.fillStyle = '#ff4d6d';
+  ctx.beginPath(); ctx.arc(14, 15, 4, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = 'rgba(255,255,255,.9)';
+  ctx.font = `700 10px ${FONT}`; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+  ctx.fillText('REC', 24, 15);
+  ctx.textAlign = 'right';
+  ctx.fillText('00:0' + (idx + 1), 190, 15);
+  // 右上电量
+  ctx.strokeStyle = 'rgba(255,255,255,.6)'; ctx.lineWidth = 1.2;
+  ctx.strokeRect(160, 11, 12, 7);
+  ctx.fillStyle = 'rgba(255,255,255,.7)';
+  ctx.fillRect(162, 13, 6, 3);
+  // 底部标签与进度
+  ctx.fillStyle = 'rgba(0,0,0,.42)';
+  ctx.fillRect(0, 306, 200, 50);
+  ctx.fillStyle = 'rgba(255,255,255,.6)';
+  ctx.font = `600 10px ${FONT}`; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+  ctx.fillText(M32_TAGS[idx], 12, 324);
+  for (let i = 0; i < 8; i++) {
+    ctx.fillStyle = i === idx ? '#ffffff' : 'rgba(255,255,255,.26)';
+    ctx.fillRect(12 + i * 22, 340, 18, 3);
+  }
+  ctx.restore();
+
+  // 边框
+  ctx.strokeStyle = 'rgba(240,246,255,.85)';
+  ctx.lineWidth = 2.4;
+  ctx.beginPath();
+  if (ctx.roundRect) ctx.roundRect(M32_PH.x, M32_PH.y, M32_PH.w, M32_PH.h, R);
+  else ctx.rect(M32_PH.x, M32_PH.y, M32_PH.w, M32_PH.h);
+  ctx.stroke();
+  ctx.restore();
+
+  // 外场文字：竖屏说明与镜头号
+  ctx.save();
+  ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+  ctx.fillStyle = 'rgba(255,255,255,.42)';
+  ctx.font = `600 10px ${FONT}`;
+  ctx.fillText('VERTICAL  ·  POV', 44, 44);
+  ctx.fillStyle = 'rgba(255,255,255,.20)';
+  ctx.font = `800 44px ${FONT}`;
+  ctx.fillText(String(idx + 1).padStart(2, '0'), 40, 96);
+  ctx.fillStyle = 'rgba(255,255,255,.5)';
+  ctx.font = `600 10px ${FONT}`;
+  ctx.fillText('/ 08', 44, 112);
+  ctx.restore();
+}
+
+  // ===== 共享渲染与署名 =======================================================
+  function watermark() {
+    const text = 'DeepSeek Harness 生成示例';
+    ctx.save();
+    ctx.font = '11px ' + FONT;
+    const w = ctx.measureText(text).width + 14;
+    const x = W - w - 8, y = H - 24;
+    ctx.fillStyle = 'rgba(0,0,0,.46)';
+    ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(x, y, w, 18, 4); else ctx.rect(x, y, w, 18);
+    ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,.82)';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(text, x + 7, y + 9.5);
+    ctx.restore();
+  }
+
+  function paint(t) {
+    ctx.save();
+    ctx.clearRect(0, 0, W, H);
+    try { drawScene(t); } catch (err) { console.error(err); }
+    ctx.restore();
+    watermark();
+  }
+
+  function renderAt(seconds) {
+    const t = ((Number(seconds) % DURATION) + DURATION) % DURATION;
+    paint(t);
+    syncUI(t);
+    return t;
+  }
+  window.renderAt = renderAt;
+
+  // ===== 播放、控制、减少动态 =================================================
+  const playBtn = document.getElementById('play');
+  const timeline = document.getElementById('timeline');
+  const clock = document.getElementById('clock');
+  let playing = false, base = 0, start = 0, current = 0;
+  const reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function syncUI(t) {
+    if (EXPORT) return;
+    current = t;
+    if (timeline) timeline.value = String(t.toFixed(2));
+    if (clock) clock.textContent = t.toFixed(2) + ' / ' + DURATION.toFixed(2) + 's';
+  }
+  function frame(now) {
+    if (!playing) return;
+    const t = ((now - start) / 1000 + base) % DURATION;
+    paint(t);
+    syncUI(t);
+    requestAnimationFrame(frame);
+  }
+  function play() {
+    if (playing) return;
+    playing = true;
+    start = performance.now();
+    base = current;
+    if (playBtn) playBtn.textContent = '暂停';
+    requestAnimationFrame(frame);
+  }
+  function pause() {
+    playing = false;
+    if (playBtn) playBtn.textContent = '播放';
+  }
+  if (playBtn) playBtn.addEventListener('click', () => { playing ? pause() : play(); });
+  document.getElementById('replay')?.addEventListener('click', () => {
+    base = 0; start = performance.now(); paint(0); syncUI(0); play();
+  });
+  timeline?.addEventListener('input', () => {
+    pause(); paint(Number(timeline.value)); syncUI(Number(timeline.value));
+  });
+  window.addEventListener('keydown', e => {
+    if (e.code === 'Space') { e.preventDefault(); playing ? pause() : play(); }
+    if (e.key === 'r' || e.key === 'R') { base = 0; start = performance.now(); paint(0); syncUI(0); play(); }
+  });
+
+  if (EXPORT) {
+    document.body.classList.add('export');
+    renderAt(0);
+  } else if (reduced) {
+    renderAt(2.4);
+    pause();
+  } else {
+    renderAt(0);
+    play();
+  }
+})();
+</script>
+</body>
+</html>

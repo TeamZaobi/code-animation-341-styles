@@ -1,0 +1,716 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Z6 年画 · DeepSeek Harness 生成示例</title>
+<!--
+  Provenance
+  ----------
+  风格来源：code-animation-styles 目录（《来自俯仰观照博主的动画画风整理》整理稿）
+  catalog commit: 01576924a2b316d1f11ae33f75d3c005e8781451
+  style id: Z6「年画」
+  license: upstream-custom-noncommercial（俯仰观照整理稿，非商业）
+  本文件：DeepSeek Harness（deepseek-flash）根据该风格提示词新写的候选示例，
+  不是原作者样片，也不是原项目演示；仅用于风格挑选预览。共享的只有时间轴、
+  尺寸、导出接口与页脚署名，画面与动作按本风格重新设计。
+  原文“只输出代码”等语句属于素材的一部分，不覆盖本任务的交付合同。
+-->
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; min-height: 100%; background: #0c0c10; color: #e9e9ee;
+    font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif; }
+  #app { min-height: 100vh; display: flex; flex-direction: column; align-items: center;
+    justify-content: center; gap: 12px; padding: 20px; }
+  #stage { width: min(94vw, 1000px); aspect-ratio: 16 / 9; background: #000;
+    box-shadow: 0 18px 60px rgba(0,0,0,.55); position: relative; overflow: hidden; }
+  canvas { display: block; width: 100%; height: 100%; }
+  #head, #ui { width: min(94vw, 1000px); }
+  #head h1 { margin: 0 0 4px; font-size: 15px; font-weight: 600; letter-spacing: .02em; }
+  #head p { margin: 0; font-size: 12px; line-height: 1.5; color: #9a9aa8; }
+  #ui { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  #ui button { background: #1d1d26; color: #f2f2f6; border: 1px solid #343444;
+    border-radius: 7px; padding: 6px 12px; font-size: 12px; cursor: pointer; }
+  #ui button:hover { background: #272734; }
+  #ui input[type=range] { flex: 1 1 220px; min-width: 150px; accent-color: #7c8cff; }
+  #clock { font-variant-numeric: tabular-nums; font-size: 12px; color: #a9a9ba; min-width: 78px; }
+  #credit { width: min(94vw, 1000px); font-size: 11px; line-height: 1.6; color: #6f6f80; }
+  #credit b { color: #9c9cae; font-weight: 500; }
+  body.export, body.export #app { display: block; width: 640px; height: 360px; min-height: 0;
+    padding: 0; margin: 0; overflow: hidden; background: #000; }
+  body.export #stage { width: 640px; height: 360px; box-shadow: none; }
+  body.export #head, body.export #ui, body.export #credit { display: none; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="head">
+    <h1>Z6 · 年画</h1>
+    <p>年画门笺：红门框里贴「五福临门」横批与春联，童子抱鲤套色印出，金屑飘落。</p>
+  </div>
+  <div id="stage"><canvas id="c" width="640" height="360" aria-label="年画 风格动画示例"></canvas></div>
+  <div id="ui">
+    <button id="play" type="button">暂停</button>
+    <button id="replay" type="button">重播</button>
+    <input id="timeline" type="range" min="0" max="6" step="0.01" value="0" aria-label="时间轴">
+    <span id="clock">0.00 / 6.00s</span>
+  </div>
+  <div id="credit">
+    <b>DeepSeek Harness 生成示例</b>（非原项目样片）· 来源：来自俯仰观照博主的动画画风整理 ·
+    许可：upstream-custom-noncommercial（俯仰观照整理稿，非商业） · 画面与文字均由代码绘制，静音。
+  </div>
+</div>
+<script>
+(() => {
+  'use strict';
+  // ===== 共享脚手架（可改，但导出合同不要破坏）=================================
+  const W = 640, H = 360, DURATION = 6;
+  const EXPORT = new URLSearchParams(location.search).get('export') === '1';
+  const canvas = document.getElementById('c');
+  const ctx = canvas.getContext('2d');
+  const FONT = '"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",sans-serif';
+
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  const lerp = (a, b, t) => a + (b - a) * t;
+  const smooth = t => t * t * (3 - 2 * t);
+  const easeOut = t => 1 - Math.pow(1 - t, 3);
+  const easeIn = t => t * t * t;
+  function rng(seed) { let s = seed >>> 0; return () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; }; }
+
+  // ===== 场景（每个 ID 独立设计；下面的注释区由构建器替换）===================
+  // DESC: 年画门笺：红门框里贴「五福临门」横批与春联，童子抱鲤套色印出，金屑飘落。
+// Z6 年画 · DeepSeek Harness 生成示例
+
+const Z6_RED = '#c62f26', Z6_DEEP = '#8c1b16', Z6_GOLD = '#e8b446', Z6_GOLD_L = '#f6d98c';
+const Z6_INK = '#221f1d', Z6_SKIN = '#f6d6b8', Z6_GREEN = '#2f8763', Z6_PINK = '#ee9c95';
+const Z6_CREAM = '#f6e8c9';
+
+// 红墙木纹
+const Z6_WALL = (() => {
+  const c = document.createElement('canvas'); c.width = W; c.height = H;
+  const g = c.getContext('2d');
+  const grd = g.createLinearGradient(0, 0, 0, H);
+  grd.addColorStop(0, '#a3231c');
+  grd.addColorStop(0.55, '#991f19');
+  grd.addColorStop(1, '#7d1712');
+  g.fillStyle = grd; g.fillRect(0, 0, W, H);
+  const r = rng(6606);
+  for (let i = 0; i < 200; i++) {
+    const x = r() * W;
+    g.strokeStyle = `rgba(60,10,8,${0.03 + r() * 0.06})`;
+    g.lineWidth = 0.6 + r() * 2.4;
+    g.beginPath();
+    g.moveTo(x, 0);
+    g.bezierCurveTo(x + (r() - 0.5) * 14, H * 0.33, x + (r() - 0.5) * 18, H * 0.66, x + (r() - 0.5) * 10, H);
+    g.stroke();
+  }
+  const vg = g.createRadialGradient(W / 2, H * 0.45, 120, W / 2, H * 0.45, 420);
+  vg.addColorStop(0, 'rgba(255,180,120,0.10)');
+  vg.addColorStop(1, 'rgba(40,6,4,0.40)');
+  g.fillStyle = vg; g.fillRect(0, 0, W, H);
+  return c;
+})();
+
+// 年画纸：米黄 + 纤维 + 木版压痕
+const Z6_PAPER = (() => {
+  const c = document.createElement('canvas'); c.width = 264; c.height = 244;
+  const g = c.getContext('2d');
+  g.fillStyle = Z6_CREAM; g.fillRect(0, 0, 264, 244);
+  const r = rng(9911);
+  for (let i = 0; i < 240; i++) {
+    const x = r() * 264, y = r() * 244, len = 4 + r() * 20, a = r() * Math.PI;
+    g.strokeStyle = `rgba(150,118,74,${0.02 + r() * 0.05})`;
+    g.lineWidth = 0.6;
+    g.beginPath(); g.moveTo(x, y); g.lineTo(x + Math.cos(a) * len, y + Math.sin(a) * len); g.stroke();
+  }
+  for (let i = 0; i < 12; i++) {
+    const y = r() * 244;
+    g.strokeStyle = `rgba(120,92,58,${0.03 + r() * 0.03})`;
+    g.lineWidth = 0.8;
+    g.beginPath(); g.moveTo(0, y); g.lineTo(264, y + (r() - 0.5) * 3); g.stroke();
+  }
+  return c;
+})();
+
+const Z6_FLAKES = (() => {
+  const r = rng(7712);
+  return Array.from({ length: 46 }, () => ({
+    x: 150 + r() * 360, y: r() * 380, sp: 16 + r() * 40, sz: 1.2 + r() * 2.6, ph: r() * 6.28, sw: 6 + r() * 14,
+  }));
+})();
+
+function z6seg(t, a, b) { return clamp((t - a) / (b - a), 0, 1); }
+function z6pop(p) { return p <= 0 ? 0 : 1 - Math.pow(1 - p, 3); }
+
+function z6frame(p) {
+  if (p <= 0) return;
+  const e = z6pop(p);
+  ctx.save();
+  ctx.globalAlpha = e;
+  // 门框：深木
+  ctx.fillStyle = '#63291d';
+  ctx.fillRect(174, 62, 292, 270);
+  ctx.fillStyle = '#4a1c13';
+  ctx.fillRect(174, 62, 292, 6);
+  ctx.fillRect(174, 326, 292, 6);
+  // 内金线
+  ctx.strokeStyle = Z6_GOLD;
+  ctx.lineWidth = 2;
+  ctx.strokeRect(184, 72, 272, 250);
+  // 门钉
+  for (let i = 0; i < 5; i++) {
+    for (const x of [179, 461]) {
+      const y = 86 + i * 58;
+      ctx.fillStyle = Z6_GOLD;
+      ctx.beginPath(); ctx.arc(x, y, 3.2, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = 'rgba(255,240,190,0.7)';
+      ctx.beginPath(); ctx.arc(x - 0.8, y - 0.8, 1.2, 0, Math.PI * 2); ctx.fill();
+    }
+  }
+  ctx.restore();
+}
+
+function z6lantern(x, y, s, p, swing, glow) {
+  if (p <= 0) return;
+  const e = z6pop(p);
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(swing);
+  ctx.scale(s, s);
+  ctx.globalAlpha = Math.min(1, e * 1.1);
+  // 光晕
+  const g = ctx.createRadialGradient(0, 6, 2, 0, 6, 66);
+  g.addColorStop(0, `rgba(255,196,120,${0.30 * glow})`);
+  g.addColorStop(0.5, `rgba(255,160,90,${0.12 * glow})`);
+  g.addColorStop(1, 'rgba(255,160,90,0)');
+  ctx.fillStyle = g;
+  ctx.beginPath(); ctx.arc(0, 6, 66, 0, Math.PI * 2); ctx.fill();
+  // 吊绳
+  ctx.strokeStyle = 'rgba(60,34,20,0.9)';
+  ctx.lineWidth = 1.6;
+  ctx.beginPath(); ctx.moveTo(0, -46); ctx.lineTo(0, -26); ctx.stroke();
+  // 顶盖与底盖
+  ctx.fillStyle = Z6_GOLD;
+  ctx.fillRect(-9, -27, 18, 5);
+  ctx.fillRect(-9, 25, 18, 5);
+  // 灯身
+  ctx.fillStyle = Z6_RED;
+  ctx.beginPath();
+  ctx.ellipse(0, 0, 22, 25, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.strokeStyle = Z6_DEEP;
+  ctx.lineWidth = 1.4;
+  ctx.stroke();
+  // 竖骨
+  ctx.strokeStyle = 'rgba(246,217,140,0.65)';
+  ctx.lineWidth = 1.2;
+  for (const k of [-0.55, 0, 0.55]) {
+    ctx.beginPath();
+    ctx.ellipse(0, 0, Math.abs(Math.cos(k)) * 22 + 1, 25, 0, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+  ctx.beginPath();
+  ctx.moveTo(-22, 0); ctx.lineTo(22, 0);
+  ctx.stroke();
+  // 福字
+  ctx.fillStyle = Z6_GOLD_L;
+  ctx.font = `700 15px ${FONT}`;
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText('福', 0, 1);
+  // 流苏
+  ctx.strokeStyle = Z6_GOLD;
+  ctx.lineWidth = 1.2;
+  for (let i = -2; i <= 2; i++) {
+    ctx.beginPath();
+    ctx.moveTo(i * 3, 30);
+    ctx.lineTo(i * 3 + Math.sin(swing * 3 + i) * 2, 44);
+    ctx.stroke();
+  }
+  ctx.fillStyle = Z6_RED;
+  ctx.beginPath(); ctx.arc(0, 30, 3.6, 0, Math.PI * 2); ctx.fill();
+  ctx.restore();
+}
+
+function z6scroll(x, y, w, h, p, chars, fs) {
+  if (p <= 0) return;
+  ctx.save();
+  // 红纸
+  ctx.globalAlpha = 1;
+  ctx.fillStyle = '#c1271f';
+  ctx.fillRect(x, y, w, h);
+  ctx.strokeStyle = Z6_GOLD;
+  ctx.lineWidth = 1.4;
+  ctx.strokeRect(x + 2, y + 2, w - 4, h - 4);
+  // 自上而下展开
+  ctx.beginPath();
+  ctx.rect(x, y, w, h * z6pop(p));
+  ctx.clip();
+  ctx.fillStyle = Z6_GOLD_L;
+  ctx.font = `700 ${fs}px ${FONT}`;
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  chars.forEach((ch, i) => {
+    ctx.fillText(ch, x + w / 2, y + 20 + i * (fs + 8));
+  });
+  ctx.restore();
+}
+
+function z6horizontal(p, text) {
+  if (p <= 0) return;
+  const e = z6pop(p);
+  const w = 232, h = 38, x = 320 - w / 2, y = 18 - (1 - e) * 26;
+  ctx.save();
+  ctx.globalAlpha = Math.min(1, e * 1.2);
+  ctx.fillStyle = '#c1271f';
+  ctx.fillRect(x, y, w, h);
+  ctx.strokeStyle = Z6_GOLD;
+  ctx.lineWidth = 1.6;
+  ctx.strokeRect(x + 2.5, y + 2.5, w - 5, h - 5);
+  ctx.fillStyle = Z6_GOLD_L;
+  ctx.font = `700 26px ${FONT}`;
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  const n = text.length;
+  const step = 34;
+  text.split('').forEach((ch, i) => {
+    ctx.fillText(ch, 320 - (n - 1) * step / 2 + i * step, y + h / 2 + 1);
+  });
+  ctx.restore();
+}
+
+// 童子抱鲤：先套色，后压墨线
+function z6child(fillP, keyP, t) {
+  const CX = 320;
+  ctx.save();
+  // ==== 套色 ====
+  if (fillP > 0) {
+    ctx.save();
+    ctx.globalAlpha = Math.min(1, fillP * 1.15);
+    const dx = (1 - fillP) * 2.4, dy = (1 - fillP) * -1.8;
+    ctx.translate(dx, dy);
+    // 脸与身
+    ctx.fillStyle = Z6_SKIN;
+    ctx.beginPath(); ctx.arc(CX, 146, 30, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(CX - 33, 182);
+    ctx.quadraticCurveTo(CX - 38, 240, CX - 26, 258);
+    ctx.lineTo(CX + 26, 258);
+    ctx.quadraticCurveTo(CX + 38, 240, CX + 33, 182);
+    ctx.closePath();
+    ctx.fill();
+    // 腿
+    ctx.beginPath();
+    ctx.moveTo(CX - 22, 252); ctx.quadraticCurveTo(CX - 28, 288, CX - 18, 292);
+    ctx.lineTo(CX - 6, 292); ctx.lineTo(CX - 8, 252); ctx.closePath(); ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(CX + 22, 252); ctx.quadraticCurveTo(CX + 28, 288, CX + 18, 292);
+    ctx.lineTo(CX + 6, 292); ctx.lineTo(CX + 8, 252); ctx.closePath(); ctx.fill();
+    // 肚兜（红）
+    ctx.fillStyle = Z6_RED;
+    ctx.beginPath();
+    ctx.moveTo(CX - 24, 190);
+    ctx.quadraticCurveTo(CX, 200, CX + 24, 190);
+    ctx.lineTo(CX + 20, 252);
+    ctx.quadraticCurveTo(CX, 260, CX - 20, 252);
+    ctx.closePath();
+    ctx.fill();
+    // 双髻
+    ctx.fillStyle = Z6_INK;
+    ctx.beginPath(); ctx.arc(CX - 25, 112, 9.5, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(CX + 25, 112, 9.5, 0, Math.PI * 2); ctx.fill();
+    // 刘海
+    ctx.beginPath();
+    ctx.arc(CX, 140, 30, Math.PI * 1.02, Math.PI * 1.98);
+    ctx.quadraticCurveTo(CX, 132, CX - 30, 140);
+    ctx.fill();
+    // 腮红
+    ctx.fillStyle = 'rgba(238,120,110,0.55)';
+    ctx.beginPath(); ctx.ellipse(CX - 19, 158, 7.5, 5, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(CX + 19, 158, 7.5, 5, 0, 0, Math.PI * 2); ctx.fill();
+    // 鲤鱼：斜抱在胸前
+    ctx.save();
+    ctx.translate(CX + 2, 214);
+    ctx.rotate(-0.30);
+    const wig = Math.sin(t * 4.4) * 0.10;
+    // 尾
+    ctx.save();
+    ctx.translate(-56, 4);
+    ctx.rotate(wig);
+    ctx.fillStyle = '#d94a30';
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.quadraticCurveTo(-22, -18, -26, -6);
+    ctx.quadraticCurveTo(-14, 0, -26, 8);
+    ctx.quadraticCurveTo(-20, 20, 0, 6);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+    // 身体
+    ctx.fillStyle = '#e2523a';
+    ctx.beginPath();
+    ctx.ellipse(0, 0, 56, 22, 0, 0, Math.PI * 2);
+    ctx.fill();
+    // 鱼腹金
+    ctx.fillStyle = '#f0b350';
+    ctx.beginPath();
+    ctx.ellipse(2, 8, 46, 11, 0, 0, Math.PI * 2);
+    ctx.fill();
+    // 背鳍
+    ctx.fillStyle = '#c8402b';
+    ctx.beginPath();
+    ctx.moveTo(-16, -20);
+    ctx.quadraticCurveTo(4, -32, 26, -18);
+    ctx.quadraticCurveTo(4, -22, -16, -20);
+    ctx.closePath();
+    ctx.fill();
+    // 鳞：三排弧
+    ctx.strokeStyle = 'rgba(140,36,22,0.55)';
+    ctx.lineWidth = 1.2;
+    for (let row = 0; row < 3; row++) {
+      for (let i = 0; i < 8; i++) {
+        const sx = -34 + i * 10 - row * 4;
+        const sy = -8 + row * 9;
+        ctx.beginPath();
+        ctx.arc(sx, sy, 5, -0.9, 0.9);
+        ctx.stroke();
+      }
+    }
+    // 眼
+    ctx.fillStyle = '#fff8ea';
+    ctx.beginPath(); ctx.arc(34, -5, 6.2, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = Z6_INK;
+    ctx.beginPath(); ctx.arc(35, -5, 3.2, 0, Math.PI * 2); ctx.fill();
+    // 须
+    ctx.strokeStyle = '#7c2418';
+    ctx.lineWidth = 1.6;
+    ctx.beginPath(); ctx.moveTo(50, 2); ctx.quadraticCurveTo(62, 6, 68, 14); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(48, 8); ctx.quadraticCurveTo(58, 16, 60, 24); ctx.stroke();
+    ctx.restore();
+    // 手臂
+    ctx.strokeStyle = Z6_SKIN;
+    ctx.lineCap = 'round';
+    ctx.lineWidth = 14;
+    ctx.beginPath(); ctx.moveTo(CX - 30, 192); ctx.quadraticCurveTo(CX - 38, 210, CX - 34, 226); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(CX + 30, 192); ctx.quadraticCurveTo(CX + 40, 196, CX + 38, 204); ctx.stroke();
+    // 手
+    ctx.fillStyle = Z6_SKIN;
+    ctx.beginPath(); ctx.arc(CX - 34, 226, 9, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(CX + 38, 204, 9, 0, Math.PI * 2); ctx.fill();
+    // 莲花
+    ctx.save();
+    ctx.translate(CX - 72, 268);
+    ctx.fillStyle = Z6_PINK;
+    for (let i = -2; i <= 2; i++) {
+      ctx.save();
+      ctx.rotate(i * 0.42);
+      ctx.beginPath();
+      ctx.ellipse(0, -14, 5.4, 14, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+    ctx.fillStyle = Z6_GOLD;
+    ctx.beginPath(); ctx.arc(0, -4, 4.4, 0, Math.PI * 2); ctx.fill();
+    // 莲叶
+    ctx.fillStyle = Z6_GREEN;
+    ctx.beginPath(); ctx.ellipse(16, 14, 18, 7, 0.3, 0, Math.PI * 2); ctx.fill();
+    ctx.restore();
+    // 铜钱
+    ctx.save();
+    ctx.translate(CX + 66, 272);
+    ctx.fillStyle = Z6_GOLD;
+    ctx.beginPath(); ctx.arc(0, 0, 12, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#b9822c';
+    ctx.fillRect(-4, -4, 8, 8);
+    ctx.fillStyle = Z6_CREAM;
+    ctx.fillRect(-3, -3, 6, 6);
+    ctx.strokeStyle = '#a06f22';
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.arc(0, 0, 12, 0, Math.PI * 2); ctx.stroke();
+    ctx.restore();
+    ctx.restore();
+  }
+
+  // ==== 墨线（压印）====
+  if (keyP > 0) {
+    ctx.save();
+    ctx.globalAlpha = Math.min(1, keyP);
+    ctx.strokeStyle = Z6_INK;
+    ctx.lineWidth = 2.2;
+    ctx.lineCap = 'round';
+    // 脸
+    ctx.beginPath(); ctx.arc(CX, 146, 30, 0, Math.PI * 2); ctx.stroke();
+    // 发型与髻
+    ctx.lineWidth = 2.4;
+    ctx.beginPath(); ctx.arc(CX - 25, 112, 9.5, 0, Math.PI * 2); ctx.stroke();
+    ctx.beginPath(); ctx.arc(CX + 25, 112, 9.5, 0, Math.PI * 2); ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(CX, 146, 30, Math.PI * 1.03, Math.PI * 1.97);
+    ctx.stroke();
+    // 五官
+    ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.ellipse(CX - 11, 147, 5, 6.4, 0, 0, Math.PI * 2); ctx.stroke();
+    ctx.beginPath(); ctx.ellipse(CX + 11, 147, 5, 6.4, 0, 0, Math.PI * 2); ctx.stroke();
+    ctx.fillStyle = Z6_INK;
+    ctx.beginPath(); ctx.arc(CX - 11, 147, 2.4, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(CX + 11, 147, 2.4, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(CX, 160, 6, 0.2 * Math.PI, 0.8 * Math.PI); ctx.stroke();
+    // 身体
+    ctx.lineWidth = 2.2;
+    ctx.beginPath();
+    ctx.moveTo(CX - 33, 182);
+    ctx.quadraticCurveTo(CX - 38, 240, CX - 26, 258);
+    ctx.lineTo(CX + 26, 258);
+    ctx.quadraticCurveTo(CX + 38, 240, CX + 33, 182);
+    ctx.stroke();
+    // 肚兜
+    ctx.beginPath();
+    ctx.moveTo(CX - 24, 190);
+    ctx.quadraticCurveTo(CX, 200, CX + 24, 190);
+    ctx.lineTo(CX + 20, 252);
+    ctx.quadraticCurveTo(CX, 260, CX - 20, 252);
+    ctx.closePath();
+    ctx.stroke();
+    // 腿
+    for (const s of [-1, 1]) {
+      ctx.beginPath();
+      ctx.moveTo(CX + s * 22, 252);
+      ctx.quadraticCurveTo(CX + s * 28, 288, CX + s * 18, 292);
+      ctx.lineTo(CX + s * 6, 292);
+      ctx.lineTo(CX + s * 8, 252);
+      ctx.stroke();
+    }
+    // 鱼
+    ctx.save();
+    ctx.translate(CX + 2, 214);
+    ctx.rotate(-0.30);
+    ctx.lineWidth = 2.2;
+    ctx.beginPath(); ctx.ellipse(0, 0, 56, 22, 0, 0, Math.PI * 2); ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(-16, -20);
+    ctx.quadraticCurveTo(4, -32, 26, -18);
+    ctx.stroke();
+    const wig = Math.sin(t * 4.4) * 0.10;
+    ctx.save();
+    ctx.translate(-56, 4); ctx.rotate(wig);
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.quadraticCurveTo(-22, -18, -26, -6);
+    ctx.quadraticCurveTo(-14, 0, -26, 8);
+    ctx.quadraticCurveTo(-20, 20, 0, 6);
+    ctx.closePath();
+    ctx.stroke();
+    ctx.restore();
+    ctx.beginPath(); ctx.arc(34, -5, 6.2, 0, Math.PI * 2); ctx.stroke();
+    ctx.restore();
+    // 手臂不勾线，靠色块边缘（木版套色的效果）
+    // 手
+    ctx.beginPath(); ctx.arc(CX - 34, 226, 9, 0, Math.PI * 2); ctx.stroke();
+    ctx.beginPath(); ctx.arc(CX + 38, 204, 9, 0, Math.PI * 2); ctx.stroke();
+    // 莲花与钱
+    ctx.save();
+    ctx.translate(CX - 72, 268);
+    for (let i = -2; i <= 2; i++) {
+      ctx.save(); ctx.rotate(i * 0.42);
+      ctx.beginPath(); ctx.ellipse(0, -14, 5.4, 14, 0, 0, Math.PI * 2); ctx.stroke();
+      ctx.restore();
+    }
+    ctx.beginPath(); ctx.arc(0, -4, 4.4, 0, Math.PI * 2); ctx.stroke();
+    ctx.beginPath(); ctx.ellipse(16, 14, 18, 7, 0.3, 0, Math.PI * 2); ctx.stroke();
+    ctx.restore();
+    ctx.save();
+    ctx.translate(CX + 66, 272);
+    ctx.beginPath(); ctx.arc(0, 0, 12, 0, Math.PI * 2); ctx.stroke();
+    ctx.beginPath(); ctx.rect(-3, -3, 6, 6); ctx.stroke();
+    ctx.restore();
+    ctx.restore();
+  }
+  ctx.restore();
+}
+
+function z6flakes(p, t) {
+  if (p <= 0) return;
+  ctx.save();
+  ctx.globalAlpha = Math.min(1, p);
+  Z6_FLAKES.forEach((f, i) => {
+    const y = 20 + ((f.y + t * f.sp) % 340);
+    const x = f.x + Math.sin(t * 1.4 + f.ph) * f.sw;
+    const a = 0.45 + 0.5 * Math.abs(Math.sin(t * 2 + f.ph));
+    ctx.fillStyle = `rgba(246,214,130,${a * 0.9})`;
+    ctx.beginPath();
+    ctx.ellipse(x, y, f.sz, f.sz * 1.7, f.ph, 0, Math.PI * 2);
+    ctx.fill();
+  });
+  ctx.restore();
+}
+
+function drawScene(t) {
+  ctx.drawImage(Z6_WALL, 0, 0);
+
+  // 门框
+  z6frame(clamp((t + 0.3) / 0.45, 0, 1));
+
+  // 年画纸
+  const pp = z6seg(t, -0.35, 0.18);
+  if (pp > 0) {
+    ctx.save();
+    ctx.globalAlpha = z6pop(pp);
+    ctx.drawImage(Z6_PAPER, 188, 78);
+    ctx.strokeStyle = 'rgba(196,60,40,0.55)';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(190, 80, 260, 240);
+    ctx.restore();
+  }
+
+  // 横批
+  z6horizontal(z6seg(t, 0.18, 0.75), '五福临门');
+
+  // 春联：左右垂下
+  z6scroll(112, 82, 50, 224, z6seg(t, 0.42, 1.25), ['岁', '岁', '平', '安'], 16);
+  z6scroll(478, 82, 50, 224, z6seg(t, 0.58, 1.4), ['年', '年', '有', '余'], 16);
+
+  // 灯笼
+  const swing = Math.sin(t * 1.5) * 0.045;
+  z6lantern(76, 56, 1.0, z6seg(t, 0.22, 0.95), swing, 0.8 + 0.2 * Math.sin(t * 2.2));
+  z6lantern(566, 56, 0.86, z6seg(t, 0.34, 1.05), -swing, 0.8 + 0.2 * Math.cos(t * 2.0));
+
+  // 童子抱鲤：套色 → 墨线
+  const fillP = z6seg(t, 1.35, 2.55);
+  const keyP = z6seg(t, 2.5, 3.15);
+  if (fillP > 0 || keyP > 0) z6child(fillP, keyP, t);
+
+  // 金屑
+  z6flakes(z6seg(t, 3.2, 3.7), t);
+
+  // 小字
+  const sp = z6seg(t, 3.9, 4.4);
+  if (sp > 0) {
+    ctx.save();
+    ctx.globalAlpha = z6pop(sp) * 0.9;
+    ctx.fillStyle = 'rgba(246,214,130,0.85)';
+    ctx.font = `400 13px ${FONT}`;
+    ctx.textAlign = 'left';
+    ctx.fillText('木版套色', 26, 332);
+    ctx.restore();
+  }
+  // 朱印
+  const cp = z6seg(t, 4.5, 4.8);
+  if (cp > 0) {
+    ctx.save();
+    ctx.globalAlpha = z6pop(cp);
+    ctx.translate(430, 300);
+    ctx.rotate(-0.05);
+    const s = 0.9 + 0.14 * (1 - z6pop(cp));
+    ctx.scale(s, s);
+    ctx.fillStyle = '#b3221c';
+    ctx.fillRect(-11, -11, 22, 22);
+    ctx.fillStyle = 'rgba(246,232,201,0.95)';
+    ctx.font = `700 13px ${FONT}`;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('吉', 0, 1);
+    ctx.restore();
+  }
+  // 灯火暖光
+  const gp = z6seg(t, 1.0, 2.2);
+  if (gp > 0) {
+    ctx.save();
+    ctx.globalAlpha = gp * 0.55;
+    const g = ctx.createRadialGradient(320, 330, 20, 320, 330, 300);
+    g.addColorStop(0, 'rgba(255,170,90,0.20)');
+    g.addColorStop(1, 'rgba(255,170,90,0)');
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, W, H);
+    ctx.restore();
+  }
+}
+
+  // ===== 共享渲染与署名 =======================================================
+  function watermark() {
+    const text = 'DeepSeek Harness 生成示例';
+    ctx.save();
+    ctx.font = '11px ' + FONT;
+    const w = ctx.measureText(text).width + 14;
+    const x = W - w - 8, y = H - 24;
+    ctx.fillStyle = 'rgba(0,0,0,.46)';
+    ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(x, y, w, 18, 4); else ctx.rect(x, y, w, 18);
+    ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,.82)';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(text, x + 7, y + 9.5);
+    ctx.restore();
+  }
+
+  function paint(t) {
+    ctx.save();
+    ctx.clearRect(0, 0, W, H);
+    try { drawScene(t); } catch (err) { console.error(err); }
+    ctx.restore();
+    watermark();
+  }
+
+  function renderAt(seconds) {
+    const t = ((Number(seconds) % DURATION) + DURATION) % DURATION;
+    paint(t);
+    syncUI(t);
+    return t;
+  }
+  window.renderAt = renderAt;
+
+  // ===== 播放、控制、减少动态 =================================================
+  const playBtn = document.getElementById('play');
+  const timeline = document.getElementById('timeline');
+  const clock = document.getElementById('clock');
+  let playing = false, base = 0, start = 0, current = 0;
+  const reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function syncUI(t) {
+    if (EXPORT) return;
+    current = t;
+    if (timeline) timeline.value = String(t.toFixed(2));
+    if (clock) clock.textContent = t.toFixed(2) + ' / ' + DURATION.toFixed(2) + 's';
+  }
+  function frame(now) {
+    if (!playing) return;
+    const t = ((now - start) / 1000 + base) % DURATION;
+    paint(t);
+    syncUI(t);
+    requestAnimationFrame(frame);
+  }
+  function play() {
+    if (playing) return;
+    playing = true;
+    start = performance.now();
+    base = current;
+    if (playBtn) playBtn.textContent = '暂停';
+    requestAnimationFrame(frame);
+  }
+  function pause() {
+    playing = false;
+    if (playBtn) playBtn.textContent = '播放';
+  }
+  if (playBtn) playBtn.addEventListener('click', () => { playing ? pause() : play(); });
+  document.getElementById('replay')?.addEventListener('click', () => {
+    base = 0; start = performance.now(); paint(0); syncUI(0); play();
+  });
+  timeline?.addEventListener('input', () => {
+    pause(); paint(Number(timeline.value)); syncUI(Number(timeline.value));
+  });
+  window.addEventListener('keydown', e => {
+    if (e.code === 'Space') { e.preventDefault(); playing ? pause() : play(); }
+    if (e.key === 'r' || e.key === 'R') { base = 0; start = performance.now(); paint(0); syncUI(0); play(); }
+  });
+
+  if (EXPORT) {
+    document.body.classList.add('export');
+    renderAt(0);
+  } else if (reduced) {
+    renderAt(2.4);
+    pause();
+  } else {
+    renderAt(0);
+    play();
+  }
+})();
+</script>
+</body>
+</html>

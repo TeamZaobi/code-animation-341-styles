@@ -1,0 +1,499 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>V3 扁平矢量 · DeepSeek Harness 生成示例</title>
+<!--
+  Provenance
+  ----------
+  风格来源：code-animation-styles 目录（《来自俯仰观照博主的动画画风整理》整理稿）
+  catalog commit: 01576924a2b316d1f11ae33f75d3c005e8781451
+  style id: V3「扁平矢量」
+  license: MIT（mg-styles-15，Copyright (c) 2026 Vincentwei1021）
+  本文件：DeepSeek Harness（deepseek-flash）根据该风格提示词新写的候选示例，
+  不是原作者样片，也不是原项目演示；仅用于风格挑选预览。共享的只有时间轴、
+  尺寸、导出接口与页脚署名，画面与动作按本风格重新设计。
+  原文“只输出代码”等语句属于素材的一部分，不覆盖本任务的交付合同。
+-->
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; min-height: 100%; background: #0c0c10; color: #e9e9ee;
+    font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif; }
+  #app { min-height: 100vh; display: flex; flex-direction: column; align-items: center;
+    justify-content: center; gap: 12px; padding: 20px; }
+  #stage { width: min(94vw, 1000px); aspect-ratio: 16 / 9; background: #000;
+    box-shadow: 0 18px 60px rgba(0,0,0,.55); position: relative; overflow: hidden; }
+  canvas { display: block; width: 100%; height: 100%; }
+  #head, #ui { width: min(94vw, 1000px); }
+  #head h1 { margin: 0 0 4px; font-size: 15px; font-weight: 600; letter-spacing: .02em; }
+  #head p { margin: 0; font-size: 12px; line-height: 1.5; color: #9a9aa8; }
+  #ui { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  #ui button { background: #1d1d26; color: #f2f2f6; border: 1px solid #343444;
+    border-radius: 7px; padding: 6px 12px; font-size: 12px; cursor: pointer; }
+  #ui button:hover { background: #272734; }
+  #ui input[type=range] { flex: 1 1 220px; min-width: 150px; accent-color: #7c8cff; }
+  #clock { font-variant-numeric: tabular-nums; font-size: 12px; color: #a9a9ba; min-width: 78px; }
+  #credit { width: min(94vw, 1000px); font-size: 11px; line-height: 1.6; color: #6f6f80; }
+  #credit b { color: #9c9cae; font-weight: 500; }
+  body.export, body.export #app { display: block; width: 640px; height: 360px; min-height: 0;
+    padding: 0; margin: 0; overflow: hidden; background: #000; }
+  body.export #stage { width: 640px; height: 360px; box-shadow: none; }
+  body.export #head, body.export #ui, body.export #credit { display: none; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="head">
+    <h1>V3 · 扁平矢量</h1>
+    <p>扁平矢量一镜到底：一个珊瑚色圆点落定成太阳，纯色小城逐栋弹起，色块擦除后三个图标成形，最后收成一个点与「一点」字标。</p>
+  </div>
+  <div id="stage"><canvas id="c" width="640" height="360" aria-label="扁平矢量 风格动画示例"></canvas></div>
+  <div id="ui">
+    <button id="play" type="button">暂停</button>
+    <button id="replay" type="button">重播</button>
+    <input id="timeline" type="range" min="0" max="6" step="0.01" value="0" aria-label="时间轴">
+    <span id="clock">0.00 / 6.00s</span>
+  </div>
+  <div id="credit">
+    <b>DeepSeek Harness 生成示例</b>（非原项目样片）· 来源：来自俯仰观照博主的动画画风整理 ·
+    许可：MIT（mg-styles-15，Copyright (c) 2026 Vincentwei1021） · 画面与文字均由代码绘制，静音。
+  </div>
+</div>
+<script>
+(() => {
+  'use strict';
+  // ===== 共享脚手架（可改，但导出合同不要破坏）=================================
+  const W = 640, H = 360, DURATION = 6;
+  const EXPORT = new URLSearchParams(location.search).get('export') === '1';
+  const canvas = document.getElementById('c');
+  const ctx = canvas.getContext('2d');
+  const FONT = '"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",sans-serif';
+
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  const lerp = (a, b, t) => a + (b - a) * t;
+  const smooth = t => t * t * (3 - 2 * t);
+  const easeOut = t => 1 - Math.pow(1 - t, 3);
+  const easeIn = t => t * t * t;
+  function rng(seed) { let s = seed >>> 0; return () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; }; }
+
+  // ===== 场景（每个 ID 独立设计；下面的注释区由构建器替换）===================
+  // DESC: 扁平矢量一镜到底：一个珊瑚色圆点落定成太阳，纯色小城逐栋弹起，色块擦除后三个图标成形，最后收成一个点与「一点」字标。
+// V3 扁平矢量 · DeepSeek Harness 生成示例
+const V3_BG = '#FFF6E9', V3_ULTRA = '#2B2BFF', V3_CORAL = '#FF5A4E', V3_SUN = '#FFC62B';
+const V3_MINT = '#2EE6A8', V3_INK = '#151433', V3_WHITE = '#FFFFFF';
+
+function v3seg(t, a, b) { return clamp((t - a) / (b - a), 0, 1); }
+function v3ease(p) { return 1 - Math.pow(1 - p, 3); }
+function v3back(p) { const c = 1.9, q = p - 1; return 1 + (c + 1) * q * q * q + c * q * q; }
+function v3quad(p) { return p < 0.5 ? 2 * p * p : 1 - Math.pow(-2 * p + 2, 2) / 2; }
+
+function v3circle(x, y, r, fill) {
+  ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fillStyle = fill; ctx.fill();
+}
+function v3rr(x, y, w, h, r, fill) {
+  ctx.beginPath();
+  if (ctx.roundRect) ctx.roundRect(x, y, w, h, r); else ctx.rect(x, y, w, h);
+  ctx.fillStyle = fill; ctx.fill();
+}
+// 弹性缩放入场
+function v3popBox(cx, cy, w, h, r, p, fill) {
+  if (p <= 0) return;
+  const s = v3back(clamp(p, 0, 1));
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.scale(s, s);
+  v3rr(-w / 2, -h / 2, w, h, r, fill);
+  ctx.restore();
+}
+
+const V3_BLD = [
+  { x: 62, w: 58, h: 96, c: V3_MINT, win: 2, t0: 1.02 },
+  { x: 126, w: 46, h: 138, c: V3_ULTRA, win: 3, t0: 1.14 },
+  { x: 180, w: 66, h: 74, c: V3_CORAL, win: 1, t0: 1.26, roof: true },
+  { x: 254, w: 52, h: 172, c: V3_INK, win: 4, t0: 1.38 },
+  { x: 314, w: 60, h: 106, c: V3_MINT, win: 2, t0: 1.50 },
+  { x: 382, w: 68, h: 84, c: V3_CORAL, win: 1, t0: 1.62 },
+  { x: 458, w: 50, h: 128, c: V3_ULTRA, win: 3, t0: 1.74 },
+];
+
+const V3_CLOUDS = [
+  { x: 96, y: 62, s: 1.0, sp: 9 },
+  { x: 430, y: 44, s: 0.82, sp: 13 },
+  { x: 268, y: 96, s: 0.62, sp: 7 },
+];
+
+const V3_BIRDS = [
+  { x: 0, y: 0, s: 1, ph: 0 }, { x: 34, y: 12, s: 0.8, ph: 1.1 }, { x: 66, y: -6, s: 0.66, ph: 2.2 },
+];
+
+function v3Cloud(x, y, s) {
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.scale(s, s);
+  v3rr(-34, -8, 68, 20, 10, V3_WHITE);
+  v3circle(-14, -12, 14, V3_WHITE);
+  v3circle(12, -14, 17, V3_WHITE);
+  v3circle(30, -4, 11, V3_WHITE);
+  ctx.restore();
+}
+
+function v3Bird(x, y, s, flap) {
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.scale(s, s);
+  const a = Math.sin(flap) * 5;
+  ctx.fillStyle = V3_INK;
+  ctx.beginPath();
+  ctx.moveTo(0, 0);
+  ctx.quadraticCurveTo(-8, -6 - a, -16, -1 - a);
+  ctx.quadraticCurveTo(-8, 2, 0, 3);
+  ctx.closePath(); ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(0, 0);
+  ctx.quadraticCurveTo(8, -6 - a, 16, -1 - a);
+  ctx.quadraticCurveTo(8, 2, 0, 3);
+  ctx.closePath(); ctx.fill();
+  ctx.beginPath(); ctx.arc(0, 1, 3.2, 0, Math.PI * 2); ctx.fill();
+  ctx.restore();
+}
+
+function v3Buildings(t) {
+  for (const b of V3_BLD) {
+    const p = v3seg(t, b.t0, b.t0 + 0.34);
+    if (p <= 0) continue;
+    const baseY = 276;
+    const hh = b.h * clamp(v3back(clamp(p, 0, 1)), 0, 1.06);
+    v3rr(b.x, baseY - hh, b.w, hh, 3, b.c);
+    // 窗：随楼体升起后淡入
+    const wp = v3seg(t, b.t0 + 0.14, b.t0 + 0.42);
+    if (wp > 0) {
+      ctx.save();
+      ctx.globalAlpha = wp;
+      const cols = b.win, rows = Math.max(1, Math.floor(hh / 34));
+      const col = b.c === V3_INK ? V3_SUN : V3_BG;
+      for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
+        const wx = b.x + 10 + c * ((b.w - 20) / cols) + (b.w - 20) / cols * 0.18;
+        const wy = baseY - hh + 14 + r * 30;
+        if (wy + 14 > baseY - 6) continue;
+        v3rr(wx, wy, Math.min(12, (b.w - 20) / cols - 6), 13, 2, col);
+      }
+      ctx.restore();
+    }
+  }
+}
+
+// 坐在屋顶上的几何小人：圆头、半圆身体、一只挥手的手臂
+function v3Character(x, y, t, p) {
+  if (p <= 0) return;
+  const s = clamp(v3back(clamp(p, 0, 1)), 0, 1.1);
+  const bob = Math.sin(t * 3.2) * 2.2;
+  ctx.save();
+  ctx.translate(x, y + bob);
+  ctx.scale(s, s);
+  // 腿
+  ctx.strokeStyle = V3_INK; ctx.lineWidth = 5; ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.moveTo(-6, -2); ctx.lineTo(-9, -14); ctx.moveTo(6, -2); ctx.lineTo(9, -14); ctx.stroke();
+  // 身体
+  v3rr(-11, -30, 22, 20, 7, V3_SUN);
+  // 手臂（挥手）
+  const arm = Math.sin(t * 6) * 0.5;
+  ctx.beginPath(); ctx.moveTo(10, -26); ctx.lineTo(20, -36 - arm * 8); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(-10, -26); ctx.lineTo(-17, -18); ctx.stroke();
+  // 头
+  v3circle(0, -40, 12, V3_INK);
+  // 眼睛眨眼
+  const blink = (Math.sin(t * 2.4) > 0.96) ? 0.4 : 1;
+  ctx.fillStyle = V3_BG;
+  v3rr(-5.5, -43, 3, 4 * blink, 1.5, V3_BG);
+  v3rr(2.5, -43, 3, 4 * blink, 1.5, V3_BG);
+  ctx.restore();
+}
+
+// 三个图标：柱状图生长 / 对勾描边 / 心心弹出
+function v3Icons(t, alpha) {
+  if (alpha <= 0) return;
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  // 1) 柱状图
+  const bp = v3seg(t, 3.40, 3.78);
+  if (bp > 0) {
+    const bx = 168, by = 250;
+    [0.5, 0.85, 0.68].forEach((k, i) => {
+      const hp = v3ease(clamp(bp * 1.5 - i * 0.22, 0, 1));
+      v3rr(bx + i * 30, by - 74 * k * hp, 20, 74 * k * hp, 4, i === 1 ? V3_BG : V3_INK);
+    });
+    v3rr(bx - 8, by + 4, 96, 5, 2.5, 'rgba(255,246,233,.55)');
+    if (bp > 0.7) {
+      ctx.save(); ctx.globalAlpha = alpha * v3seg(t, 3.58, 3.78);
+      ctx.fillStyle = V3_BG; ctx.font = `600 14px ${FONT}`; ctx.textAlign = 'center';
+      ctx.fillText('生长', bx + 40, by + 32);
+      ctx.restore();
+    }
+  }
+  // 2) 对勾
+  const cp = v3seg(t, 3.66, 4.0);
+  if (cp > 0) {
+    const e = v3ease(cp);
+    ctx.strokeStyle = V3_BG; ctx.lineWidth = 11; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    ctx.beginPath();
+    ctx.moveTo(348, 206);
+    ctx.lineTo(lerp(348, 364, clamp(e * 2, 0, 1)), lerp(206, 224, clamp(e * 2, 0, 1)));
+    if (e > 0.5) ctx.lineTo(lerp(364, 392, clamp((e - 0.5) * 2, 0, 1)), lerp(224, 184, clamp((e - 0.5) * 2, 0, 1)));
+    ctx.stroke();
+    if (cp > 0.75) {
+      ctx.fillStyle = V3_BG; ctx.font = `600 14px ${FONT}`; ctx.textAlign = 'center';
+      ctx.fillText('完成', 368, 268);
+    }
+  }
+  // 3) 心心
+  const hp = v3seg(t, 3.9, 4.22);
+  if (hp > 0) {
+    const s = v3back(clamp(hp, 0, 1));
+    ctx.save();
+    ctx.translate(472, 206);
+    ctx.scale(s * 1.35, s * 1.35);
+    ctx.beginPath();
+    ctx.moveTo(0, 14);
+    ctx.bezierCurveTo(-26, -2, -16, -26, 0, -12);
+    ctx.bezierCurveTo(16, -26, 26, -2, 0, 14);
+    ctx.fillStyle = V3_BG; ctx.fill();
+    ctx.restore();
+    if (hp > 0.6) {
+      ctx.save(); ctx.globalAlpha = alpha * v3seg(t, 3.94, 4.04);
+      ctx.fillStyle = V3_BG; ctx.font = `600 14px ${FONT}`; ctx.textAlign = 'center';
+      ctx.fillText('心动', 472, 268);
+      ctx.restore();
+    }
+  }
+  ctx.restore();
+}
+
+function v3Headline(a, t) {
+  if (a <= 0) return;
+  ctx.save();
+  ctx.globalAlpha = a;
+  ctx.fillStyle = V3_BG;
+  ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
+  ctx.font = `800 26px ${FONT}`;
+  ctx.fillText('一个点，能变成什么？', 320, 104);
+  ctx.font = `500 13px ${FONT}`;
+  ctx.fillStyle = 'rgba(255,246,233,.82)';
+  ctx.fillText('长成一座城 · 做成一件小事 · 心动一下', 320, 128);
+  ctx.restore();
+}
+
+function drawScene(t) {
+  ctx.fillStyle = V3_BG; ctx.fillRect(0, 0, W, H);
+
+  /* ---------- 第一幕：点 → 太阳 → 城市 ---------- */
+  if (t < 3.42) {
+    // 底部色带与几个小色点，保证 t=0 就有构图
+    const gp = v3seg(t, -0.5, -0.1);
+    if (gp > 0) v3rr(0, 276, W, 84, 0, V3_ULTRA);
+    const dots = [[64, 306, V3_SUN], [92, 326, V3_MINT], [44, 330, V3_CORAL]];
+    dots.forEach(([x, y, c], i) => {
+      const k = v3ease(v3seg(t, -0.45 + i * 0.07, -0.1 + i * 0.07));
+      if (k > 0) v3circle(x, y, 6 * k, c);
+    });
+
+    // 圆点：落下 + 拉伸 + 挤压回弹（t=0 时已在半空中）
+    const fall = v3seg(t, -0.62, 0.12);
+    const d = Math.max(0, t - 0.12);
+    const amp = 0.3 * Math.exp(-6.5 * d);
+    let sx = 1 + amp * Math.cos(19 * d);
+    let sy = 1 - amp * Math.cos(19 * d);
+    if (fall < 1) { sx = 1 - 0.16 * fall; sy = 1 + 0.38 * fall; }
+    // 落定后升格为太阳
+    const rise = v3ease(v3seg(t, 0.5, 1.15));
+    const cx = lerp(320, 496, rise), cy = lerp(190, 104, rise);
+    const r = lerp(34, 46, rise);
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.scale(sx, sy);
+    v3circle(0, 0, r, rise > 0.45 ? V3_SUN : V3_CORAL);
+    ctx.restore();
+    // 太阳光芒
+    if (rise > 0.55) {
+      ctx.save();
+      ctx.globalAlpha = v3seg(t, 0.9, 1.25);
+      ctx.strokeStyle = V3_SUN; ctx.lineWidth = 5; ctx.lineCap = 'round';
+      for (let i = 0; i < 8; i++) {
+        const a = i * Math.PI / 4 + t * 0.5;
+        ctx.beginPath();
+        ctx.moveTo(cx + Math.cos(a) * (r + 10), cy + Math.sin(a) * (r + 10));
+        ctx.lineTo(cx + Math.cos(a) * (r + 20), cy + Math.sin(a) * (r + 20));
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+
+    // 云
+    V3_CLOUDS.forEach((c, i) => {
+      const p = v3seg(t, 0.66 + i * 0.08, 1.1 + i * 0.08);
+      if (p <= 0) return;
+      const x = ((c.x + t * c.sp) % 700) - 30;
+      ctx.save(); ctx.globalAlpha = v3ease(p);
+      v3Cloud(x, c.y, c.s * v3ease(p));
+      ctx.restore();
+    });
+
+    // 楼群
+    v3Buildings(t);
+    // 屋顶小人
+    v3Character(213, 202, t, v3seg(t, 1.78, 2.08));
+    // 鸟
+    if (t > 1.8) {
+      V3_BIRDS.forEach((b, i) => {
+        const x = 620 - ((t - 1.8) * (130 + i * 10)) % 800;
+        v3Bird(x + b.x, 116 + b.y, b.s, t * 9 + b.ph);
+      });
+    }
+
+    // 元素驱动转场：珊瑚色块从左侧擦入，鸟在前领路
+    const wipe = v3ease(v3seg(t, 2.86, 3.36));
+    if (wipe > 0) {
+      ctx.save();
+      ctx.fillStyle = V3_CORAL;
+      ctx.fillRect(0, 0, W * wipe, H);
+      if (wipe < 0.995) {
+        ctx.fillStyle = V3_BG;
+        ctx.fillRect(W * wipe - 6, 0, 6, H);
+        v3Bird(W * wipe + 26, 90, 1.6, t * 10);
+      }
+      ctx.restore();
+    }
+  } else {
+    /* ---------- 第二幕：色块底上的三个图标 ---------- */
+    const toDot = v3ease(v3seg(t, 4.34, 4.66));
+    const cxD = 320, cyD = 138, rD = 22;
+    if (toDot <= 0) {
+      ctx.fillStyle = V3_CORAL; ctx.fillRect(0, 0, W, H);
+    } else {
+      const w = lerp(W, rD * 2, toDot), h = lerp(H, rD * 2, toDot);
+      const x = lerp(0, cxD - rD, toDot), y = lerp(0, cyD - rD, toDot);
+      v3rr(x, y, w, h, rD * toDot * 1.2, V3_CORAL);
+    }
+
+    v3Headline((1 - v3seg(t, 4.2, 4.36)) * v3seg(t, 3.4, 3.62), t);
+    const icoAlpha = 1 - v3seg(t, 4.2, 4.36);
+    v3Icons(t, icoAlpha);
+
+    // 字标
+    const lp = v3seg(t, 4.56, 4.94);
+    if (lp > 0) {
+      const e = v3ease(lp);
+      ctx.save();
+      ctx.globalAlpha = e;
+      ctx.translate(0, (1 - e) * 12);
+      ctx.fillStyle = V3_ULTRA; ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
+      ctx.font = `800 40px ${FONT}`;
+      ctx.fillText('一点', 320, 218);
+      ctx.fillStyle = 'rgba(21,20,51,.74)';
+      ctx.font = `500 15px ${FONT}`;
+      ctx.fillText('从一个点开始，长成一座城。', 320, 248);
+      ctx.restore();
+      const dp = v3seg(t, 4.8, 5.1);
+      if (dp > 0) {
+        const k = v3ease(dp);
+        [[250, 176, V3_MINT], [392, 182, V3_SUN], [268, 268, V3_CORAL], [374, 272, V3_MINT]].forEach(([x, y, c], i) => {
+          v3circle(x, y, k * (2.4 + Math.sin(t * 4 + i) * 0.5), c);
+        });
+      }
+    }
+  }
+}
+
+  // ===== 共享渲染与署名 =======================================================
+  function watermark() {
+    const text = 'DeepSeek Harness 生成示例';
+    ctx.save();
+    ctx.font = '11px ' + FONT;
+    const w = ctx.measureText(text).width + 14;
+    const x = W - w - 8, y = H - 24;
+    ctx.fillStyle = 'rgba(0,0,0,.46)';
+    ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(x, y, w, 18, 4); else ctx.rect(x, y, w, 18);
+    ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,.82)';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(text, x + 7, y + 9.5);
+    ctx.restore();
+  }
+
+  function paint(t) {
+    ctx.save();
+    ctx.clearRect(0, 0, W, H);
+    try { drawScene(t); } catch (err) { console.error(err); }
+    ctx.restore();
+    watermark();
+  }
+
+  function renderAt(seconds) {
+    const t = ((Number(seconds) % DURATION) + DURATION) % DURATION;
+    paint(t);
+    syncUI(t);
+    return t;
+  }
+  window.renderAt = renderAt;
+
+  // ===== 播放、控制、减少动态 =================================================
+  const playBtn = document.getElementById('play');
+  const timeline = document.getElementById('timeline');
+  const clock = document.getElementById('clock');
+  let playing = false, base = 0, start = 0, current = 0;
+  const reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function syncUI(t) {
+    if (EXPORT) return;
+    current = t;
+    if (timeline) timeline.value = String(t.toFixed(2));
+    if (clock) clock.textContent = t.toFixed(2) + ' / ' + DURATION.toFixed(2) + 's';
+  }
+  function frame(now) {
+    if (!playing) return;
+    const t = ((now - start) / 1000 + base) % DURATION;
+    paint(t);
+    syncUI(t);
+    requestAnimationFrame(frame);
+  }
+  function play() {
+    if (playing) return;
+    playing = true;
+    start = performance.now();
+    base = current;
+    if (playBtn) playBtn.textContent = '暂停';
+    requestAnimationFrame(frame);
+  }
+  function pause() {
+    playing = false;
+    if (playBtn) playBtn.textContent = '播放';
+  }
+  if (playBtn) playBtn.addEventListener('click', () => { playing ? pause() : play(); });
+  document.getElementById('replay')?.addEventListener('click', () => {
+    base = 0; start = performance.now(); paint(0); syncUI(0); play();
+  });
+  timeline?.addEventListener('input', () => {
+    pause(); paint(Number(timeline.value)); syncUI(Number(timeline.value));
+  });
+  window.addEventListener('keydown', e => {
+    if (e.code === 'Space') { e.preventDefault(); playing ? pause() : play(); }
+    if (e.key === 'r' || e.key === 'R') { base = 0; start = performance.now(); paint(0); syncUI(0); play(); }
+  });
+
+  if (EXPORT) {
+    document.body.classList.add('export');
+    renderAt(0);
+  } else if (reduced) {
+    renderAt(2.4);
+    pause();
+  } else {
+    renderAt(0);
+    play();
+  }
+})();
+</script>
+</body>
+</html>

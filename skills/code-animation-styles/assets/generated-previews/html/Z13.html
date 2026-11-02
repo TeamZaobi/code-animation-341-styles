@@ -1,0 +1,527 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Z13 水墨漫画 · DeepSeek Harness 生成示例</title>
+<!--
+  Provenance
+  ----------
+  风格来源：code-animation-styles 目录（《来自俯仰观照博主的动画画风整理》整理稿）
+  catalog commit: 01576924a2b316d1f11ae33f75d3c005e8781451
+  style id: Z13「水墨漫画」
+  license: upstream-custom-noncommercial（俯仰观照整理稿，非商业）
+  本文件：DeepSeek Harness（deepseek-flash）根据该风格提示词新写的候选示例，
+  不是原作者样片，也不是原项目演示；仅用于风格挑选预览。共享的只有时间轴、
+  尺寸、导出接口与页脚署名，画面与动作按本风格重新设计。
+  原文“只输出代码”等语句属于素材的一部分，不覆盖本任务的交付合同。
+-->
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; min-height: 100%; background: #0c0c10; color: #e9e9ee;
+    font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif; }
+  #app { min-height: 100vh; display: flex; flex-direction: column; align-items: center;
+    justify-content: center; gap: 12px; padding: 20px; }
+  #stage { width: min(94vw, 1000px); aspect-ratio: 16 / 9; background: #000;
+    box-shadow: 0 18px 60px rgba(0,0,0,.55); position: relative; overflow: hidden; }
+  canvas { display: block; width: 100%; height: 100%; }
+  #head, #ui { width: min(94vw, 1000px); }
+  #head h1 { margin: 0 0 4px; font-size: 15px; font-weight: 600; letter-spacing: .02em; }
+  #head p { margin: 0; font-size: 12px; line-height: 1.5; color: #9a9aa8; }
+  #ui { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  #ui button { background: #1d1d26; color: #f2f2f6; border: 1px solid #343444;
+    border-radius: 7px; padding: 6px 12px; font-size: 12px; cursor: pointer; }
+  #ui button:hover { background: #272734; }
+  #ui input[type=range] { flex: 1 1 220px; min-width: 150px; accent-color: #7c8cff; }
+  #clock { font-variant-numeric: tabular-nums; font-size: 12px; color: #a9a9ba; min-width: 78px; }
+  #credit { width: min(94vw, 1000px); font-size: 11px; line-height: 1.6; color: #6f6f80; }
+  #credit b { color: #9c9cae; font-weight: 500; }
+  body.export, body.export #app { display: block; width: 640px; height: 360px; min-height: 0;
+    padding: 0; margin: 0; overflow: hidden; background: #000; }
+  body.export #stage { width: 640px; height: 360px; box-shadow: none; }
+  body.export #head, body.export #ui, body.export #credit { display: none; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="head">
+    <h1>Z13 · 水墨漫画</h1>
+    <p>水墨漫画：毛笔线画一只闭眼小猫，墨晕打底，气泡里冒出「慢慢来，也挺好」，尾巴一直晃。</p>
+  </div>
+  <div id="stage"><canvas id="c" width="640" height="360" aria-label="水墨漫画 风格动画示例"></canvas></div>
+  <div id="ui">
+    <button id="play" type="button">暂停</button>
+    <button id="replay" type="button">重播</button>
+    <input id="timeline" type="range" min="0" max="6" step="0.01" value="0" aria-label="时间轴">
+    <span id="clock">0.00 / 6.00s</span>
+  </div>
+  <div id="credit">
+    <b>DeepSeek Harness 生成示例</b>（非原项目样片）· 来源：来自俯仰观照博主的动画画风整理 ·
+    许可：upstream-custom-noncommercial（俯仰观照整理稿，非商业） · 画面与文字均由代码绘制，静音。
+  </div>
+</div>
+<script>
+(() => {
+  'use strict';
+  // ===== 共享脚手架（可改，但导出合同不要破坏）=================================
+  const W = 640, H = 360, DURATION = 6;
+  const EXPORT = new URLSearchParams(location.search).get('export') === '1';
+  const canvas = document.getElementById('c');
+  const ctx = canvas.getContext('2d');
+  const FONT = '"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",sans-serif';
+
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  const lerp = (a, b, t) => a + (b - a) * t;
+  const smooth = t => t * t * (3 - 2 * t);
+  const easeOut = t => 1 - Math.pow(1 - t, 3);
+  const easeIn = t => t * t * t;
+  function rng(seed) { let s = seed >>> 0; return () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; }; }
+
+  // ===== 场景（每个 ID 独立设计；下面的注释区由构建器替换）===================
+  // DESC: 水墨漫画：毛笔线画一只闭眼小猫，墨晕打底，气泡里冒出「慢慢来，也挺好」，尾巴一直晃。
+// Z13 水墨漫画 · DeepSeek Harness 生成示例
+
+const Z13_PAPER = '#f6f0e0';
+const Z13_INK = '32,30,26';
+
+const Z13_TEX = (() => {
+  const c = document.createElement('canvas'); c.width = W; c.height = H;
+  const g = c.getContext('2d');
+  g.fillStyle = Z13_PAPER; g.fillRect(0, 0, W, H);
+  const r = rng(1313);
+  for (let i = 0; i < 420; i++) {
+    const x = r() * W, y = r() * H, len = 4 + r() * 22, a = r() * Math.PI;
+    g.strokeStyle = `rgba(140,120,86,${0.015 + r() * 0.04})`;
+    g.lineWidth = 0.6;
+    g.beginPath(); g.moveTo(x, y); g.lineTo(x + Math.cos(a) * len, y + Math.sin(a) * len); g.stroke();
+  }
+  return c;
+})();
+
+// 墨晕底：一次性糊好的几团
+const Z13_WASH = (() => {
+  const c = document.createElement('canvas'); c.width = W; c.height = H;
+  const g = c.getContext('2d');
+  const r = rng(2323);
+  const blobs = [[236, 236, 96, 0.16], [116, 300, 58, 0.10], [360, 300, 66, 0.09], [520, 300, 48, 0.07]];
+  blobs.forEach(([x, y, rr, a]) => {
+    const grd = g.createRadialGradient(x, y, 4, x, y, rr);
+    grd.addColorStop(0, `rgba(${Z13_INK},${a})`);
+    grd.addColorStop(0.55, `rgba(${Z13_INK},${a * 0.45})`);
+    grd.addColorStop(1, `rgba(${Z13_INK},0)`);
+    g.fillStyle = grd;
+    g.beginPath();
+    g.ellipse(x, y, rr, rr * 0.78, 0, 0, Math.PI * 2);
+    g.fill();
+  });
+  for (let i = 0; i < 40; i++) {
+    g.fillStyle = `rgba(${Z13_INK},${0.03 + r() * 0.08})`;
+    g.beginPath();
+    g.arc(r() * W, r() * H, 1 + r() * 5, 0, Math.PI * 2);
+    g.fill();
+  }
+  return c;
+})();
+
+function z13seg(t, a, b) { return clamp((t - a) / (b - a), 0, 1); }
+
+// 毛笔线：两头收、中段饱满
+function z13brush(pts, p, w, alpha) {
+  if (p <= 0.01) return;
+  const n = pts.length - 1;
+  const np = Math.max(2, Math.round(p * n));
+  const L = [], R = [];
+  for (let i = 0; i <= np; i++) {
+    const u = i / n;
+    const [x, y] = pts[i];
+    const [x2, y2] = pts[Math.min(i + 1, n)];
+    const [x0, y0] = pts[Math.max(i - 1, 0)];
+    let dx = x2 - x0, dy = y2 - y0;
+    const dl = Math.hypot(dx, dy) || 1;
+    dx /= dl; dy /= dl;
+    const hw = w * 0.5 * Math.pow(Math.sin(Math.PI * clamp(u * 0.96 + 0.02, 0, 1)), 0.4);
+    L.push([x - dy * hw, y + dx * hw]);
+    R.push([x + dy * hw, y - dx * hw]);
+  }
+  ctx.save();
+  ctx.globalAlpha = alpha === undefined ? 1 : alpha;
+  ctx.fillStyle = `rgba(${Z13_INK},0.92)`;
+  ctx.beginPath();
+  ctx.moveTo(L[0][0], L[0][1]);
+  for (let i = 1; i < L.length; i++) ctx.lineTo(L[i][0], L[i][1]);
+  for (let i = R.length - 1; i >= 0; i--) ctx.lineTo(R[i][0], R[i][1]);
+  ctx.closePath();
+  ctx.fill();
+  ctx.restore();
+}
+
+function z13curve(p0, pc, p1, n) {
+  const out = [];
+  for (let i = 0; i <= n; i++) {
+    const u = i / n, v = 1 - u;
+    out.push([
+      v * v * p0[0] + 2 * v * u * pc[0] + u * u * p1[0],
+      v * v * p0[1] + 2 * v * u * pc[1] + u * u * p1[1],
+    ]);
+  }
+  return out;
+}
+
+// 小猫：头 + 身体 + 尾
+function z13cat(t, pHead, pBody, pFace) {
+  const cx = 228, cy = 196;
+  const bob = Math.sin(t * 1.6) * 1.6;
+
+  // 身体
+  if (pBody > 0) {
+    const e = easeOut(pBody);
+    ctx.save();
+    ctx.globalAlpha = e;
+    ctx.translate(cx, cy + bob + 58);
+    ctx.fillStyle = `rgba(${Z13_INK},0.06)`;
+    ctx.beginPath();
+    ctx.ellipse(0, 0, 52 * e, 46 * e, 0.06, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = `rgba(${Z13_INK},0.9)`;
+    ctx.lineWidth = 3.2;
+    ctx.stroke();
+    // 前爪
+    ctx.fillStyle = `rgba(${Z13_INK},0.08)`;
+    for (const sx of [-20, 22]) {
+      ctx.beginPath();
+      ctx.ellipse(sx, 34, 13, 9, 0.1, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = `rgba(${Z13_INK},0.82)`;
+      ctx.lineWidth = 2.4;
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  // 尾巴：一直晃
+  if (pBody > 0.3) {
+    const e = clamp((pBody - 0.3) / 0.7, 0, 1);
+    const sway = Math.sin(t * 2.4) * 14;
+    const pts = z13curve([-44, 64], [-96, 30 + sway * 0.4], [-70 + sway, -34 + sway * 0.5], 18);
+    z13brush(pts, e, 12, 0.92);
+  }
+
+  // 头
+  if (pHead > 0) {
+    const e = easeOut(pHead);
+    ctx.save();
+    ctx.translate(cx, cy + bob);
+    ctx.globalAlpha = e;
+    // 耳朵
+    const tw = Math.sin(t * 3.1) * 0.05;
+    for (const sx of [-1, 1]) {
+      ctx.save();
+      ctx.translate(sx * 30, -30);
+      ctx.rotate(sx * (0.5 + tw));
+      ctx.fillStyle = `rgba(${Z13_INK},0.08)`;
+      ctx.beginPath();
+      ctx.moveTo(-16, 8); ctx.lineTo(0, -26); ctx.lineTo(16, 6);
+      ctx.closePath();
+      ctx.fill();
+      ctx.strokeStyle = `rgba(${Z13_INK},0.9)`;
+      ctx.lineWidth = 3;
+      ctx.lineJoin = 'round';
+      ctx.stroke();
+      ctx.restore();
+    }
+    // 脸
+    ctx.fillStyle = `rgba(250,246,236,0.85)`;
+    ctx.beginPath();
+    ctx.ellipse(0, 0, 46 * e, 40 * e, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = `rgba(${Z13_INK},0.92)`;
+    ctx.lineWidth = 3.4;
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  // 五官
+  if (pFace > 0) {
+    ctx.save();
+    ctx.translate(cx, cy + bob);
+    ctx.globalAlpha = pFace;
+    ctx.strokeStyle = `rgba(${Z13_INK},0.92)`;
+    ctx.lineCap = 'round';
+    ctx.lineWidth = 3;
+    // 闭眼
+    for (const sx of [-1, 1]) {
+      ctx.beginPath();
+      ctx.arc(sx * 17, -3, 8, Math.PI * 1.12, Math.PI * 1.88);
+      ctx.stroke();
+    }
+    // 鼻
+    ctx.fillStyle = `rgba(${Z13_INK},0.9)`;
+    ctx.beginPath();
+    ctx.moveTo(0, 8); ctx.lineTo(5, 14); ctx.lineTo(-5, 14);
+    ctx.closePath(); ctx.fill();
+    // 嘴
+    ctx.lineWidth = 2.2;
+    ctx.beginPath();
+    ctx.moveTo(0, 14);
+    ctx.quadraticCurveTo(-6, 21, -12, 16);
+    ctx.moveTo(0, 14);
+    ctx.quadraticCurveTo(6, 21, 12, 16);
+    ctx.stroke();
+    // 胡须
+    ctx.lineWidth = 1.7;
+    for (const sx of [-1, 1]) {
+      for (let k = 0; k < 3; k++) {
+        const yy = 8 + k * 7;
+        ctx.beginPath();
+        ctx.moveTo(sx * 32, yy);
+        ctx.quadraticCurveTo(sx * 48, yy - 2 + k * 2, sx * 62, yy - 6 + k * 4);
+        ctx.stroke();
+      }
+    }
+    // 腮红
+    ctx.fillStyle = 'rgba(214,120,104,0.28)';
+    ctx.beginPath(); ctx.ellipse(-26, 12, 9, 6, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(26, 12, 9, 6, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.restore();
+  }
+}
+
+function z13bubble(t, p) {
+  if (p <= 0) return;
+  const e = easeOut(p);
+  const bx = 342, by = 84 + Math.sin(t * 1.5) * 3, bw = 218, bh = 96;
+  ctx.save();
+  ctx.globalAlpha = Math.min(1, e * 1.15);
+  ctx.translate(bx + bw / 2, by + bh / 2);
+  const s = 0.82 + 0.18 * e + 0.012 * Math.sin(t * 2.2);
+  ctx.scale(s, s);
+  ctx.translate(-(bx + bw / 2), -(by + bh / 2));
+  // 气泡
+  ctx.fillStyle = 'rgba(252,248,238,0.96)';
+  ctx.strokeStyle = `rgba(${Z13_INK},0.9)`;
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  if (ctx.roundRect) ctx.roundRect(bx, by, bw, bh, 22); else ctx.rect(bx, by, bw, bh);
+  ctx.fill();
+  ctx.stroke();
+  // 指向猫的尾巴
+  ctx.beginPath();
+  ctx.moveTo(bx + 22, by + bh - 16);
+  ctx.lineTo(bx - 26, by + bh + 26);
+  ctx.lineTo(bx + 52, by + bh - 6);
+  ctx.closePath();
+  ctx.fillStyle = 'rgba(252,248,238,0.96)';
+  ctx.fill();
+  ctx.strokeStyle = `rgba(${Z13_INK},0.9)`;
+  ctx.stroke();
+  // 盖住气泡与尾巴相交的两条边
+  ctx.beginPath();
+  ctx.moveTo(bx + 24, by + bh - 4);
+  ctx.lineTo(bx + 50, by + bh - 4);
+  ctx.strokeStyle = 'rgba(252,248,238,1)';
+  ctx.lineWidth = 4;
+  ctx.stroke();
+  ctx.restore();
+}
+
+function z13text(p) {
+  if (p <= 0) return;
+  ctx.save();
+  ctx.globalAlpha = p;
+  ctx.fillStyle = `rgba(${Z13_INK},0.92)`;
+  ctx.font = `400 21px ${FONT}`;
+  ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+  ctx.fillText('慢慢来，', 366, 118);
+  ctx.fillText('也挺好。', 366, 150);
+  ctx.restore();
+}
+
+function drawScene(t) {
+  ctx.drawImage(Z13_TEX, 0, 0);
+  ctx.drawImage(Z13_WASH, 0, 0);
+
+  // 漫画框：毛笔画出的粗线
+  const fp = z13seg(t, -0.2, 0.7);
+  if (fp > 0) {
+    const pts = [];
+    for (let i = 0; i <= 18; i++) {
+      pts.push([30 + i * 32.5, 30 + Math.sin(i * 1.7) * 1.6]);
+    }
+    z13brush(pts, clamp(fp * 4, 0, 1), 8, 0.9);
+    const pts2 = [];
+    for (let i = 0; i <= 18; i++) pts2.push([610 - Math.sin(i * 1.3) * 1.4, 34 + i * 16]);
+    z13brush(pts2, clamp(fp * 4 - 1, 0, 1), 7, 0.9);
+    const pts3 = [];
+    for (let i = 0; i <= 18; i++) pts3.push([610 - i * 32.5, 328 + Math.sin(i * 1.5) * 1.6]);
+    z13brush(pts3, clamp(fp * 4 - 2, 0, 1), 8, 0.9);
+    const pts4 = [];
+    for (let i = 0; i <= 18; i++) pts4.push([30, 322 - i * 16 + Math.sin(i * 1.9) * 1.4]);
+    z13brush(pts4, clamp(fp * 4 - 3, 0, 1), 7, 0.9);
+  }
+
+  // 猫
+  const ph = z13seg(t, 0.75, 1.9);
+  const pb = z13seg(t, 1.6, 2.7);
+  const pf = z13seg(t, 2.3, 3.1);
+  z13cat(t, ph, pb, pf);
+
+  // 气泡与台词
+  const bp = z13seg(t, 2.9, 3.7);
+  z13bubble(t, bp);
+  z13text(z13seg(t, 3.3, 3.9));
+
+  // 拟声「喵」
+  const mp = z13seg(t, 3.8, 4.4);
+  if (mp > 0) {
+    ctx.save();
+    ctx.globalAlpha = easeOut(mp) * (0.85 + 0.15 * Math.sin(t * 3));
+    ctx.fillStyle = `rgba(${Z13_INK},0.85)`;
+    ctx.font = `400 22px ${FONT}`;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('喵', 316, 236);
+    ctx.restore();
+  }
+
+  // 动态线：小猫头顶的快乐线
+  const lp = z13seg(t, 3.6, 4.2);
+  if (lp > 0) {
+    ctx.save();
+    ctx.globalAlpha = easeOut(lp) * 0.7;
+    ctx.strokeStyle = `rgba(${Z13_INK},0.6)`;
+    ctx.lineWidth = 2;
+    for (let k = -1; k <= 1; k++) {
+      const a = -Math.PI / 2 + k * 0.55;
+      const x0 = 228 + Math.cos(a) * 58, y0 = 196 + Math.sin(a) * 50;
+      ctx.beginPath();
+      ctx.moveTo(x0, y0);
+      ctx.lineTo(x0 + Math.cos(a) * (10 + 3 * Math.sin(t * 4 + k)), y0 + Math.sin(a) * (10 + 3 * Math.sin(t * 4 + k)));
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  // 题头
+  const tp = z13seg(t, 0.35, 1.0);
+  if (tp > 0) {
+    ctx.save();
+    ctx.globalAlpha = easeOut(tp);
+    ctx.fillStyle = `rgba(${Z13_INK},0.9)`;
+    ctx.font = `700 25px ${FONT}`;
+    ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+    ctx.fillText('水墨漫画', 52, 54);
+    ctx.font = `400 13px ${FONT}`;
+    ctx.fillStyle = `rgba(${Z13_INK},0.66)`;
+    ctx.fillText('毛笔线 · 墨晕', 52, 78);
+    ctx.restore();
+  }
+
+  // 飘着的墨点
+  const dp = z13seg(t, 4.2, 5.0);
+  if (dp > 0) {
+    ctx.save();
+    ctx.globalAlpha = dp * 0.5;
+    for (let i = 0; i < 7; i++) {
+      const x = 470 + Math.sin(t * 0.7 + i * 1.7) * 44;
+      const y = 232 + ((t * 8 + i * 21) % 78);
+      ctx.fillStyle = `rgba(${Z13_INK},0.28)`;
+      ctx.beginPath();
+      ctx.arc(x, y, 1.2 + (i % 3), 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.restore();
+  }
+}
+
+  // ===== 共享渲染与署名 =======================================================
+  function watermark() {
+    const text = 'DeepSeek Harness 生成示例';
+    ctx.save();
+    ctx.font = '11px ' + FONT;
+    const w = ctx.measureText(text).width + 14;
+    const x = W - w - 8, y = H - 24;
+    ctx.fillStyle = 'rgba(0,0,0,.46)';
+    ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(x, y, w, 18, 4); else ctx.rect(x, y, w, 18);
+    ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,.82)';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(text, x + 7, y + 9.5);
+    ctx.restore();
+  }
+
+  function paint(t) {
+    ctx.save();
+    ctx.clearRect(0, 0, W, H);
+    try { drawScene(t); } catch (err) { console.error(err); }
+    ctx.restore();
+    watermark();
+  }
+
+  function renderAt(seconds) {
+    const t = ((Number(seconds) % DURATION) + DURATION) % DURATION;
+    paint(t);
+    syncUI(t);
+    return t;
+  }
+  window.renderAt = renderAt;
+
+  // ===== 播放、控制、减少动态 =================================================
+  const playBtn = document.getElementById('play');
+  const timeline = document.getElementById('timeline');
+  const clock = document.getElementById('clock');
+  let playing = false, base = 0, start = 0, current = 0;
+  const reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function syncUI(t) {
+    if (EXPORT) return;
+    current = t;
+    if (timeline) timeline.value = String(t.toFixed(2));
+    if (clock) clock.textContent = t.toFixed(2) + ' / ' + DURATION.toFixed(2) + 's';
+  }
+  function frame(now) {
+    if (!playing) return;
+    const t = ((now - start) / 1000 + base) % DURATION;
+    paint(t);
+    syncUI(t);
+    requestAnimationFrame(frame);
+  }
+  function play() {
+    if (playing) return;
+    playing = true;
+    start = performance.now();
+    base = current;
+    if (playBtn) playBtn.textContent = '暂停';
+    requestAnimationFrame(frame);
+  }
+  function pause() {
+    playing = false;
+    if (playBtn) playBtn.textContent = '播放';
+  }
+  if (playBtn) playBtn.addEventListener('click', () => { playing ? pause() : play(); });
+  document.getElementById('replay')?.addEventListener('click', () => {
+    base = 0; start = performance.now(); paint(0); syncUI(0); play();
+  });
+  timeline?.addEventListener('input', () => {
+    pause(); paint(Number(timeline.value)); syncUI(Number(timeline.value));
+  });
+  window.addEventListener('keydown', e => {
+    if (e.code === 'Space') { e.preventDefault(); playing ? pause() : play(); }
+    if (e.key === 'r' || e.key === 'R') { base = 0; start = performance.now(); paint(0); syncUI(0); play(); }
+  });
+
+  if (EXPORT) {
+    document.body.classList.add('export');
+    renderAt(0);
+  } else if (reduced) {
+    renderAt(2.4);
+    pause();
+  } else {
+    renderAt(0);
+    play();
+  }
+})();
+</script>
+</body>
+</html>

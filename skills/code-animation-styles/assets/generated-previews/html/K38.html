@@ -1,0 +1,549 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>K38 情景喜剧 · DeepSeek Harness 生成示例</title>
+<!--
+  Provenance
+  ----------
+  风格来源：code-animation-styles 目录（《来自俯仰观照博主的动画画风整理》整理稿）
+  catalog commit: 01576924a2b316d1f11ae33f75d3c005e8781451
+  style id: K38「情景喜剧」
+  license: upstream-custom-noncommercial（俯仰观照整理稿，非商业）
+  本文件：DeepSeek Harness（deepseek-flash）根据该风格提示词新写的候选示例，
+  不是原作者样片，也不是原项目演示；仅用于风格挑选预览。共享的只有时间轴、
+  尺寸、导出接口与页脚署名，画面与动作按本风格重新设计。
+  原文“只输出代码”等语句属于素材的一部分，不覆盖本任务的交付合同。
+-->
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; min-height: 100%; background: #0c0c10; color: #e9e9ee;
+    font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif; }
+  #app { min-height: 100vh; display: flex; flex-direction: column; align-items: center;
+    justify-content: center; gap: 12px; padding: 20px; }
+  #stage { width: min(94vw, 1000px); aspect-ratio: 16 / 9; background: #000;
+    box-shadow: 0 18px 60px rgba(0,0,0,.55); position: relative; overflow: hidden; }
+  canvas { display: block; width: 100%; height: 100%; }
+  #head, #ui { width: min(94vw, 1000px); }
+  #head h1 { margin: 0 0 4px; font-size: 15px; font-weight: 600; letter-spacing: .02em; }
+  #head p { margin: 0; font-size: 12px; line-height: 1.5; color: #9a9aa8; }
+  #ui { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  #ui button { background: #1d1d26; color: #f2f2f6; border: 1px solid #343444;
+    border-radius: 7px; padding: 6px 12px; font-size: 12px; cursor: pointer; }
+  #ui button:hover { background: #272734; }
+  #ui input[type=range] { flex: 1 1 220px; min-width: 150px; accent-color: #7c8cff; }
+  #clock { font-variant-numeric: tabular-nums; font-size: 12px; color: #a9a9ba; min-width: 78px; }
+  #credit { width: min(94vw, 1000px); font-size: 11px; line-height: 1.6; color: #6f6f80; }
+  #credit b { color: #9c9cae; font-weight: 500; }
+  body.export, body.export #app { display: block; width: 640px; height: 360px; min-height: 0;
+    padding: 0; margin: 0; overflow: hidden; background: #000; }
+  body.export #stage { width: 640px; height: 360px; box-shadow: none; }
+  body.export #head, body.export #ui, body.export #credit { display: none; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="head">
+    <h1>K38 · 情景喜剧</h1>
+    <p>平涂粗描边的客厅情景喜剧：一家三口坐在橙色沙发上，最小的那个站起来比划「我有个主意」，电视光在墙上闪。</p>
+  </div>
+  <div id="stage"><canvas id="c" width="640" height="360" aria-label="情景喜剧 风格动画示例"></canvas></div>
+  <div id="ui">
+    <button id="play" type="button">暂停</button>
+    <button id="replay" type="button">重播</button>
+    <input id="timeline" type="range" min="0" max="6" step="0.01" value="0" aria-label="时间轴">
+    <span id="clock">0.00 / 6.00s</span>
+  </div>
+  <div id="credit">
+    <b>DeepSeek Harness 生成示例</b>（非原项目样片）· 来源：来自俯仰观照博主的动画画风整理 ·
+    许可：upstream-custom-noncommercial（俯仰观照整理稿，非商业） · 画面与文字均由代码绘制，静音。
+  </div>
+</div>
+<script>
+(() => {
+  'use strict';
+  // ===== 共享脚手架（可改，但导出合同不要破坏）=================================
+  const W = 640, H = 360, DURATION = 6;
+  const EXPORT = new URLSearchParams(location.search).get('export') === '1';
+  const canvas = document.getElementById('c');
+  const ctx = canvas.getContext('2d');
+  const FONT = '"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",sans-serif';
+
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  const lerp = (a, b, t) => a + (b - a) * t;
+  const smooth = t => t * t * (3 - 2 * t);
+  const easeOut = t => 1 - Math.pow(1 - t, 3);
+  const easeIn = t => t * t * t;
+  function rng(seed) { let s = seed >>> 0; return () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; }; }
+
+  // ===== 场景（每个 ID 独立设计；下面的注释区由构建器替换）===================
+  // DESC: 平涂粗描边的客厅情景喜剧：一家三口坐在橙色沙发上，最小的那个站起来比划「我有个主意」，电视光在墙上闪。
+// K38 情景喜剧 · DeepSeek Harness 生成示例
+const K38 = {
+  wall: '#b7a5d6', wallTrim: '#9b87bf', floor: '#c08a52', floorDark: '#a8723f',
+  rug: '#4a9e96', rugDark: '#3b847e', couch: '#e07a3c', couchDark: '#c4632c', couchLight: '#f0965a',
+  skin: '#ffd90f', white: '#fdfdfb', ink: '#121212',
+  dadShirt: '#f6f6f2', momDress: '#d84a4a', momHair: '#4a7fa8', kidShirt: '#e0553a', pants: '#36517f',
+};
+const k38seg = (t, a, b) => clamp((t - a) / (b - a), 0, 1);
+const k38ease = p => 1 - Math.pow(1 - p, 3);
+const K38_INK = 2.6;
+function k38Stroke(w) {
+  ctx.strokeStyle = K38.ink; ctx.lineWidth = w || K38_INK; ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+}
+function k38Fill(c) { ctx.fillStyle = c; ctx.fill(); }
+function k38Shape(fill, lw) {
+  ctx.fillStyle = fill; ctx.fill();
+  ctx.strokeStyle = K38.ink; ctx.lineWidth = lw || K38_INK; ctx.stroke();
+}
+function k38Blink(t, ph) {
+  const cycle = (t + ph) % 3.4;
+  return cycle < 0.12 ? 0.12 : 1;
+}
+
+// 客厅背景
+function k38Room(t) {
+  ctx.fillStyle = K38.wall; ctx.fillRect(0, 0, W, H);
+  // 墙裙
+  ctx.fillStyle = K38.wallTrim;
+  ctx.fillRect(0, 236, W, 70);
+  ctx.fillStyle = '#8a76ae';
+  ctx.fillRect(0, 232, W, 6);
+  // 墙纸花纹
+  ctx.save();
+  ctx.globalAlpha = 0.12;
+  ctx.strokeStyle = '#6b5590'; ctx.lineWidth = 1.4;
+  for (let x = 20; x < W; x += 56) {
+    for (let y = 18; y < 220; y += 44) {
+      ctx.beginPath();
+      ctx.moveTo(x, y - 7); ctx.lineTo(x + 6, y); ctx.lineTo(x, y + 7); ctx.lineTo(x - 6, y);
+      ctx.closePath(); ctx.stroke();
+    }
+  }
+  ctx.restore();
+  // 地板
+  ctx.fillStyle = K38.floor; ctx.fillRect(0, 300, W, 60);
+  ctx.strokeStyle = K38.floorDark; ctx.lineWidth = 2;
+  for (let x = -40; x < W + 60; x += 80) {
+    ctx.beginPath(); ctx.moveTo(x, 300); ctx.lineTo(x - 30, 360); ctx.stroke();
+  }
+  // 地毯
+  ctx.beginPath();
+  ctx.ellipse(280, 340, 250, 34, 0, 0, Math.PI * 2);
+  k38Shape(K38.rug, 2.4);
+  ctx.beginPath();
+  ctx.ellipse(280, 340, 210, 24, 0, 0, Math.PI * 2);
+  ctx.strokeStyle = K38.rugDark; ctx.lineWidth = 2; ctx.stroke();
+  // 挂画
+  ctx.save();
+  ctx.translate(72, 112);
+  ctx.rotate(-0.02);
+  ctx.beginPath(); ctx.rect(-32, -24, 64, 48); k38Shape('#d9c08a', 2.6);
+  ctx.beginPath(); ctx.rect(-25, -17, 50, 34); ctx.strokeStyle = '#8a6b3a'; ctx.lineWidth = 1.6; ctx.stroke();
+  ctx.fillStyle = '#6aa86a';
+  ctx.beginPath(); ctx.ellipse(0, 4, 20, 11, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = '#c9a24a';
+  ctx.beginPath(); ctx.arc(10, -6, 6, 0, Math.PI * 2); ctx.fill();
+  ctx.restore();
+  // 落地灯
+  ctx.beginPath();
+  ctx.moveTo(600, 300); ctx.lineTo(600, 168);
+  ctx.strokeStyle = K38.ink; ctx.lineWidth = 3; ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(566, 168); ctx.lineTo(634, 168); ctx.lineTo(620, 124); ctx.lineTo(580, 124); ctx.closePath();
+  k38Shape('#f2d06a', 2.4);
+  ctx.beginPath();
+  ctx.moveTo(568, 300); ctx.lineTo(632, 300);
+  ctx.strokeStyle = K38.ink; ctx.lineWidth = 3; ctx.stroke();
+}
+
+// 电视与屏幕光
+function k38TV(t) {
+  const fx = 470, fy = 236;
+  // 电视柜
+  ctx.beginPath(); ctx.rect(fx, fy, 128, 64); k38Shape('#8a5a34', 2.8);
+  ctx.beginPath(); ctx.moveTo(fx + 12, fy + 64); ctx.lineTo(fx + 12, 306);
+  ctx.moveTo(fx + 116, fy + 64); ctx.lineTo(fx + 116, 306);
+  ctx.strokeStyle = K38.ink; ctx.lineWidth = 3; ctx.stroke();
+  // 电视
+  const flick = 0.72 + 0.28 * Math.sin(t * 17) * Math.sin(t * 7.3);
+  ctx.beginPath(); ctx.roundRect(fx + 18, fy - 74, 92, 76, 6); k38Shape('#3a3a48', 2.8);
+  ctx.beginPath(); ctx.roundRect(fx + 24, fy - 68, 80, 58, 3);
+  ctx.fillStyle = `rgba(140,220,240,${0.55 + 0.3 * flick})`; ctx.fill();
+  ctx.strokeStyle = K38.ink; ctx.lineWidth = 2.2; ctx.stroke();
+  // 屏幕里的色块
+  ctx.save();
+  ctx.beginPath(); ctx.roundRect(fx + 24, fy - 68, 80, 58, 3); ctx.clip();
+  ctx.fillStyle = `rgba(255,255,255,${0.18 + 0.2 * flick})`;
+  ctx.fillRect(fx + 24 + 40 * Math.sin(t * 2.1), fy - 68, 26, 58);
+  ctx.fillStyle = `rgba(240,120,90,${0.3 * flick})`;
+  ctx.fillRect(fx + 30, fy - 40 + 12 * Math.sin(t * 3), 40, 22);
+  ctx.restore();
+  // 电视光打到墙上
+  ctx.save();
+  ctx.globalAlpha = 0.20 * flick;
+  const g = ctx.createRadialGradient(fx + 64, fy - 30, 10, fx + 64, fy - 30, 220);
+  g.addColorStop(0, 'rgba(150,225,245,1)');
+  g.addColorStop(1, 'rgba(150,225,245,0)');
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, W, H);
+  ctx.restore();
+  return flick;
+}
+
+// 沙发
+function k38Couch() {
+  // 靠背
+  ctx.beginPath();
+  ctx.roundRect(56, 196, 400, 84, 14);
+  k38Shape(K38.couch, 3);
+  // 靠垫分割
+  ctx.strokeStyle = K38.couchDark; ctx.lineWidth = 2;
+  for (let i = 1; i < 3; i++) {
+    const x = 56 + (400 / 3) * i;
+    ctx.beginPath(); ctx.moveTo(x, 202); ctx.lineTo(x, 274); ctx.stroke();
+  }
+  // 坐垫
+  ctx.beginPath(); ctx.roundRect(48, 262, 416, 46, 12); k38Shape(K38.couchLight, 3);
+  ctx.beginPath(); ctx.roundRect(48, 296, 416, 24, 8); k38Shape(K38.couch, 3);
+  // 扶手
+  ctx.beginPath(); ctx.roundRect(34, 214, 34, 96, 14); k38Shape(K38.couch, 3);
+  ctx.beginPath(); ctx.roundRect(444, 214, 34, 96, 14); k38Shape(K38.couch, 3);
+  // 沙发脚
+  ctx.beginPath();
+  ctx.moveTo(70, 320); ctx.lineTo(70, 334); ctx.moveTo(442, 320); ctx.lineTo(442, 334);
+  ctx.strokeStyle = K38.ink; ctx.lineWidth = 4; ctx.stroke();
+  ctx.beginPath(); ctx.roundRect(64, 330, 12, 8, 3); k38Shape('#6b4a2a', 2.4);
+  ctx.beginPath(); ctx.roundRect(436, 330, 12, 8, 3); k38Shape('#6b4a2a', 2.4);
+}
+
+// 辛普森式大头：muzzle 突出、白眼球、无眼皮
+function k38Head(cx, cy, scale, hair, t, ph, mouthOpen) {
+  const s = scale;
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.scale(s, s);
+  // 头
+  ctx.beginPath();
+  ctx.ellipse(0, 0, 30, 32, 0, 0, Math.PI * 2);
+  k38Shape(K38.skin, 2.8);
+  // 头发
+  if (hair === 'dad') {
+    ctx.beginPath();
+    ctx.arc(0, -6, 30.5, Math.PI * 1.08, Math.PI * 1.92);
+    ctx.lineTo(26, -6);
+    ctx.strokeStyle = K38.ink; ctx.lineWidth = 2.4; ctx.stroke();
+    // 两根呆毛
+    ctx.beginPath();
+    ctx.moveTo(-8, -30); ctx.quadraticCurveTo(-14, -40, -20, -36);
+    ctx.moveTo(4, -31); ctx.quadraticCurveTo(2, -42, -4, -42);
+    ctx.strokeStyle = K38.ink; ctx.lineWidth = 2.2; ctx.stroke();
+  } else if (hair === 'mom') {
+    ctx.beginPath();
+    ctx.arc(0, -10, 31, Math.PI * 1.02, Math.PI * 1.98);
+    ctx.lineTo(31, -10);
+    k38Shape(K38.momHair, 2.6);
+    // 高发髻
+    ctx.beginPath();
+    ctx.moveTo(-18, -34);
+    ctx.quadraticCurveTo(-26, -62, -4, -66);
+    ctx.quadraticCurveTo(20, -68, 16, -40);
+    ctx.quadraticCurveTo(12, -56, -2, -52);
+    ctx.quadraticCurveTo(-14, -50, -18, -34);
+    ctx.closePath();
+    k38Shape(K38.momHair, 2.6);
+    // 珍珠项链
+    ctx.beginPath();
+    for (let i = 0; i < 5; i++) {
+      const a = Math.PI * (0.15 + i * 0.175);
+      ctx.moveTo(Math.cos(a) * 16, 30 + Math.sin(a) * 6 + 2);
+      ctx.arc(Math.cos(a) * 16, 30 + Math.sin(a) * 6 + 2, 2.2, 0, Math.PI * 2);
+    }
+    ctx.fillStyle = '#f4f0e0'; ctx.fill();
+    ctx.strokeStyle = K38.ink; ctx.lineWidth = 1.4; ctx.stroke();
+  } else {
+    // 小孩：刺头
+    ctx.beginPath();
+    ctx.moveTo(-30, -12);
+    ctx.lineTo(-26, -34); ctx.lineTo(-17, -24); ctx.lineTo(-9, -38);
+    ctx.lineTo(0, -26); ctx.lineTo(9, -38); ctx.lineTo(17, -24); ctx.lineTo(27, -34);
+    ctx.lineTo(30, -12);
+    ctx.closePath();
+    k38Shape('#6b4a2a', 2.6);
+  }
+  // 耳朵
+  ctx.beginPath(); ctx.ellipse(-31, 2, 6, 8, 0, 0, Math.PI * 2); k38Shape(K38.skin, 2.2);
+  ctx.beginPath(); ctx.ellipse(31, 2, 6, 8, 0, 0, Math.PI * 2); k38Shape(K38.skin, 2.2);
+  // 眼睛
+  const bl = k38Blink(t, ph);
+  ctx.beginPath(); ctx.ellipse(-10, -8, 9.5, 13 * bl, 0, 0, Math.PI * 2); k38Shape(K38.white, 2.4);
+  ctx.beginPath(); ctx.ellipse(11, -8, 9.5, 13 * bl, 0, 0, Math.PI * 2); k38Shape(K38.white, 2.4);
+  if (bl > 0.3) {
+    ctx.fillStyle = K38.ink;
+    ctx.beginPath(); ctx.arc(-8, -6, 3.4, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(13, -6, 3.4, 0, Math.PI * 2); ctx.fill();
+  }
+  // 鼻子
+  ctx.beginPath(); ctx.ellipse(0, 6, 5, 4, 0, 0, Math.PI * 2); k38Shape(K38.skin, 2.2);
+  // muzzle / 上唇
+  ctx.beginPath();
+  ctx.moveTo(-14, 16);
+  ctx.quadraticCurveTo(0, 12, 15, 16);
+  ctx.quadraticCurveTo(14, 27, 0, 28);
+  ctx.quadraticCurveTo(-14, 27, -14, 16);
+  ctx.closePath();
+  k38Shape(K38.skin, 2.2);
+  // 嘴
+  ctx.strokeStyle = K38.ink; ctx.lineWidth = 2;
+  if (mouthOpen) {
+    ctx.beginPath();
+    ctx.moveTo(-8, 21); ctx.quadraticCurveTo(0, 30, 9, 21);
+    ctx.stroke();
+  } else {
+    ctx.beginPath();
+    ctx.moveTo(-8, 21); ctx.quadraticCurveTo(0, 24, 9, 21);
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+// 坐在沙发上的身体
+function k38Sitter(cx, seatY, shirt, hair, t, ph, mouthOpen, lean) {
+  ctx.save();
+  ctx.translate(cx, seatY);
+  // 腿
+  ctx.beginPath(); ctx.roundRect(-26, 26, 22, 26, 6); k38Shape(K38.pants, 2.6);
+  ctx.beginPath(); ctx.roundRect(6, 26, 22, 26, 6); k38Shape(K38.pants, 2.6);
+  // 鞋
+  ctx.beginPath(); ctx.roundRect(-30, 48, 26, 10, 4); k38Shape('#3a3a3a', 2.4);
+  ctx.beginPath(); ctx.roundRect(6, 48, 26, 10, 4); k38Shape('#3a3a3a', 2.4);
+  // 躯干
+  ctx.beginPath();
+  ctx.moveTo(-34, 0);
+  ctx.quadraticCurveTo(-40, 30, -34, 46);
+  ctx.lineTo(34, 46);
+  ctx.quadraticCurveTo(40, 30, 34, 0);
+  ctx.closePath();
+  k38Shape(shirt, 2.8);
+  // 手臂
+  ctx.beginPath();
+  ctx.moveTo(-32, 8); ctx.quadraticCurveTo(-46, 26, -42, 44);
+  ctx.strokeStyle = K38.ink; ctx.lineWidth = 11; ctx.stroke();
+  ctx.strokeStyle = shirt; ctx.lineWidth = 7; ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(32, 8); ctx.quadraticCurveTo(46, 26, 42, 44);
+  ctx.strokeStyle = K38.ink; ctx.lineWidth = 11; ctx.stroke();
+  ctx.strokeStyle = shirt; ctx.lineWidth = 7; ctx.stroke();
+  // 手
+  ctx.beginPath(); ctx.arc(-43, 46, 6, 0, Math.PI * 2); k38Shape(K38.skin, 2.2);
+  ctx.beginPath(); ctx.arc(43, 46, 6, 0, Math.PI * 2); k38Shape(K38.skin, 2.2);
+  // 头
+  k38Head(0, -30 + lean, 1, hair, t, ph, mouthOpen);
+  ctx.restore();
+}
+
+function k38Kid(t) {
+  const cx = 394, feet = 340;
+  const rise = k38ease(k38seg(t, 2.3, 3.0));
+  const arm = k38ease(k38seg(t, 2.5, 3.2));
+  ctx.save();
+  ctx.translate(cx, feet - rise * 6);
+  // 腿
+  ctx.beginPath(); ctx.roundRect(-16, -34, 14, 34, 5); k38Shape(K38.pants, 2.6);
+  ctx.beginPath(); ctx.roundRect(3, -34, 14, 34, 5); k38Shape(K38.pants, 2.6);
+  ctx.beginPath(); ctx.roundRect(-21, -8, 18, 9, 4); k38Shape('#3a3a3a', 2.3);
+  ctx.beginPath(); ctx.roundRect(3, -8, 18, 9, 4); k38Shape('#3a3a3a', 2.3);
+  // 身体
+  ctx.beginPath();
+  ctx.moveTo(-24, -34);
+  ctx.quadraticCurveTo(-28, -62, -22, -70);
+  ctx.lineTo(22, -70);
+  ctx.quadraticCurveTo(28, -62, 24, -34);
+  ctx.closePath();
+  k38Shape(K38.kidShirt, 2.8);
+  // 举起的手臂
+  const ax = 22, ay = -64;
+  const hx = ax + 26 * arm + 4, hy = ay - 40 * arm;
+  ctx.beginPath(); ctx.moveTo(ax, ay); ctx.lineTo(hx, hy);
+  ctx.strokeStyle = K38.ink; ctx.lineWidth = 10; ctx.stroke();
+  ctx.strokeStyle = K38.kidShirt; ctx.lineWidth = 6; ctx.stroke();
+  // 手：张开四指
+  ctx.save();
+  ctx.translate(hx, hy);
+  ctx.rotate(-0.3);
+  ctx.beginPath(); ctx.arc(0, 0, 6, 0, Math.PI * 2); k38Shape(K38.skin, 2.2);
+  ctx.strokeStyle = K38.ink; ctx.lineWidth = 2;
+  for (let i = -1; i <= 2; i++) {
+    ctx.beginPath(); ctx.moveTo(2, i * 3 - 1); ctx.lineTo(11, i * 4 - 3); ctx.stroke();
+  }
+  ctx.restore();
+  // 另一只手
+  ctx.beginPath(); ctx.moveTo(-22, -62); ctx.lineTo(-34, -44);
+  ctx.strokeStyle = K38.ink; ctx.lineWidth = 10; ctx.stroke();
+  ctx.strokeStyle = K38.kidShirt; ctx.lineWidth = 6; ctx.stroke();
+  ctx.beginPath(); ctx.arc(-35, -43, 6, 0, Math.PI * 2); k38Shape(K38.skin, 2.2);
+  // 头
+  k38Head(0, -100, 1, 'kid', t, 1.1, arm > 0.4);
+  ctx.restore();
+}
+
+function baseScene(t) {
+  k38Room(t);
+  const flick = k38TV(t);
+  k38Couch();
+  // 三个人：爸爸、妈妈、小孩
+  k38Sitter(150, 258, K38.dadShirt, 'dad', t, 0.0, false, Math.sin(t * 1.4) * 1.2);
+  k38Sitter(252, 258, K38.momDress, 'mom', t, 1.7, false, Math.sin(t * 1.1 + 1) * 1);
+  k38Kid(t);
+  // 电视前的光斑
+  ctx.save();
+  ctx.globalAlpha = 0.10 * flick;
+  ctx.fillStyle = '#bfe9f5';
+  ctx.beginPath(); ctx.ellipse(470, 330, 150, 26, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.restore();
+
+  // 字幕
+  const cap = k38ease(k38seg(t, 3.1, 3.6));
+  if (cap > 0) {
+    ctx.save();
+    ctx.globalAlpha = cap;
+    ctx.fillStyle = 'rgba(12,10,16,.82)';
+    ctx.beginPath(); ctx.roundRect(96, 306, 330, 34, 6); ctx.fill();
+    ctx.fillStyle = '#fffdf4';
+    ctx.font = `700 17px ${FONT}`;
+    ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+    ctx.fillText('我有个主意！', 112, 323);
+    // 笑声音轨标记
+    ctx.globalAlpha = cap * (0.45 + 0.35 * (0.5 + 0.5 * Math.sin(t * 6)));
+    ctx.fillStyle = '#ffe27a';
+    ctx.font = `600 13px ${FONT}`;
+    ctx.textAlign = 'right';
+    ctx.fillText('（观众笑声）', 412, 323);
+    ctx.restore();
+  }
+  // 右上角集数标
+  ctx.save();
+  ctx.fillStyle = 'rgba(18,18,18,.28)';
+  ctx.beginPath(); ctx.roundRect(486, 18, 132, 26, 6); ctx.fill();
+  ctx.fillStyle = '#f7f3e6';
+  ctx.font = `700 13px ${FONT}`;
+  ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+  ctx.fillText('第 3 集 · 一个主意', 496, 31);
+  ctx.restore();
+  // 标题
+  ctx.save();
+  ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+  ctx.fillStyle = K38.ink;
+  ctx.font = `800 26px ${FONT}`;
+  ctx.fillText('情景喜剧', 26, 46);
+  ctx.fillStyle = '#4b3f63';
+  ctx.font = `600 13px ${FONT}`;
+  ctx.fillText('SITCOM · 平涂 · 动作少', 27, 66);
+  ctx.restore();
+}
+
+function drawScene(t) {
+  const a = t / 6 * Math.PI * 2;
+  ctx.save();
+  ctx.translate(320, 180);
+  const z = 1.022 + 0.012 * Math.sin(a + 3.1);
+  ctx.scale(z, z);
+  ctx.translate(-320 + 2.6 * Math.sin(a), -180 + 2.0 * Math.cos(a + 0.4));
+  baseScene(t);
+  ctx.restore();
+}
+
+  // ===== 共享渲染与署名 =======================================================
+  function watermark() {
+    const text = 'DeepSeek Harness 生成示例';
+    ctx.save();
+    ctx.font = '11px ' + FONT;
+    const w = ctx.measureText(text).width + 14;
+    const x = W - w - 8, y = H - 24;
+    ctx.fillStyle = 'rgba(0,0,0,.46)';
+    ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(x, y, w, 18, 4); else ctx.rect(x, y, w, 18);
+    ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,.82)';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(text, x + 7, y + 9.5);
+    ctx.restore();
+  }
+
+  function paint(t) {
+    ctx.save();
+    ctx.clearRect(0, 0, W, H);
+    try { drawScene(t); } catch (err) { console.error(err); }
+    ctx.restore();
+    watermark();
+  }
+
+  function renderAt(seconds) {
+    const t = ((Number(seconds) % DURATION) + DURATION) % DURATION;
+    paint(t);
+    syncUI(t);
+    return t;
+  }
+  window.renderAt = renderAt;
+
+  // ===== 播放、控制、减少动态 =================================================
+  const playBtn = document.getElementById('play');
+  const timeline = document.getElementById('timeline');
+  const clock = document.getElementById('clock');
+  let playing = false, base = 0, start = 0, current = 0;
+  const reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function syncUI(t) {
+    if (EXPORT) return;
+    current = t;
+    if (timeline) timeline.value = String(t.toFixed(2));
+    if (clock) clock.textContent = t.toFixed(2) + ' / ' + DURATION.toFixed(2) + 's';
+  }
+  function frame(now) {
+    if (!playing) return;
+    const t = ((now - start) / 1000 + base) % DURATION;
+    paint(t);
+    syncUI(t);
+    requestAnimationFrame(frame);
+  }
+  function play() {
+    if (playing) return;
+    playing = true;
+    start = performance.now();
+    base = current;
+    if (playBtn) playBtn.textContent = '暂停';
+    requestAnimationFrame(frame);
+  }
+  function pause() {
+    playing = false;
+    if (playBtn) playBtn.textContent = '播放';
+  }
+  if (playBtn) playBtn.addEventListener('click', () => { playing ? pause() : play(); });
+  document.getElementById('replay')?.addEventListener('click', () => {
+    base = 0; start = performance.now(); paint(0); syncUI(0); play();
+  });
+  timeline?.addEventListener('input', () => {
+    pause(); paint(Number(timeline.value)); syncUI(Number(timeline.value));
+  });
+  window.addEventListener('keydown', e => {
+    if (e.code === 'Space') { e.preventDefault(); playing ? pause() : play(); }
+    if (e.key === 'r' || e.key === 'R') { base = 0; start = performance.now(); paint(0); syncUI(0); play(); }
+  });
+
+  if (EXPORT) {
+    document.body.classList.add('export');
+    renderAt(0);
+  } else if (reduced) {
+    renderAt(2.4);
+    pause();
+  } else {
+    renderAt(0);
+    play();
+  }
+})();
+</script>
+</body>
+</html>

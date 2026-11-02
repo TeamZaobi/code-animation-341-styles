@@ -1,0 +1,367 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>V10 极光与毛玻璃 · DeepSeek Harness 生成示例</title>
+<!--
+  Provenance
+  ----------
+  风格来源：code-animation-styles 目录（《来自俯仰观照博主的动画画风整理》整理稿）
+  catalog commit: 01576924a2b316d1f11ae33f75d3c005e8781451
+  style id: V10「极光与毛玻璃」
+  license: MIT（mg-styles-15，Copyright (c) 2026 Vincentwei1021）
+  本文件：DeepSeek Harness（deepseek-flash）根据该风格提示词新写的候选示例，
+  不是原作者样片，也不是原项目演示；仅用于风格挑选预览。共享的只有时间轴、
+  尺寸、导出接口与页脚署名，画面与动作按本风格重新设计。
+  原文“只输出代码”等语句属于素材的一部分，不覆盖本任务的交付合同。
+-->
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; min-height: 100%; background: #0c0c10; color: #e9e9ee;
+    font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif; }
+  #app { min-height: 100vh; display: flex; flex-direction: column; align-items: center;
+    justify-content: center; gap: 12px; padding: 20px; }
+  #stage { width: min(94vw, 1000px); aspect-ratio: 16 / 9; background: #000;
+    box-shadow: 0 18px 60px rgba(0,0,0,.55); position: relative; overflow: hidden; }
+  canvas { display: block; width: 100%; height: 100%; }
+  #head, #ui { width: min(94vw, 1000px); }
+  #head h1 { margin: 0 0 4px; font-size: 15px; font-weight: 600; letter-spacing: .02em; }
+  #head p { margin: 0; font-size: 12px; line-height: 1.5; color: #9a9aa8; }
+  #ui { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  #ui button { background: #1d1d26; color: #f2f2f6; border: 1px solid #343444;
+    border-radius: 7px; padding: 6px 12px; font-size: 12px; cursor: pointer; }
+  #ui button:hover { background: #272734; }
+  #ui input[type=range] { flex: 1 1 220px; min-width: 150px; accent-color: #7c8cff; }
+  #clock { font-variant-numeric: tabular-nums; font-size: 12px; color: #a9a9ba; min-width: 78px; }
+  #credit { width: min(94vw, 1000px); font-size: 11px; line-height: 1.6; color: #6f6f80; }
+  #credit b { color: #9c9cae; font-weight: 500; }
+  body.export, body.export #app { display: block; width: 640px; height: 360px; min-height: 0;
+    padding: 0; margin: 0; overflow: hidden; background: #000; }
+  body.export #stage { width: 640px; height: 360px; box-shadow: none; }
+  body.export #head, body.export #ui, body.export #credit { display: none; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="head">
+    <h1>V10 · 极光与毛玻璃</h1>
+    <p>极光与毛玻璃：暗底上五团被打散的高斯色斑极慢漂移，三张磨砂玻璃卡片浮起，最后一秒标题「想法自有光」轻轻浮出。</p>
+  </div>
+  <div id="stage"><canvas id="c" width="640" height="360" aria-label="极光与毛玻璃 风格动画示例"></canvas></div>
+  <div id="ui">
+    <button id="play" type="button">暂停</button>
+    <button id="replay" type="button">重播</button>
+    <input id="timeline" type="range" min="0" max="6" step="0.01" value="0" aria-label="时间轴">
+    <span id="clock">0.00 / 6.00s</span>
+  </div>
+  <div id="credit">
+    <b>DeepSeek Harness 生成示例</b>（非原项目样片）· 来源：来自俯仰观照博主的动画画风整理 ·
+    许可：MIT（mg-styles-15，Copyright (c) 2026 Vincentwei1021） · 画面与文字均由代码绘制，静音。
+  </div>
+</div>
+<script>
+(() => {
+  'use strict';
+  // ===== 共享脚手架（可改，但导出合同不要破坏）=================================
+  const W = 640, H = 360, DURATION = 6;
+  const EXPORT = new URLSearchParams(location.search).get('export') === '1';
+  const canvas = document.getElementById('c');
+  const ctx = canvas.getContext('2d');
+  const FONT = '"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",sans-serif';
+
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  const lerp = (a, b, t) => a + (b - a) * t;
+  const smooth = t => t * t * (3 - 2 * t);
+  const easeOut = t => 1 - Math.pow(1 - t, 3);
+  const easeIn = t => t * t * t;
+  function rng(seed) { let s = seed >>> 0; return () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; }; }
+
+  // ===== 场景（每个 ID 独立设计；下面的注释区由构建器替换）===================
+  // DESC: 极光与毛玻璃：暗底上五团被打散的高斯色斑极慢漂移，三张磨砂玻璃卡片浮起，最后一秒标题「想法自有光」轻轻浮出。
+// V10 极光与毛玻璃 · DeepSeek Harness 生成示例
+const V10_BG = '#080B16';
+const V10_AUR = [
+  { x: 0.28, y: 0.35, r: 0.62, c: ['#7B5BFF', 'rgba(123,91,255,0)'], ph: 0.0, sp: 0.55 },
+  { x: 0.62, y: 0.30, r: 0.55, c: ['#3FD0FF', 'rgba(63,208,255,0)'], ph: 1.9, sp: 0.42 },
+  { x: 0.48, y: 0.66, r: 0.60, c: ['#FF6FB5', 'rgba(255,111,181,0)'], ph: 3.4, sp: 0.36 },
+  { x: 0.80, y: 0.62, r: 0.44, c: ['#7A6BFF', 'rgba(122,107,255,0)'], ph: 4.8, sp: 0.48 },
+  { x: 0.16, y: 0.70, r: 0.40, c: ['#4BE0C0', 'rgba(75,224,192,0)'], ph: 2.6, sp: 0.30 },
+];
+
+function v10seg(t, a, b) { return clamp((t - a) / (b - a), 0, 1); }
+function v10ease(p) { return p * p * (3 - 2 * p); }
+
+// 两块离屏：大色斑层（软）与卡片背景层（更糊）
+const V10_BIG = document.createElement('canvas');
+const V10_SOFT = document.createElement('canvas');
+V10_BIG.width = V10_SOFT.width = 200; V10_BIG.height = V10_SOFT.height = 112;
+V10_SOFT.width = 72; V10_SOFT.height = 40;
+const v10bg = V10_BIG.getContext('2d');
+const v10sf = V10_SOFT.getContext('2d');
+
+function v10PaintAurora(g, w, h, t, spread) {
+  g.clearRect(0, 0, w, h);
+  for (const b of V10_AUR) {
+    const bx = (b.x + Math.sin(t * 0.22 + b.ph) * 0.05 * spread) * w;
+    const by = (b.y + Math.cos(t * 0.17 + b.ph * 1.3) * 0.055 * spread) * h;
+    const br = b.r * w * (0.92 + 0.08 * Math.sin(t * 0.3 + b.ph));
+    const rg = g.createRadialGradient(bx, by, 0, bx, by, br);
+    rg.addColorStop(0, b.c[0]);
+    rg.addColorStop(0.55, b.c[0].replace(')', ',.35)').replace('rgb', 'rgba'));
+    rg.addColorStop(1, b.c[1]);
+    g.fillStyle = rg;
+    g.beginPath(); g.arc(bx, by, br, 0, Math.PI * 2); g.fill();
+  }
+}
+
+// 颗粒（预计算，压 banding）
+const V10_GRAIN = (() => {
+  const r = rng(1010);
+  return Array.from({ length: 900 }, () => ({ x: r() * W, y: r() * H, a: 0.02 + r() * 0.05, s: 0.7 + r() * 1.2 }));
+})();
+
+function v10Card(x, y, w, h, p, label) {
+  if (p <= 0) return;
+  const e = v10ease(p);
+  const yy = y + (1 - e) * 16;
+  ctx.save();
+  ctx.globalAlpha = e;
+  const r = 18;
+  // 卡片投影：让它真的浮在光上
+  ctx.save();
+  ctx.shadowColor = 'rgba(0,0,0,.55)';
+  ctx.shadowBlur = 26; ctx.shadowOffsetY = 12;
+  ctx.fillStyle = 'rgba(8,10,20,.55)';
+  ctx.beginPath();
+  if (ctx.roundRect) ctx.roundRect(x, yy, w, h, r); else ctx.rect(x, yy, w, h);
+  ctx.fill();
+  ctx.restore();
+  // 卡片后面的“更糊一层”：从低分辨率极光层取样
+  ctx.save();
+  ctx.beginPath();
+  if (ctx.roundRect) ctx.roundRect(x, yy, w, h, r); else ctx.rect(x, yy, w, h);
+  ctx.clip();
+  ctx.globalAlpha = e * 0.85;
+  ctx.drawImage(V10_SOFT, 0, 0, V10_SOFT.width, V10_SOFT.height, x, yy, w, h);
+  // 白色薄雾
+  ctx.globalAlpha = e * 0.55;
+  ctx.fillStyle = 'rgba(12,16,32,.30)';
+  ctx.fillRect(x, yy, w, h);
+  ctx.globalAlpha = e * 0.85;
+  ctx.fillStyle = 'rgba(255,255,255,.09)';
+  ctx.fillRect(x, yy, w, h);
+  ctx.restore();
+  // 玻璃描边 + 顶部高光
+  ctx.beginPath();
+  if (ctx.roundRect) ctx.roundRect(x, yy, w, h, r); else ctx.rect(x, yy, w, h);
+  ctx.strokeStyle = 'rgba(255,255,255,.30)';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+  ctx.beginPath();
+  if (ctx.roundRect) ctx.roundRect(x + 1, yy + 1, w - 2, h - 2, r - 1); else ctx.rect(x + 1, yy + 1, w - 2, h - 2);
+  ctx.strokeStyle = 'rgba(255,255,255,.14)';
+  ctx.stroke();
+  // 顶部内高光
+  ctx.save();
+  const g = ctx.createLinearGradient(x, yy, x, yy + 30);
+  g.addColorStop(0, 'rgba(255,255,255,.20)');
+  g.addColorStop(1, 'rgba(255,255,255,0)');
+  ctx.fillStyle = g;
+  ctx.beginPath();
+  if (ctx.roundRect) ctx.roundRect(x, yy, w, 30, [r, r, 0, 0]); else ctx.rect(x, yy, w, 30);
+  ctx.fill();
+  ctx.restore();
+  // 卡片内容
+  if (label) {
+    ctx.fillStyle = 'rgba(255,255,255,.92)';
+    ctx.font = `500 22px ${FONT}`;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(label, x + w / 2, yy + h / 2 - 4);
+  }
+  ctx.restore();
+}
+
+function drawScene(t) {
+  // 底色
+  ctx.fillStyle = V10_BG; ctx.fillRect(0, 0, W, H);
+
+  // 极光层：小画布 → 放大，天然是柔的
+  v10PaintAurora(v10bg, V10_BIG.width, V10_BIG.height, t, 1);
+  ctx.save();
+  ctx.globalAlpha = 0.60;
+  ctx.drawImage(V10_BIG, 0, 0, W, H);
+  ctx.restore();
+  // 卡片专用（更糊）
+  v10PaintAurora(v10sf, V10_SOFT.width, V10_SOFT.height, t, 1);
+
+  // 暗角，把光收在中间
+  const vg = ctx.createRadialGradient(320, 170, 90, 320, 170, 400);
+  vg.addColorStop(0, 'rgba(8,11,22,0)');
+  vg.addColorStop(1, 'rgba(3,5,10,.94)');
+  ctx.fillStyle = vg; ctx.fillRect(0, 0, W, H);
+
+  // 三张玻璃卡片
+  v10Card(64, 150, 148, 108, v10seg(t, -0.42, 0.55), '慢');
+  v10Card(246, 132, 148, 126, v10seg(t, -0.22, 0.75), '透');
+  v10Card(428, 156, 148, 102, v10seg(t, 0.05, 1.05), '光');
+
+  // 卡片上的一道斜向高光扫过（很慢）
+  const sweep = v10seg(t, 2.4, 4.2);
+  if (sweep > 0 && sweep < 1) {
+    ctx.save();
+    ctx.globalAlpha = 0.18 * Math.sin(sweep * Math.PI);
+    const sx = lerp(40, 600, sweep);
+    const g = ctx.createLinearGradient(sx - 60, 0, sx + 60, 0);
+    g.addColorStop(0, 'rgba(255,255,255,0)');
+    g.addColorStop(0.5, 'rgba(255,255,255,.9)');
+    g.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.fillStyle = g;
+    ctx.beginPath();
+    ctx.moveTo(sx - 70, 120); ctx.lineTo(sx + 40, 120);
+    ctx.lineTo(sx - 40, 290); ctx.lineTo(sx - 150, 290);
+    ctx.closePath(); ctx.fill();
+    ctx.restore();
+  }
+
+  // 标题：只用 opacity + 8px 位移
+  const tp = v10seg(t, 2.5, 3.5);
+  if (tp > 0) {
+    const e = v10ease(tp);
+    ctx.save();
+    ctx.globalAlpha = e;
+    ctx.translate(0, (1 - e) * 8);
+    ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
+    ctx.fillStyle = 'rgba(255,255,255,.96)';
+    ctx.font = `600 30px ${FONT}`;
+    ctx.fillText('想法自有光', 320, 92);
+    ctx.fillStyle = 'rgba(226,232,255,.58)';
+    ctx.font = `400 12px ${FONT}`;
+    ctx.fillText('A U R O R A   ·   T H I N K   I N   L I G H T', 320, 114);
+    ctx.restore();
+  }
+
+  // 底部一行小注
+  const fp = v10seg(t, 4.2, 4.9);
+  if (fp > 0) {
+    ctx.save();
+    ctx.globalAlpha = v10ease(fp) * 0.55;
+    ctx.fillStyle = '#DCE4FF';
+    ctx.font = `400 12px ${FONT}`;
+    ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+    ctx.fillText('慢一点，让光自己散开。', 24, 336);
+    ctx.restore();
+  }
+
+  // 颗粒，防 banding
+  ctx.save();
+  for (const g of V10_GRAIN) {
+    ctx.fillStyle = `rgba(255,255,255,${g.a})`;
+    ctx.fillRect(g.x, g.y, g.s, g.s);
+  }
+  ctx.restore();
+
+  // 结尾呼吸：极光整体提一点亮，循环回到开头
+  const endP = v10seg(t, 5.5, 6);
+  if (endP > 0) {
+    ctx.save();
+    ctx.globalAlpha = endP * 0.08;
+    ctx.fillStyle = '#8FA6FF';
+    ctx.fillRect(0, 0, W, H);
+    ctx.restore();
+  }
+}
+
+  // ===== 共享渲染与署名 =======================================================
+  function watermark() {
+    const text = 'DeepSeek Harness 生成示例';
+    ctx.save();
+    ctx.font = '11px ' + FONT;
+    const w = ctx.measureText(text).width + 14;
+    const x = W - w - 8, y = H - 24;
+    ctx.fillStyle = 'rgba(0,0,0,.46)';
+    ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(x, y, w, 18, 4); else ctx.rect(x, y, w, 18);
+    ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,.82)';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(text, x + 7, y + 9.5);
+    ctx.restore();
+  }
+
+  function paint(t) {
+    ctx.save();
+    ctx.clearRect(0, 0, W, H);
+    try { drawScene(t); } catch (err) { console.error(err); }
+    ctx.restore();
+    watermark();
+  }
+
+  function renderAt(seconds) {
+    const t = ((Number(seconds) % DURATION) + DURATION) % DURATION;
+    paint(t);
+    syncUI(t);
+    return t;
+  }
+  window.renderAt = renderAt;
+
+  // ===== 播放、控制、减少动态 =================================================
+  const playBtn = document.getElementById('play');
+  const timeline = document.getElementById('timeline');
+  const clock = document.getElementById('clock');
+  let playing = false, base = 0, start = 0, current = 0;
+  const reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function syncUI(t) {
+    if (EXPORT) return;
+    current = t;
+    if (timeline) timeline.value = String(t.toFixed(2));
+    if (clock) clock.textContent = t.toFixed(2) + ' / ' + DURATION.toFixed(2) + 's';
+  }
+  function frame(now) {
+    if (!playing) return;
+    const t = ((now - start) / 1000 + base) % DURATION;
+    paint(t);
+    syncUI(t);
+    requestAnimationFrame(frame);
+  }
+  function play() {
+    if (playing) return;
+    playing = true;
+    start = performance.now();
+    base = current;
+    if (playBtn) playBtn.textContent = '暂停';
+    requestAnimationFrame(frame);
+  }
+  function pause() {
+    playing = false;
+    if (playBtn) playBtn.textContent = '播放';
+  }
+  if (playBtn) playBtn.addEventListener('click', () => { playing ? pause() : play(); });
+  document.getElementById('replay')?.addEventListener('click', () => {
+    base = 0; start = performance.now(); paint(0); syncUI(0); play();
+  });
+  timeline?.addEventListener('input', () => {
+    pause(); paint(Number(timeline.value)); syncUI(Number(timeline.value));
+  });
+  window.addEventListener('keydown', e => {
+    if (e.code === 'Space') { e.preventDefault(); playing ? pause() : play(); }
+    if (e.key === 'r' || e.key === 'R') { base = 0; start = performance.now(); paint(0); syncUI(0); play(); }
+  });
+
+  if (EXPORT) {
+    document.body.classList.add('export');
+    renderAt(0);
+  } else if (reduced) {
+    renderAt(2.4);
+    pause();
+  } else {
+    renderAt(0);
+    play();
+  }
+})();
+</script>
+</body>
+</html>

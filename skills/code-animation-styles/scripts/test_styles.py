@@ -68,6 +68,28 @@ class CatalogTests(unittest.TestCase):
         self.assertTrue(all(e['img'].startswith('/previews/') for e in x_entries))
         self.assertEqual(styles.check(), before)
 
+    def test_generated_previews_cover_only_missing_usable_entries(self):
+        generated = styles.generated_catalog()
+        expected = {e['id'] for e in styles.catalog() if not e.get('img') and e['s'] != 'X' and styles.available(e)}
+        self.assertEqual(set(generated['styles']), expected)
+        self.assertEqual(len(expected), 109)
+
+    def test_generated_picker_uses_posters_and_keeps_original_previews(self):
+        original = {e['id']: e for e in styles.catalog()}
+        html = styles.picker_html()
+        entries = json.loads(styles.re.search(r'<script id="data" type="application/json">(.*?)</script>', html, styles.re.S)[1])['entries']
+        generated = [e for e in entries if e.get('generatedPreview')]
+        self.assertEqual(len(generated), 109)
+        self.assertTrue(all(e['img'].endswith('.png') and e['animatedPreview'].endswith('.gif') for e in generated))
+        self.assertEqual(sum(bool(e.get('img')) for e in entries), 333)
+        for entry in entries:
+            if original[entry['id']].get('img'):
+                self.assertEqual(entry['img'], original[entry['id']]['img'])
+
+    def test_generated_assets_cannot_escape(self):
+        with self.assertRaises(ValueError):
+            styles.generated_file('../SKILL.md')
+
 
 if __name__ == '__main__':
     unittest.main()

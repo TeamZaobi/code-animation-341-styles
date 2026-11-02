@@ -1,0 +1,336 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>K4 极简线条小人 · DeepSeek Harness 生成示例</title>
+<!--
+  Provenance
+  ----------
+  风格来源：code-animation-styles 目录（《来自俯仰观照博主的动画画风整理》整理稿）
+  catalog commit: 01576924a2b316d1f11ae33f75d3c005e8781451
+  style id: K4「极简线条小人」
+  license: upstream-custom-noncommercial（俯仰观照整理稿，非商业）
+  本文件：DeepSeek Harness（deepseek-flash）根据该风格提示词新写的候选示例，
+  不是原作者样片，也不是原项目演示；仅用于风格挑选预览。共享的只有时间轴、
+  尺寸、导出接口与页脚署名，画面与动作按本风格重新设计。
+  原文“只输出代码”等语句属于素材的一部分，不覆盖本任务的交付合同。
+-->
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; min-height: 100%; background: #0c0c10; color: #e9e9ee;
+    font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif; }
+  #app { min-height: 100vh; display: flex; flex-direction: column; align-items: center;
+    justify-content: center; gap: 12px; padding: 20px; }
+  #stage { width: min(94vw, 1000px); aspect-ratio: 16 / 9; background: #000;
+    box-shadow: 0 18px 60px rgba(0,0,0,.55); position: relative; overflow: hidden; }
+  canvas { display: block; width: 100%; height: 100%; }
+  #head, #ui { width: min(94vw, 1000px); }
+  #head h1 { margin: 0 0 4px; font-size: 15px; font-weight: 600; letter-spacing: .02em; }
+  #head p { margin: 0; font-size: 12px; line-height: 1.5; color: #9a9aa8; }
+  #ui { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  #ui button { background: #1d1d26; color: #f2f2f6; border: 1px solid #343444;
+    border-radius: 7px; padding: 6px 12px; font-size: 12px; cursor: pointer; }
+  #ui button:hover { background: #272734; }
+  #ui input[type=range] { flex: 1 1 220px; min-width: 150px; accent-color: #7c8cff; }
+  #clock { font-variant-numeric: tabular-nums; font-size: 12px; color: #a9a9ba; min-width: 78px; }
+  #credit { width: min(94vw, 1000px); font-size: 11px; line-height: 1.6; color: #6f6f80; }
+  #credit b { color: #9c9cae; font-weight: 500; }
+  body.export, body.export #app { display: block; width: 640px; height: 360px; min-height: 0;
+    padding: 0; margin: 0; overflow: hidden; background: #000; }
+  body.export #stage { width: 640px; height: 360px; box-shadow: none; }
+  body.export #head, body.export #ui, body.export #credit { display: none; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="head">
+    <h1>K4 · 极简线条小人</h1>
+    <p>几根等粗的细线在留白里勾出一个小人，他一直往前走，头顶慢慢长出一个带点的圆圈。</p>
+  </div>
+  <div id="stage"><canvas id="c" width="640" height="360" aria-label="极简线条小人 风格动画示例"></canvas></div>
+  <div id="ui">
+    <button id="play" type="button">暂停</button>
+    <button id="replay" type="button">重播</button>
+    <input id="timeline" type="range" min="0" max="6" step="0.01" value="0" aria-label="时间轴">
+    <span id="clock">0.00 / 6.00s</span>
+  </div>
+  <div id="credit">
+    <b>DeepSeek Harness 生成示例</b>（非原项目样片）· 来源：来自俯仰观照博主的动画画风整理 ·
+    许可：upstream-custom-noncommercial（俯仰观照整理稿，非商业） · 画面与文字均由代码绘制，静音。
+  </div>
+</div>
+<script>
+(() => {
+  'use strict';
+  // ===== 共享脚手架（可改，但导出合同不要破坏）=================================
+  const W = 640, H = 360, DURATION = 6;
+  const EXPORT = new URLSearchParams(location.search).get('export') === '1';
+  const canvas = document.getElementById('c');
+  const ctx = canvas.getContext('2d');
+  const FONT = '"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",sans-serif';
+
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  const lerp = (a, b, t) => a + (b - a) * t;
+  const smooth = t => t * t * (3 - 2 * t);
+  const easeOut = t => 1 - Math.pow(1 - t, 3);
+  const easeIn = t => t * t * t;
+  function rng(seed) { let s = seed >>> 0; return () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; }; }
+
+  // ===== 场景（每个 ID 独立设计；下面的注释区由构建器替换）===================
+  // DESC: 几根等粗的细线在留白里勾出一个小人，他一直往前走，头顶慢慢长出一个带点的圆圈。
+// K4 极简线条小人 · DeepSeek Harness 生成示例
+const K4_BG = '#f6f5f1', K4_INK = '#1c1c1e', K4_GRAY = '#b8b6af', K4_LIGHT = '#dedcd5';
+
+function k4seg(t, a, b) { return clamp((t - a) / (b - a), 0, 1); }
+function k4ease(p) { return 1 - Math.pow(1 - p, 3); }
+
+// 按折线长度逐步画线
+function k4Stroke(pts, p, color, w) {
+  if (p <= 0) return;
+  let total = 0;
+  for (let i = 1; i < pts.length; i++) total += Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]);
+  let remain = total * k4ease(clamp(p, 0, 1));
+  ctx.save();
+  ctx.strokeStyle = color; ctx.lineWidth = w || 2; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+  ctx.beginPath(); ctx.moveTo(pts[0][0], pts[0][1]);
+  for (let i = 1; i < pts.length; i++) {
+    const d = Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]);
+    if (remain >= d) { ctx.lineTo(pts[i][0], pts[i][1]); remain -= d; }
+    else {
+      const f = d ? remain / d : 0;
+      ctx.lineTo(lerp(pts[i - 1][0], pts[i][0], f), lerp(pts[i - 1][1], pts[i][1], f));
+      break;
+    }
+  }
+  ctx.stroke(); ctx.restore();
+}
+
+function drawScene(t) {
+  ctx.fillStyle = K4_BG; ctx.fillRect(0, 0, W, H);
+
+  // 地平线：一根很淡的线
+  ctx.save();
+  ctx.strokeStyle = K4_LIGHT; ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.moveTo(40, 290); ctx.lineTo(600, 290); ctx.stroke();
+  ctx.restore();
+
+  // 一直走：脚步不停，画面每分钟都有位移与摆动
+  const ws = 0.45;
+  const walkP = clamp((t - ws) / (6 - ws), 0, 1);
+  const fx = 284 + walkP * 112;
+  const walking = t > ws;
+  const phase = Math.max(0, t - ws) * 2.15;
+  const swing = walking ? Math.sin(phase * Math.PI * 2) : 0;
+  const bob = walking ? Math.abs(Math.sin(phase * Math.PI * 2)) * 3 : 0;
+  const fy = 190 - bob;
+
+  const ink = K4_INK, lw = 2.2;
+  const tt = t + 0.95;
+
+  // 头：从左侧起笔，顺时针画圆
+  const headP = k4ease(k4seg(tt, 0, 0.9));
+  if (headP > 0) {
+    ctx.save();
+    ctx.strokeStyle = ink; ctx.lineWidth = lw; ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.arc(fx, fy - 46, 21, Math.PI * 0.86, Math.PI * 0.86 + headP * Math.PI * 2);
+    ctx.stroke();
+    ctx.restore();
+  }
+  if (headP > 0 && headP < 0.98) {
+    const a = Math.PI * 0.86 + headP * Math.PI * 2;
+    ctx.save(); ctx.fillStyle = ink;
+    ctx.beginPath(); ctx.arc(fx + Math.cos(a) * 21, fy - 46 + Math.sin(a) * 21, 2.6, 0, Math.PI * 2); ctx.fill();
+    ctx.restore();
+  }
+
+  // 躯干：一根竖线，走路时微微前倾
+  const lean = walking ? 2 : 0;
+  k4Stroke([[fx, fy - 24], [fx + lean, fy + 42]], k4seg(tt, 0.25, 0.95), ink, lw);
+
+  // 腿：一直在迈步
+  const hipY = fy + 42;
+  const lf = walking ? Math.sin(phase * Math.PI * 2) * 15 : 0;
+  const rf = walking ? -Math.sin(phase * Math.PI * 2) * 15 : 0;
+  k4Stroke([[fx, hipY], [fx - 15 + lf, hipY + 58]], k4seg(tt, 0.5, 1.15), ink, lw);
+  k4Stroke([[fx, hipY], [fx + 15 + rf, hipY + 58]], k4seg(tt, 0.56, 1.2), ink, lw);
+  if (k4seg(tt, 1.05, 1.4) > 0.85) {
+    ctx.save(); ctx.strokeStyle = ink; ctx.lineWidth = lw; ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(fx - 15 + lf - 6, hipY + 58); ctx.lineTo(fx - 15 + lf + 6, hipY + 58);
+    ctx.moveTo(fx + 15 + rf - 6, hipY + 58); ctx.lineTo(fx + 15 + rf + 6, hipY + 58);
+    ctx.stroke(); ctx.restore();
+  }
+
+  // 手臂：与腿反相摆动
+  const armSwing = swing * 9;
+  k4Stroke([[fx, fy - 12], [fx - 22 - armSwing, fy + 20 - armSwing * 0.4]], k4seg(tt, 0.7, 1.3), ink, lw);
+  k4Stroke([[fx, fy - 12], [fx + 22 + armSwing, fy + 20 + armSwing * 0.4]], k4seg(tt, 0.76, 1.35), ink, lw);
+
+  // 头顶的圆圈：跟着人走，边长大边亮起来
+  const ideaP = k4ease(k4seg(t, 2.55, 3.5));
+  if (ideaP > 0) {
+    const ix = fx + 30 + Math.sin(t * 1.4) * 2;
+    const iy = fy - 92 + Math.cos(t * 1.1) * 2;
+    const pulse = ideaP >= 1 ? 1.6 * Math.sin(t * 2.6) : 0;
+    const r = 15.5 * ideaP + pulse;
+
+    // 连线：从头顶冒出的虚线
+    const linkP = k4ease(k4seg(t, 2.75, 3.4));
+    ctx.save();
+    ctx.strokeStyle = K4_GRAY; ctx.lineWidth = 1.4; ctx.setLineDash([4, 5]);
+    ctx.beginPath();
+    ctx.moveTo(fx + 6, fy - 68);
+    ctx.lineTo(lerp(fx + 6, ix - 4, linkP), lerp(fy - 68, iy + 14, linkP));
+    ctx.stroke();
+    ctx.restore();
+
+    ctx.save();
+    ctx.strokeStyle = ink; ctx.lineWidth = lw; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.arc(ix, iy, r, 0, Math.PI * 2); ctx.stroke();
+
+    // 圈里的小点：绕小圈慢慢转
+    const dotP = k4seg(t, 3.3, 3.8);
+    if (dotP > 0) {
+      const a = t * 1.9;
+      const dx = ix + Math.cos(a) * 5.5 * dotP;
+      const dy = iy + Math.sin(a) * 5.5 * dotP;
+      ctx.fillStyle = ink;
+      ctx.beginPath(); ctx.arc(dx, dy, 3.2 * dotP, 0, Math.PI * 2); ctx.fill();
+    }
+    ctx.restore();
+
+    // 圈外依次冒出的短线：想法一点点成形
+    ctx.save();
+    ctx.strokeStyle = ink; ctx.lineWidth = 1.8; ctx.lineCap = 'round';
+    for (let i = 0; i < 8; i++) {
+      const ap = k4seg(t, 3.9 + i * 0.22, 4.15 + i * 0.22);
+      if (ap <= 0) continue;
+      const a = i * Math.PI / 4 - 0.3;
+      const r0 = r + 6, r1 = r + 6 + 8 * k4ease(ap);
+      ctx.beginPath();
+      ctx.moveTo(ix + Math.cos(a) * r0, iy + Math.sin(a) * r0);
+      ctx.lineTo(ix + Math.cos(a) * r1, iy + Math.sin(a) * r1);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  // 文字
+  ctx.save();
+  ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+  ctx.fillStyle = K4_INK; ctx.font = `600 28px ${FONT}`;
+  ctx.fillText('几根线，一个人', 48, 74);
+  ctx.fillStyle = K4_GRAY; ctx.font = `500 14px ${FONT}`;
+  ctx.fillText('背景空着，他一直在走', 48, 98);
+  ctx.restore();
+
+  const capP = k4seg(t, 4.2, 4.9);
+  if (capP > 0) {
+    ctx.save();
+    ctx.globalAlpha = capP;
+    ctx.fillStyle = K4_INK; ctx.font = `600 15px ${FONT}`;
+    ctx.fillText('留白，也算画完', 48, 330);
+    ctx.restore();
+  }
+
+  ctx.save();
+  ctx.globalAlpha = 0.45; ctx.fillStyle = K4_INK; ctx.font = `500 13px ${FONT}`;
+  ctx.fillText('K4 · 极简线条 / minimalist line', 48, 30);
+  ctx.restore();
+}
+
+  // ===== 共享渲染与署名 =======================================================
+  function watermark() {
+    const text = 'DeepSeek Harness 生成示例';
+    ctx.save();
+    ctx.font = '11px ' + FONT;
+    const w = ctx.measureText(text).width + 14;
+    const x = W - w - 8, y = H - 24;
+    ctx.fillStyle = 'rgba(0,0,0,.46)';
+    ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(x, y, w, 18, 4); else ctx.rect(x, y, w, 18);
+    ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,.82)';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(text, x + 7, y + 9.5);
+    ctx.restore();
+  }
+
+  function paint(t) {
+    ctx.save();
+    ctx.clearRect(0, 0, W, H);
+    try { drawScene(t); } catch (err) { console.error(err); }
+    ctx.restore();
+    watermark();
+  }
+
+  function renderAt(seconds) {
+    const t = ((Number(seconds) % DURATION) + DURATION) % DURATION;
+    paint(t);
+    syncUI(t);
+    return t;
+  }
+  window.renderAt = renderAt;
+
+  // ===== 播放、控制、减少动态 =================================================
+  const playBtn = document.getElementById('play');
+  const timeline = document.getElementById('timeline');
+  const clock = document.getElementById('clock');
+  let playing = false, base = 0, start = 0, current = 0;
+  const reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function syncUI(t) {
+    if (EXPORT) return;
+    current = t;
+    if (timeline) timeline.value = String(t.toFixed(2));
+    if (clock) clock.textContent = t.toFixed(2) + ' / ' + DURATION.toFixed(2) + 's';
+  }
+  function frame(now) {
+    if (!playing) return;
+    const t = ((now - start) / 1000 + base) % DURATION;
+    paint(t);
+    syncUI(t);
+    requestAnimationFrame(frame);
+  }
+  function play() {
+    if (playing) return;
+    playing = true;
+    start = performance.now();
+    base = current;
+    if (playBtn) playBtn.textContent = '暂停';
+    requestAnimationFrame(frame);
+  }
+  function pause() {
+    playing = false;
+    if (playBtn) playBtn.textContent = '播放';
+  }
+  if (playBtn) playBtn.addEventListener('click', () => { playing ? pause() : play(); });
+  document.getElementById('replay')?.addEventListener('click', () => {
+    base = 0; start = performance.now(); paint(0); syncUI(0); play();
+  });
+  timeline?.addEventListener('input', () => {
+    pause(); paint(Number(timeline.value)); syncUI(Number(timeline.value));
+  });
+  window.addEventListener('keydown', e => {
+    if (e.code === 'Space') { e.preventDefault(); playing ? pause() : play(); }
+    if (e.key === 'r' || e.key === 'R') { base = 0; start = performance.now(); paint(0); syncUI(0); play(); }
+  });
+
+  if (EXPORT) {
+    document.body.classList.add('export');
+    renderAt(0);
+  } else if (reduced) {
+    renderAt(2.4);
+    pause();
+  } else {
+    renderAt(0);
+    play();
+  }
+})();
+</script>
+</body>
+</html>

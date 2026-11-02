@@ -1,0 +1,551 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>M22 配方式步骤 · DeepSeek Harness 生成示例</title>
+<!--
+  Provenance
+  ----------
+  风格来源：code-animation-styles 目录（《来自俯仰观照博主的动画画风整理》整理稿）
+  catalog commit: 01576924a2b316d1f11ae33f75d3c005e8781451
+  style id: M22「配方式步骤」
+  license: upstream-custom-noncommercial（俯仰观照整理稿，非商业）
+  本文件：DeepSeek Harness（deepseek-flash）根据该风格提示词新写的候选示例，
+  不是原作者样片，也不是原项目演示；仅用于风格挑选预览。共享的只有时间轴、
+  尺寸、导出接口与页脚署名，画面与动作按本风格重新设计。
+  原文“只输出代码”等语句属于素材的一部分，不覆盖本任务的交付合同。
+-->
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; min-height: 100%; background: #0c0c10; color: #e9e9ee;
+    font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif; }
+  #app { min-height: 100vh; display: flex; flex-direction: column; align-items: center;
+    justify-content: center; gap: 12px; padding: 20px; }
+  #stage { width: min(94vw, 1000px); aspect-ratio: 16 / 9; background: #000;
+    box-shadow: 0 18px 60px rgba(0,0,0,.55); position: relative; overflow: hidden; }
+  canvas { display: block; width: 100%; height: 100%; }
+  #head, #ui { width: min(94vw, 1000px); }
+  #head h1 { margin: 0 0 4px; font-size: 15px; font-weight: 600; letter-spacing: .02em; }
+  #head p { margin: 0; font-size: 12px; line-height: 1.5; color: #9a9aa8; }
+  #ui { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  #ui button { background: #1d1d26; color: #f2f2f6; border: 1px solid #343444;
+    border-radius: 7px; padding: 6px 12px; font-size: 12px; cursor: pointer; }
+  #ui button:hover { background: #272734; }
+  #ui input[type=range] { flex: 1 1 220px; min-width: 150px; accent-color: #7c8cff; }
+  #clock { font-variant-numeric: tabular-nums; font-size: 12px; color: #a9a9ba; min-width: 78px; }
+  #credit { width: min(94vw, 1000px); font-size: 11px; line-height: 1.6; color: #6f6f80; }
+  #credit b { color: #9c9cae; font-weight: 500; }
+  body.export, body.export #app { display: block; width: 640px; height: 360px; min-height: 0;
+    padding: 0; margin: 0; overflow: hidden; background: #000; }
+  body.export #stage { width: 640px; height: 360px; box-shadow: none; }
+  body.export #head, body.export #ui, body.export #credit { display: none; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="head">
+    <h1>M22 · 配方式步骤</h1>
+    <p>深色吧台上，三种配料按分量依次倒进杯子，左边标出名字和毫升数，右边配方逐条打勾，最后放上柠檬片。</p>
+  </div>
+  <div id="stage"><canvas id="c" width="640" height="360" aria-label="配方式步骤 风格动画示例"></canvas></div>
+  <div id="ui">
+    <button id="play" type="button">暂停</button>
+    <button id="replay" type="button">重播</button>
+    <input id="timeline" type="range" min="0" max="6" step="0.01" value="0" aria-label="时间轴">
+    <span id="clock">0.00 / 6.00s</span>
+  </div>
+  <div id="credit">
+    <b>DeepSeek Harness 生成示例</b>（非原项目样片）· 来源：来自俯仰观照博主的动画画风整理 ·
+    许可：upstream-custom-noncommercial（俯仰观照整理稿，非商业） · 画面与文字均由代码绘制，静音。
+  </div>
+</div>
+<script>
+(() => {
+  'use strict';
+  // ===== 共享脚手架（可改，但导出合同不要破坏）=================================
+  const W = 640, H = 360, DURATION = 6;
+  const EXPORT = new URLSearchParams(location.search).get('export') === '1';
+  const canvas = document.getElementById('c');
+  const ctx = canvas.getContext('2d');
+  const FONT = '"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",sans-serif';
+
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  const lerp = (a, b, t) => a + (b - a) * t;
+  const smooth = t => t * t * (3 - 2 * t);
+  const easeOut = t => 1 - Math.pow(1 - t, 3);
+  const easeIn = t => t * t * t;
+  function rng(seed) { let s = seed >>> 0; return () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; }; }
+
+  // ===== 场景（每个 ID 独立设计；下面的注释区由构建器替换）===================
+  // DESC: 深色吧台上，三种配料按分量依次倒进杯子，左边标出名字和毫升数，右边配方逐条打勾，最后放上柠檬片。
+// M22 配方式步骤 · DeepSeek Harness 生成示例
+const M22_BG = '#0e1a19', M22_CREAM = '#f2e8d5', M22_DIM = 'rgba(242,232,213,.52)';
+const M22_AMBER = '#e9a13b', M22_RED = '#cf5c46', M22_LIME = '#96c96a';
+
+const M22_GLASS = { cx: 252, top: 112, bottom: 300, topHalf: 82, botHalf: 64, inner: 6 };
+// 从下到上的三层：先倒的在底下
+const M22_STEPS = [
+  { name: '基酒', amt: '30 ml', color: M22_AMBER, h: 92, pour: 0.55, tagY: 172 },
+  { name: '酸汁', amt: '20 ml', color: M22_RED, h: 60, pour: 1.70, tagY: 218 },
+  { name: '气泡水', amt: '10 ml', color: M22_LIME, h: 32, pour: 2.85, tagY: 264 },
+];
+const M22_BUBBLES = (() => {
+  const r = rng(2211);
+  return Array.from({ length: 22 }, () => ({ x: r(), y: r(), sp: 0.5 + r() * 0.9, s: 0.9 + r() * 1.7 }));
+})();
+const M22_STARS = (() => {
+  const r = rng(909);
+  return Array.from({ length: 40 }, () => ({ x: r() * W, y: r() * H * 0.7, a: 0.03 + r() * 0.1 }));
+})();
+
+function m22seg(t, a, b) { return clamp((t - a) / (b - a), 0, 1); }
+function m22e(t) { return 1 - Math.pow(1 - t, 3); }
+function m22pop(p) { return p <= 0 ? 0 : 1 + Math.sin(clamp(p, 0, 1) * Math.PI) * 0.16 * (1 - p) - (1 - p) * 0.0; }
+
+// 杯子轮廓（上宽下窄的直身杯）
+function m22GlassPath() {
+  const G = M22_GLASS;
+  ctx.beginPath();
+  ctx.moveTo(G.cx - G.topHalf, G.top);
+  ctx.lineTo(G.cx + G.topHalf, G.top);
+  ctx.lineTo(G.cx + G.botHalf, G.bottom - 12);
+  ctx.quadraticCurveTo(G.cx + G.botHalf, G.bottom, G.cx + G.botHalf - 12, G.bottom);
+  ctx.lineTo(G.cx - G.botHalf + 12, G.bottom);
+  ctx.quadraticCurveTo(G.cx - G.botHalf, G.bottom, G.cx - G.botHalf, G.bottom - 12);
+  ctx.closePath();
+}
+// 某个高度处的半宽
+function m22HalfAt(y) {
+  const f = clamp((y - M22_GLASS.top) / (M22_GLASS.bottom - M22_GLASS.top), 0, 1);
+  return lerp(M22_GLASS.topHalf, M22_GLASS.botHalf, f);
+}
+function m22LevelOf(i, t) {
+  // 返回第 i 层已倒进杯中的高度（像素）
+  let h = 0;
+  for (let k = 0; k <= i; k++) {
+    const st = M22_STEPS[k];
+    const p = t >= st.pour ? m22e(m22seg(t, st.pour, st.pour + 0.62)) : 0;
+    h += st.h * (k < i ? 1 : p);
+  }
+  return h;
+}
+
+function m22Back() {
+  const g = ctx.createLinearGradient(0, 0, 0, H);
+  g.addColorStop(0, '#142421');
+  g.addColorStop(0.62, M22_BG);
+  g.addColorStop(1, '#0a1211');
+  ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  ctx.save();
+  for (const s of M22_STARS) {
+    ctx.fillStyle = `rgba(242,232,213,${s.a})`;
+    ctx.beginPath(); ctx.arc(s.x, s.y, 1.1, 0, Math.PI * 2); ctx.fill();
+  }
+  // 后景酒架：模糊的酒瓶剪影
+  ctx.globalAlpha = 0.5;
+  for (let i = 0; i < 5; i++) {
+    const x = 44 + i * 46, hh = 42 + (i % 3) * 16;
+    ctx.fillStyle = 'rgba(28,58,52,.9)';
+    ctx.fillRect(x, 96 - hh, 15, hh);
+    ctx.fillRect(x + 3, 96 - hh - 12, 9, 12);
+  }
+  ctx.globalAlpha = 1;
+  // 吧台台面
+  const tb = ctx.createLinearGradient(0, 300, 0, 360);
+  tb.addColorStop(0, '#2a1c12');
+  tb.addColorStop(1, '#150e09');
+  ctx.fillStyle = tb; ctx.fillRect(0, 302, W, 58);
+  ctx.strokeStyle = 'rgba(233,161,59,.35)'; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(0, 302); ctx.lineTo(W, 301); ctx.stroke();
+  // 台面反光
+  ctx.save();
+  ctx.globalAlpha = 0.12; ctx.fillStyle = M22_AMBER;
+  ctx.beginPath(); ctx.ellipse(252, 320, 120, 22, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.restore();
+  ctx.restore();
+}
+
+function m22Glass(level, vis) {
+  ctx.save();
+  // 玻璃杯身
+  m22GlassPath();
+  ctx.fillStyle = 'rgba(180,220,214,.07)';
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(220,240,233,.55)'; ctx.lineWidth = 2;
+  ctx.stroke();
+  // 高光
+  ctx.save();
+  m22GlassPath(); ctx.clip();
+  ctx.fillStyle = 'rgba(255,255,255,.10)';
+  ctx.fillRect(M22_GLASS.cx - 60, M22_GLASS.top + 8, 14, 178);
+  ctx.fillStyle = 'rgba(255,255,255,.05)';
+  ctx.fillRect(M22_GLASS.cx + 52, M22_GLASS.top + 20, 7, 150);
+  ctx.restore();
+
+  // 液体：从底往上叠三层
+  if (level > 0.5 && vis > 0.001) {
+    ctx.save();
+    m22GlassPath(); ctx.clip();
+    ctx.globalAlpha = vis;
+    let acc = 0;
+    for (let i = 0; i < M22_STEPS.length; i++) {
+      const st = M22_STEPS[i];
+      const have = m22LevelOf(i, t_cur) - acc;
+      acc += st.h;
+      if (have <= 0.5) continue;
+      const topY = M22_GLASS.bottom - (acc - st.h + have);
+      const botY = M22_GLASS.bottom - (acc - st.h);
+      const gg = ctx.createLinearGradient(0, topY, 0, botY);
+      gg.addColorStop(0, st.color);
+      gg.addColorStop(1, 'rgba(0,0,0,.25)');
+      ctx.fillStyle = st.color;
+      ctx.fillRect(M22_GLASS.cx - 100, topY, 200, botY - topY + 2);
+      // 液面亮线
+      ctx.fillStyle = 'rgba(255,255,255,.30)';
+      ctx.fillRect(M22_GLASS.cx - 100, topY, 200, 2);
+      // 中层细微分层阴影
+      ctx.fillStyle = 'rgba(0,0,0,.10)';
+      ctx.fillRect(M22_GLASS.cx - 100, botY - 3, 200, 3);
+    }
+    // 气泡
+    for (const b of M22_BUBBLES) {
+      const span = 200;
+      const y = M22_GLASS.bottom - (((b.y * span + t_cur * 26 * b.sp) % span));
+      if (y < M22_GLASS.bottom - level) continue;
+      ctx.fillStyle = 'rgba(255,255,255,.34)';
+      ctx.beginPath(); ctx.arc(M22_GLASS.cx - 66 + b.x * 132, y, b.s, 0, Math.PI * 2); ctx.fill();
+    }
+    // 搅动时液体内的漩涡线
+    const stir = m22seg(t_cur, 3.85, 4.95);
+    if (stir > 0 && stir < 1) {
+      ctx.globalAlpha = vis * 0.5 * Math.sin(stir * Math.PI);
+      ctx.strokeStyle = 'rgba(255,255,255,.5)'; ctx.lineWidth = 2;
+      for (let k = 0; k < 3; k++) {
+        ctx.beginPath();
+        ctx.ellipse(M22_GLASS.cx, M22_GLASS.bottom - level * 0.55 + k * 14, 40 + k * 9, 8, 0, 0.3, Math.PI * 1.5);
+        ctx.stroke();
+      }
+    }
+    ctx.restore();
+  }
+  // 杯口
+  ctx.strokeStyle = 'rgba(235,250,244,.85)'; ctx.lineWidth = 2.4;
+  ctx.beginPath(); ctx.ellipse(M22_GLASS.cx, M22_GLASS.top, M22_GLASS.topHalf, 5, 0, 0, Math.PI * 2); ctx.stroke();
+  ctx.restore();
+}
+
+function m22Ruler(vis) {
+  ctx.save();
+  ctx.globalAlpha = vis;
+  const x = M22_GLASS.cx + 96;
+  ctx.strokeStyle = 'rgba(242,232,213,.26)'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(x, 116); ctx.lineTo(x, 300); ctx.stroke();
+  ctx.font = `500 10px ${FONT}`; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+  for (let ml = 0; ml <= 60; ml += 10) {
+    const y = M22_GLASS.bottom - ml * 3.06;
+    const long = ml % 30 === 0;
+    ctx.strokeStyle = long ? 'rgba(242,232,213,.5)' : 'rgba(242,232,213,.2)';
+    ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + (long ? 8 : 4), y); ctx.stroke();
+    if (long) { ctx.fillStyle = 'rgba(242,232,213,.42)'; ctx.fillText(String(ml), x + 11, y); }
+  }
+  ctx.restore();
+}
+
+function m22Tag(i, p, vis) {
+  if (p <= 0) return;
+  const st = M22_STEPS[i];
+  const s = m22pop(p) * vis;
+  const x = 22, y = st.tagY - 17, w = 138, h = 34;
+  ctx.save();
+  ctx.translate(x + w / 2, y + h / 2);
+  ctx.scale(s, s);
+  ctx.translate(-(x + w / 2), -(y + h / 2));
+  ctx.globalAlpha = clamp(p * 2, 0, 1) * vis;
+  // 卡片
+  ctx.fillStyle = 'rgba(18,34,31,.92)';
+  ctx.beginPath();
+  if (ctx.roundRect) ctx.roundRect(x, y, w, h, 7); else ctx.rect(x, y, w, h);
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(242,232,213,.16)'; ctx.lineWidth = 1; ctx.stroke();
+  // 色条
+  ctx.fillStyle = st.color; ctx.fillRect(x, y + 7, 3.5, h - 14);
+  // 名字与分量
+  ctx.fillStyle = M22_CREAM; ctx.font = `600 14px ${FONT}`;
+  ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+  ctx.fillText(st.name, x + 14, y + 13);
+  ctx.fillStyle = st.color; ctx.font = `700 14px ${FONT}`;
+  ctx.fillText(st.amt, x + 14, y + 27);
+  // 引线到杯壁
+  const ex = x + w + 2, ey = y + h / 2;
+  const gx = M22_GLASS.cx - m22HalfAt(ey) - 4;
+  ctx.strokeStyle = 'rgba(242,232,213,.34)'; ctx.lineWidth = 1.2;
+  ctx.beginPath();
+  ctx.moveTo(ex, ey);
+  ctx.lineTo(ex + 14, ey);
+  ctx.lineTo(gx, ey);
+  ctx.stroke();
+  ctx.fillStyle = st.color;
+  ctx.beginPath(); ctx.arc(gx, ey, 2.6, 0, Math.PI * 2); ctx.fill();
+  ctx.restore();
+}
+
+function m22Card(vis, checked) {
+  const x = 372, y = 92, w = 242, h = 208;
+  ctx.save();
+  ctx.globalAlpha = vis;
+  ctx.fillStyle = 'rgba(14,26,24,.72)';
+  ctx.beginPath();
+  if (ctx.roundRect) ctx.roundRect(x, y, w, h, 10); else ctx.rect(x, y, w, h);
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(242,232,213,.16)'; ctx.lineWidth = 1; ctx.stroke();
+  ctx.fillStyle = 'rgba(242,232,213,.55)';
+  ctx.font = `600 11px ${FONT}`; ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+  ctx.fillText('配方  /  RECIPE', x + 18, y + 26);
+  ctx.strokeStyle = 'rgba(242,232,213,.14)';
+  ctx.beginPath(); ctx.moveTo(x + 18, y + 36); ctx.lineTo(x + w - 18, y + 36); ctx.stroke();
+
+  M22_STEPS.forEach((st, i) => {
+    const ry = y + 70 + i * 44;
+    ctx.fillStyle = st.color;
+    ctx.beginPath(); ctx.arc(x + 26, ry, 6, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = M22_CREAM; ctx.font = `600 15px ${FONT}`;
+    ctx.fillText(st.name, x + 42, ry + 5);
+    ctx.fillStyle = st.color; ctx.font = `700 14px ${FONT}`;
+    ctx.textAlign = 'right';
+    ctx.fillText(st.amt, x + w - 46, ry + 5);
+    ctx.textAlign = 'left';
+    // 勾
+    if (checked[i] > 0) {
+      ctx.save();
+      ctx.translate(x + w - 26, ry - 1);
+      ctx.strokeStyle = M22_LIME; ctx.lineWidth = 2.6; ctx.lineCap = 'round';
+      const p = m22e(checked[i]);
+      ctx.beginPath();
+      ctx.moveTo(-7, 0);
+      ctx.lineTo(lerp(-7, -2, clamp(p * 2, 0, 1)), lerp(0, 5, clamp(p * 2, 0, 1)));
+      ctx.lineTo(lerp(-2, 7, clamp((p - 0.4) / 0.6, 0, 1)), lerp(5, -6, clamp((p - 0.4) / 0.6, 0, 1)));
+      ctx.stroke();
+      ctx.restore();
+    } else {
+      ctx.strokeStyle = 'rgba(242,232,213,.18)'; ctx.lineWidth = 1.4;
+      ctx.beginPath(); ctx.arc(x + w - 26, ry, 6, 0, Math.PI * 2); ctx.stroke();
+    }
+  });
+
+  // 总量
+  ctx.fillStyle = 'rgba(242,232,213,.5)'; ctx.font = `500 12px ${FONT}`;
+  ctx.fillText('总量  60 ml', x + 18, y + h - 18);
+  ctx.textAlign = 'right';
+  ctx.fillStyle = M22_AMBER; ctx.font = `700 12px ${FONT}`;
+  ctx.fillText('一杯', x + w - 18, y + h - 18);
+  ctx.restore();
+}
+
+let t_cur = 0;
+function drawScene(t) {
+  t_cur = t;
+  const vis = 1 - m22seg(t, 5.62, 5.98);   // 结尾退场，接回空杯
+  m22Back();
+
+  // 倒计时式顶部小标
+  ctx.save();
+  ctx.fillStyle = 'rgba(242,232,213,.4)';
+  ctx.font = `600 10px ${FONT}`; ctx.textAlign = 'left';
+  ctx.fillText('BAR  ·  01', 22, 24);
+  ctx.restore();
+
+  // 标题
+  ctx.save();
+  ctx.fillStyle = M22_CREAM;
+  ctx.font = `800 27px ${FONT}`;
+  ctx.fillText('三步，调一杯', 22, 58);
+  ctx.fillStyle = M22_DIM;
+  ctx.font = `400 13px ${FONT}`;
+  ctx.fillText('每加一样，标出名字和分量', 24, 80);
+  ctx.restore();
+
+  // 杯垫
+  ctx.save();
+  const pad = m22e(m22seg(t, 0, 0.45));
+  ctx.fillStyle = 'rgba(242,232,213,.10)';
+  ctx.beginPath(); ctx.ellipse(M22_GLASS.cx, 302, 74 * pad, 9 * pad, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.restore();
+
+  // 杯子 + 液面
+  const level = Math.max(m22LevelOf(0, t), m22LevelOf(1, t), m22LevelOf(2, t));
+  m22Glass(level, vis);
+
+  // 倒酒：从上方流下的细流
+  for (let i = 0; i < M22_STEPS.length; i++) {
+    const st = M22_STEPS[i];
+    const p = m22seg(t, st.pour, st.pour + 0.62);
+    if (p <= 0 || p >= 1) continue;
+    const surface = M22_GLASS.bottom - m22LevelOf(i, t);
+    const sx = M22_GLASS.cx + 8;
+    ctx.save();
+    ctx.globalAlpha = vis * (1 - Math.abs(p - 0.5) * 0.35);
+    const lg = ctx.createLinearGradient(0, 52, 0, surface);
+    lg.addColorStop(0, 'rgba(255,255,255,.2)');
+    lg.addColorStop(0.2, st.color);
+    lg.addColorStop(1, st.color);
+    ctx.strokeStyle = st.color; ctx.lineWidth = 5; ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(sx, 54);
+    ctx.quadraticCurveTo(sx + 3, (54 + surface) / 2, sx, surface - 4);
+    ctx.stroke();
+    ctx.globalAlpha = vis * 0.9;
+    ctx.fillStyle = 'rgba(255,255,255,.5)';
+    ctx.beginPath(); ctx.ellipse(sx, surface, 12 + Math.sin(t * 40) * 3, 3, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.restore();
+  }
+
+  m22Ruler(m22seg(t, 0.2, 0.6) * vis);
+
+  // 左侧配料标签
+  for (let i = 0; i < M22_STEPS.length; i++) {
+    m22Tag(i, m22seg(t, M22_STEPS[i].pour + 0.42, M22_STEPS[i].pour + 0.72), vis);
+  }
+
+  // 右侧配方卡：勾跟着倒酒进度
+  const checked = M22_STEPS.map(st => (t > st.pour + 0.55 ? m22seg(t, st.pour + 0.55, st.pour + 0.8) : 0));
+  m22Card(m22seg(t, 0.05, 0.4), checked);
+
+  // 柠檬片：完成时挂上杯口
+  const gp = m22seg(t, 3.95, 4.5);
+  if (gp > 0) {
+    ctx.save();
+    ctx.globalAlpha = vis;
+    ctx.translate(M22_GLASS.cx + M22_GLASS.topHalf - 4, M22_GLASS.top - 2);
+    ctx.rotate(-0.32);
+    const s = m22pop(gp);
+    ctx.scale(s, s);
+    ctx.fillStyle = '#e7d35a';
+    ctx.beginPath(); ctx.arc(0, 0, 19, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#f4ecc0';
+    ctx.beginPath(); ctx.arc(0, 0, 15, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = 'rgba(160,140,40,.6)'; ctx.lineWidth = 1.4;
+    for (let k = 0; k < 8; k++) {
+      const a = k * Math.PI / 4;
+      ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(Math.cos(a) * 14, Math.sin(a) * 14); ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  // 搅拌棒：转半圈
+  const sp = m22seg(t, 3.9, 4.9);
+  if (sp > 0) {
+    ctx.save();
+    ctx.globalAlpha = vis * (1 - m22seg(t, 4.95, 5.3) * 0.5);
+    ctx.translate(M22_GLASS.cx + 30, M22_GLASS.top + 4);
+    ctx.rotate(-0.16 + Math.sin(sp * Math.PI * 2) * 0.34);
+    ctx.strokeStyle = 'rgba(242,232,213,.8)'; ctx.lineWidth = 4; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(-6, 96); ctx.stroke();
+    ctx.restore();
+  }
+
+  // 完成提示
+  const fp = m22seg(t, 4.55, 4.95) * vis;
+  if (fp > 0) {
+    ctx.save();
+    ctx.globalAlpha = m22e(fp);
+    ctx.fillStyle = M22_LIME;
+    ctx.font = `600 13px ${FONT}`; ctx.textAlign = 'left';
+    ctx.fillText('好了，先尝一口。', 26, 330);
+    ctx.restore();
+  }
+}
+
+  // ===== 共享渲染与署名 =======================================================
+  function watermark() {
+    const text = 'DeepSeek Harness 生成示例';
+    ctx.save();
+    ctx.font = '11px ' + FONT;
+    const w = ctx.measureText(text).width + 14;
+    const x = W - w - 8, y = H - 24;
+    ctx.fillStyle = 'rgba(0,0,0,.46)';
+    ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(x, y, w, 18, 4); else ctx.rect(x, y, w, 18);
+    ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,.82)';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(text, x + 7, y + 9.5);
+    ctx.restore();
+  }
+
+  function paint(t) {
+    ctx.save();
+    ctx.clearRect(0, 0, W, H);
+    try { drawScene(t); } catch (err) { console.error(err); }
+    ctx.restore();
+    watermark();
+  }
+
+  function renderAt(seconds) {
+    const t = ((Number(seconds) % DURATION) + DURATION) % DURATION;
+    paint(t);
+    syncUI(t);
+    return t;
+  }
+  window.renderAt = renderAt;
+
+  // ===== 播放、控制、减少动态 =================================================
+  const playBtn = document.getElementById('play');
+  const timeline = document.getElementById('timeline');
+  const clock = document.getElementById('clock');
+  let playing = false, base = 0, start = 0, current = 0;
+  const reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function syncUI(t) {
+    if (EXPORT) return;
+    current = t;
+    if (timeline) timeline.value = String(t.toFixed(2));
+    if (clock) clock.textContent = t.toFixed(2) + ' / ' + DURATION.toFixed(2) + 's';
+  }
+  function frame(now) {
+    if (!playing) return;
+    const t = ((now - start) / 1000 + base) % DURATION;
+    paint(t);
+    syncUI(t);
+    requestAnimationFrame(frame);
+  }
+  function play() {
+    if (playing) return;
+    playing = true;
+    start = performance.now();
+    base = current;
+    if (playBtn) playBtn.textContent = '暂停';
+    requestAnimationFrame(frame);
+  }
+  function pause() {
+    playing = false;
+    if (playBtn) playBtn.textContent = '播放';
+  }
+  if (playBtn) playBtn.addEventListener('click', () => { playing ? pause() : play(); });
+  document.getElementById('replay')?.addEventListener('click', () => {
+    base = 0; start = performance.now(); paint(0); syncUI(0); play();
+  });
+  timeline?.addEventListener('input', () => {
+    pause(); paint(Number(timeline.value)); syncUI(Number(timeline.value));
+  });
+  window.addEventListener('keydown', e => {
+    if (e.code === 'Space') { e.preventDefault(); playing ? pause() : play(); }
+    if (e.key === 'r' || e.key === 'R') { base = 0; start = performance.now(); paint(0); syncUI(0); play(); }
+  });
+
+  if (EXPORT) {
+    document.body.classList.add('export');
+    renderAt(0);
+  } else if (reduced) {
+    renderAt(2.4);
+    pause();
+  } else {
+    renderAt(0);
+    play();
+  }
+})();
+</script>
+</body>
+</html>

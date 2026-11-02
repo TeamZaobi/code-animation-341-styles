@@ -1,0 +1,467 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>V4 线条画 · DeepSeek Harness 生成示例</title>
+<!--
+  Provenance
+  ----------
+  风格来源：code-animation-styles 目录（《来自俯仰观照博主的动画画风整理》整理稿）
+  catalog commit: 01576924a2b316d1f11ae33f75d3c005e8781451
+  style id: V4「线条画」
+  license: MIT（mg-styles-15，Copyright (c) 2026 Vincentwei1021）
+  本文件：DeepSeek Harness（deepseek-flash）根据该风格提示词新写的候选示例，
+  不是原作者样片，也不是原项目演示；仅用于风格挑选预览。共享的只有时间轴、
+  尺寸、导出接口与页脚署名，画面与动作按本风格重新设计。
+  原文“只输出代码”等语句属于素材的一部分，不覆盖本任务的交付合同。
+-->
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; min-height: 100%; background: #0c0c10; color: #e9e9ee;
+    font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif; }
+  #app { min-height: 100vh; display: flex; flex-direction: column; align-items: center;
+    justify-content: center; gap: 12px; padding: 20px; }
+  #stage { width: min(94vw, 1000px); aspect-ratio: 16 / 9; background: #000;
+    box-shadow: 0 18px 60px rgba(0,0,0,.55); position: relative; overflow: hidden; }
+  canvas { display: block; width: 100%; height: 100%; }
+  #head, #ui { width: min(94vw, 1000px); }
+  #head h1 { margin: 0 0 4px; font-size: 15px; font-weight: 600; letter-spacing: .02em; }
+  #head p { margin: 0; font-size: 12px; line-height: 1.5; color: #9a9aa8; }
+  #ui { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  #ui button { background: #1d1d26; color: #f2f2f6; border: 1px solid #343444;
+    border-radius: 7px; padding: 6px 12px; font-size: 12px; cursor: pointer; }
+  #ui button:hover { background: #272734; }
+  #ui input[type=range] { flex: 1 1 220px; min-width: 150px; accent-color: #7c8cff; }
+  #clock { font-variant-numeric: tabular-nums; font-size: 12px; color: #a9a9ba; min-width: 78px; }
+  #credit { width: min(94vw, 1000px); font-size: 11px; line-height: 1.6; color: #6f6f80; }
+  #credit b { color: #9c9cae; font-weight: 500; }
+  body.export, body.export #app { display: block; width: 640px; height: 360px; min-height: 0;
+    padding: 0; margin: 0; overflow: hidden; background: #000; }
+  body.export #stage { width: 640px; height: 360px; box-shadow: none; }
+  body.export #head, body.export #ui, body.export #credit { display: none; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="head">
+    <h1>V4 · 线条画</h1>
+    <p>深夜蓝底上一根香槟金线索一笔画成：种子→枝芽→楼房→天际线→圆形字标，最后线转为金面并浮出「一线成城」。</p>
+  </div>
+  <div id="stage"><canvas id="c" width="640" height="360" aria-label="线条画 风格动画示例"></canvas></div>
+  <div id="ui">
+    <button id="play" type="button">暂停</button>
+    <button id="replay" type="button">重播</button>
+    <input id="timeline" type="range" min="0" max="6" step="0.01" value="0" aria-label="时间轴">
+    <span id="clock">0.00 / 6.00s</span>
+  </div>
+  <div id="credit">
+    <b>DeepSeek Harness 生成示例</b>（非原项目样片）· 来源：来自俯仰观照博主的动画画风整理 ·
+    许可：MIT（mg-styles-15，Copyright (c) 2026 Vincentwei1021） · 画面与文字均由代码绘制，静音。
+  </div>
+</div>
+<script>
+(() => {
+  'use strict';
+  // ===== 共享脚手架（可改，但导出合同不要破坏）=================================
+  const W = 640, H = 360, DURATION = 6;
+  const EXPORT = new URLSearchParams(location.search).get('export') === '1';
+  const canvas = document.getElementById('c');
+  const ctx = canvas.getContext('2d');
+  const FONT = '"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",sans-serif';
+
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  const lerp = (a, b, t) => a + (b - a) * t;
+  const smooth = t => t * t * (3 - 2 * t);
+  const easeOut = t => 1 - Math.pow(1 - t, 3);
+  const easeIn = t => t * t * t;
+  function rng(seed) { let s = seed >>> 0; return () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; }; }
+
+  // ===== 场景（每个 ID 独立设计；下面的注释区由构建器替换）===================
+  // DESC: 深夜蓝底上一根香槟金线索一笔画成：种子→枝芽→楼房→天际线→圆形字标，最后线转为金面并浮出「一线成城」。
+// V4 线条画 · DeepSeek Harness 生成示例
+const V4_BG = '#0B1320', V4_GOLD = '#E9D7A5', V4_GOLD_HI = '#FFF4D2';
+
+function v4seg(t, a, b) { return clamp((t - a) / (b - a), 0, 1); }
+function v4ease(p) { return p * p * (3 - 2 * p); }
+
+/* ---------- 一笔画路径：所有点按顺序采样，带 stage 边界 ---------- */
+const V4 = (() => {
+  const pts = [], starts = [0];
+  let stage = 0;
+  const next = () => { starts.push(pts.length); stage++; };
+  const add = (x, y) => pts.push([x, y]);
+  const last = () => pts[pts.length - 1];
+  const ln = (x, y) => add(x, y);
+  const cu = (x1, y1, x2, y2, x, y, n) => {
+    const [x0, y0] = last(), N = n || 14;
+    for (let i = 1; i <= N; i++) {
+      const t = i / N, u = 1 - t;
+      add(u * u * u * x0 + 3 * u * u * t * x1 + 3 * u * t * t * x2 + t * t * t * x,
+          u * u * u * y0 + 3 * u * u * t * y1 + 3 * u * t * t * y2 + t * t * t * y);
+    }
+  };
+  const arc = (cx, cy, rx, ry, a0, a1, n) => {
+    const N = n || 30;
+    for (let i = 1; i <= N; i++) {
+      const a = a0 + (a1 - a0) * i / N;
+      add(cx + Math.cos(a) * rx, cy + Math.sin(a) * ry);
+    }
+  };
+
+  // stage 0：种子（一个闭合的椭圆环）
+  add(100 + Math.cos(2.2) * 17, 296 + Math.sin(2.2) * 13);
+  arc(100, 296, 17, 13, 2.2, 2.2 + Math.PI * 2.08, 48);
+  next();
+
+  // stage 1：发芽、叶子、茎（枝干向上，末端成为屋顶）
+  cu(96, 282, 92, 262, 108, 250);
+  arc(120, 243, 12, 8, Math.PI * 0.9, Math.PI * 0.9 + Math.PI * 1.5, 22); // 一片小叶
+  cu(122, 238, 118, 210, 132, 190);
+  arc(142, 178, 10, 7, Math.PI * 1.1, Math.PI * 1.1 + Math.PI * 1.4, 20);  // 第二片叶
+  cu(138, 172, 140, 148, 152, 122);
+  next();
+
+  // stage 2：枝条变成楼：屋面 → 右墙（一路画出窗格）→ 地面
+  ln(300, 122);
+  cu(310, 122, 312, 126, 312, 138);
+  ln(312, 158);
+  for (let i = 0; i < 3; i++) {
+    const y = 158 + i * 40;
+    ln(334, y); ln(334, y + 18); ln(312, y + 18); ln(312, y + 22);
+  }
+  ln(312, 288);
+  cu(312, 296, 320, 298, 330, 298);
+  ln(352, 298);
+  next();
+
+  // stage 3：天际线：第二、第三栋（也带窗格），然后地平线抬起
+  ln(352, 262);
+  ln(330, 262); ln(330, 244); ln(352, 244); ln(352, 214);
+  ln(404, 214);
+  ln(404, 236);
+  for (let i = 0; i < 2; i++) {
+    const y = 236 + i * 32;
+    ln(382, y); ln(382, y + 16); ln(404, y + 16); ln(404, y + 20);
+  }
+  ln(404, 298);
+  ln(438, 298);
+  cu(462, 298, 470, 262, 486, 216);
+  cu(498, 186, 508, 162, 516, 148);
+  next();
+
+  // stage 4：圆形字标（一笔绕出圆环）
+  const cx = 546, cy = 126, rr = 34;
+  const a0 = Math.atan2(148 - cy, 516 - cx);
+  arc(cx, cy, rr, rr, a0, a0 + Math.PI * 2.06, 60);
+
+  // 累计长度
+  const cum = [0];
+  for (let i = 1; i < pts.length; i++) {
+    cum.push(cum[i - 1] + Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]));
+  }
+  const total = cum[cum.length - 1];
+  const stageLen = starts.map((s, i) => cum[i + 1 < starts.length ? starts[i + 1] : pts.length - 1] - cum[s]);
+  // 每个 stage 的时间窗与镜头
+  const shots = [
+    { t0: -0.62, t1: 0.55, fx: 104, fy: 286, s: 1.07 },
+    { t0: 0.55, t1: 1.45, fx: 132, fy: 208, s: 1.05 },
+    { t0: 1.45, t1: 2.3, fx: 218, fy: 196, s: 1.01 },
+    { t0: 2.3, t1: 3.1, fx: 392, fy: 244, s: 1.0 },
+    { t0: 3.1, t1: 3.72, fx: 520, fy: 176, s: 1.03 },
+    { t0: 3.72, t1: 3.98, fx: 322, fy: 202, s: 0.9 },
+  ];
+  // 长度 ↔ 时间 对照表（缓入缓出反查）
+  const lut = [];
+  for (let i = 0; i < stageLen.length; i++) {
+    const sh = shots[i];
+    const L0 = cum[starts[i]], L1 = L0 + stageLen[i];
+    for (let j = 0; j <= 90; j++) {
+      const p = j / 90, e = p * p * (3 - 2 * p);
+      lut.push({ len: L0 + (L1 - L0) * e, t: sh.t0 + (sh.t1 - sh.t0) * p });
+    }
+  }
+  function timeAt(len) {
+    if (len <= lut[0].len) return lut[0].t;
+    for (let i = 1; i < lut.length; i++) {
+      if (lut[i].len >= len) {
+        const a = lut[i - 1], b = lut[i];
+        const f = (len - a.len) / Math.max(1e-6, b.len - a.len);
+        return lerp(a.t, b.t, f);
+      }
+    }
+    return lut[lut.length - 1].t;
+  }
+  return { pts, starts, cum, total, stageLen, shots, timeAt, circle: { cx, cy, rr }, ends: { x: 312, y: 298 } };
+})();
+
+function v4lenAt(t) {
+  let len = 0;
+  for (let i = 0; i < V4.stageLen.length; i++) {
+    const sh = V4.shots[i];
+    const L0 = V4.cum[V4.starts[i]], L1 = L0 + V4.stageLen[i];
+    if (t <= sh.t0) return L0;
+    if (t < sh.t1) return L0 + (L1 - L0) * v4ease((t - sh.t0) / (sh.t1 - sh.t0));
+    len = L1;
+  }
+  return len;
+}
+
+function v4camAt(t) {
+  const sh = V4.shots;
+  let k = 0;
+  for (let i = 0; i < sh.length; i++) if (t >= sh[i].t0) k = i;
+  const a = sh[k];
+  const nxt = sh[Math.min(sh.length - 1, k + 1)];
+  const p = k === sh.length - 1 ? 1 : v4ease(clamp((t - a.t0) / Math.max(0.001, a.t1 - a.t0), 0, 1));
+  return {
+    fx: lerp(a.fx, nxt.fx, k === sh.length - 1 ? 0 : p),
+    fy: lerp(a.fy, nxt.fy, k === sh.length - 1 ? 0 : p),
+    s: lerp(a.s, nxt.s, k === sh.length - 1 ? 0 : p),
+  };
+}
+
+function v4DrawLine(t, targetLen) {
+  const pts = V4.pts, cum = V4.cum;
+  // 找到绘制到的点
+  let n = 0;
+  while (n < pts.length && cum[n] <= targetLen) n++;
+  ctx.save();
+  ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+  // 分段绘制，越旧越淡（35%）
+  const CH = 16;
+  for (let i = 0; i < n; i += CH) {
+    const j = Math.min(n, i + CH);
+    const dt = t - V4.timeAt(cum[i]);
+    const k = clamp(dt / 2.6, 0, 1);
+    const alpha = lerp(1, 0.48, k);
+    ctx.strokeStyle = V4_GOLD;
+    ctx.globalAlpha = alpha;
+    ctx.beginPath();
+    ctx.moveTo(pts[i][0], pts[i][1]);
+    for (let q = i + 1; q < j; q++) ctx.lineTo(pts[q][0], pts[q][1]);
+    // 接到下一点，避免段间断口
+    if (j < pts.length) ctx.lineTo(pts[j][0], pts[j][1]);
+    ctx.lineWidth = 2.6;
+    ctx.stroke();
+    // 外侧柔光
+    ctx.globalAlpha = alpha * 0.14;
+    ctx.lineWidth = 8;
+    ctx.stroke();
+  }
+  // 笔尖
+  if (n > 0 && n < pts.length) {
+    const tip = pts[n - 1];
+    ctx.globalAlpha = 1;
+    const g = ctx.createRadialGradient(tip[0], tip[1], 0, tip[0], tip[1], 22);
+    g.addColorStop(0, 'rgba(255,244,210,.95)');
+    g.addColorStop(0.35, 'rgba(233,215,165,.45)');
+    g.addColorStop(1, 'rgba(233,215,165,0)');
+    ctx.fillStyle = g;
+    ctx.beginPath(); ctx.arc(tip[0], tip[1], 22, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = V4_GOLD_HI;
+    ctx.beginPath(); ctx.arc(tip[0], tip[1], 3.1, 0, Math.PI * 2); ctx.fill();
+  }
+  ctx.restore();
+}
+
+function drawScene(t) {
+  // 底色 + 极轻的暗角，保持高级感
+  ctx.fillStyle = V4_BG; ctx.fillRect(0, 0, W, H);
+  const vg = ctx.createRadialGradient(320, 176, 60, 320, 176, 420);
+  vg.addColorStop(0, 'rgba(30,44,66,.55)');
+  vg.addColorStop(1, 'rgba(4,7,12,.95)');
+  ctx.fillStyle = vg; ctx.fillRect(0, 0, W, H);
+
+  // 左上角的极小标识，保证 t=0 不空
+  ctx.save();
+  ctx.fillStyle = 'rgba(233,215,165,' + (0.34 + 0.28 * v4seg(t, 0, 1.6)) + ')';
+  ctx.font = `600 11px ${FONT}`; ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+  ctx.fillText('ONE LINE  /  一线成城', 28, 34);
+  ctx.fillStyle = 'rgba(233,215,165,.20)';
+  ctx.fillRect(28, 42, 84, 1);
+  ctx.restore();
+
+  const target = v4lenAt(t);
+  const cam = v4camAt(t);
+  const zoom = cam.s;
+  // 虚拟镜头：把笔尖附近推到画面中心
+  ctx.save();
+  ctx.translate(320, 178);
+  ctx.scale(zoom, zoom);
+  ctx.translate(-cam.fx, -cam.fy);
+  v4DrawLine(t, target);
+  ctx.restore();
+
+  // 线转面：圆形字标从底部锚点被金色填满
+  const fillP = v4seg(t, 3.66, 4.28);
+  if (fillP > 0) {
+    const { cx, cy, rr } = V4.circle;
+    // 与世界坐标一致的镜头变换
+    const toScreen = (x, y) => [320 + (x - cam.fx) * zoom, 178 + (y - cam.fy) * zoom];
+    const c = toScreen(cx, cy);
+    const rScreen = rr * zoom;
+    ctx.save();
+    ctx.beginPath(); ctx.arc(c[0], c[1], rScreen, 0, Math.PI * 2); ctx.clip();
+    const e = v4ease(fillP);
+    const g = ctx.createLinearGradient(c[0], c[1] + rScreen, c[0], c[1] - rScreen);
+    g.addColorStop(0, '#C9AE6E'); g.addColorStop(0.5, V4_GOLD); g.addColorStop(1, V4_GOLD_HI);
+    ctx.fillStyle = g;
+    ctx.beginPath(); ctx.arc(c[0], c[1] + rScreen * (1 - e), rScreen * 1.08, 0, Math.PI * 2); ctx.fill();
+    // 金面上的高光扫过
+    ctx.globalAlpha = 0.5;
+    const sw = ctx.createLinearGradient(c[0] - rScreen, c[1], c[0] + rScreen, c[1]);
+    sw.addColorStop(0, 'rgba(255,255,255,0)');
+    sw.addColorStop(clamp(0.15 + fillP * 0.7, 0, 1), 'rgba(255,255,255,.55)');
+    sw.addColorStop(clamp(0.3 + fillP * 0.7, 0, 1), 'rgba(255,255,255,0)');
+    ctx.fillStyle = sw; ctx.fillRect(c[0] - rScreen, c[1] - rScreen, rScreen * 2, rScreen * 2);
+    ctx.restore();
+    // 圆环描边压回
+    ctx.save();
+    ctx.strokeStyle = V4_GOLD; ctx.lineWidth = 2.6;
+    ctx.beginPath(); ctx.arc(c[0], c[1], rScreen, 0, Math.PI * 2); ctx.stroke();
+    ctx.restore();
+  }
+
+  // 收尾：整体线稿压暗，字标浮出
+  const dim = v4seg(t, 4.3, 4.9);
+  if (dim > 0) {
+    ctx.save();
+    ctx.fillStyle = `rgba(11,19,32,${0.16 * dim})`;
+    ctx.fillRect(0, 0, W, H);
+    ctx.restore();
+  }
+
+  const wp = v4seg(t, 4.34, 4.9);
+  if (wp > 0) {
+    const e = v4ease(wp);
+    ctx.save();
+    ctx.globalAlpha = e;
+    ctx.translate(0, (1 - e) * 8);
+    // 字距拉开的中文标题
+    ctx.fillStyle = V4_GOLD;
+    ctx.font = `600 28px ${FONT}`;
+    ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+    const chars = ['一', '线', '成', '城'];
+    const gap = 42;
+    let x = 320 - (chars.length - 1) * gap / 2;
+    chars.forEach((ch, i) => {
+      ctx.globalAlpha = e * clamp(wp * 2 - i * 0.16, 0, 1);
+      ctx.fillText(ch, x - 14, 322);
+      x += gap;
+    });
+    ctx.globalAlpha = e;
+    ctx.fillStyle = 'rgba(233,215,165,.55)';
+    ctx.font = `500 11px ${FONT}`;
+    ctx.textAlign = 'center';
+    ctx.fillText('O N E   L I N E   ·   一 笔 成 画', 320, 344);
+    // 细金线
+    ctx.strokeStyle = 'rgba(233,215,165,.35)'; ctx.lineWidth = 1;
+    const lw = 150 * e;
+    ctx.beginPath(); ctx.moveTo(320 - lw, 300); ctx.lineTo(320 + lw, 300); ctx.stroke();
+    ctx.restore();
+  }
+
+  // 结尾微光，循环回暖
+  const endP = v4seg(t, 5.7, 6);
+  if (endP > 0) {
+    ctx.save(); ctx.globalAlpha = endP * 0.5;
+    const g = ctx.createRadialGradient(320, 180, 20, 320, 180, 330);
+    g.addColorStop(0, 'rgba(233,215,165,.10)'); g.addColorStop(1, 'rgba(233,215,165,0)');
+    ctx.fillStyle = g; ctx.fillRect(0, 0, W, H); ctx.restore();
+  }
+}
+
+  // ===== 共享渲染与署名 =======================================================
+  function watermark() {
+    const text = 'DeepSeek Harness 生成示例';
+    ctx.save();
+    ctx.font = '11px ' + FONT;
+    const w = ctx.measureText(text).width + 14;
+    const x = W - w - 8, y = H - 24;
+    ctx.fillStyle = 'rgba(0,0,0,.46)';
+    ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(x, y, w, 18, 4); else ctx.rect(x, y, w, 18);
+    ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,.82)';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(text, x + 7, y + 9.5);
+    ctx.restore();
+  }
+
+  function paint(t) {
+    ctx.save();
+    ctx.clearRect(0, 0, W, H);
+    try { drawScene(t); } catch (err) { console.error(err); }
+    ctx.restore();
+    watermark();
+  }
+
+  function renderAt(seconds) {
+    const t = ((Number(seconds) % DURATION) + DURATION) % DURATION;
+    paint(t);
+    syncUI(t);
+    return t;
+  }
+  window.renderAt = renderAt;
+
+  // ===== 播放、控制、减少动态 =================================================
+  const playBtn = document.getElementById('play');
+  const timeline = document.getElementById('timeline');
+  const clock = document.getElementById('clock');
+  let playing = false, base = 0, start = 0, current = 0;
+  const reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function syncUI(t) {
+    if (EXPORT) return;
+    current = t;
+    if (timeline) timeline.value = String(t.toFixed(2));
+    if (clock) clock.textContent = t.toFixed(2) + ' / ' + DURATION.toFixed(2) + 's';
+  }
+  function frame(now) {
+    if (!playing) return;
+    const t = ((now - start) / 1000 + base) % DURATION;
+    paint(t);
+    syncUI(t);
+    requestAnimationFrame(frame);
+  }
+  function play() {
+    if (playing) return;
+    playing = true;
+    start = performance.now();
+    base = current;
+    if (playBtn) playBtn.textContent = '暂停';
+    requestAnimationFrame(frame);
+  }
+  function pause() {
+    playing = false;
+    if (playBtn) playBtn.textContent = '播放';
+  }
+  if (playBtn) playBtn.addEventListener('click', () => { playing ? pause() : play(); });
+  document.getElementById('replay')?.addEventListener('click', () => {
+    base = 0; start = performance.now(); paint(0); syncUI(0); play();
+  });
+  timeline?.addEventListener('input', () => {
+    pause(); paint(Number(timeline.value)); syncUI(Number(timeline.value));
+  });
+  window.addEventListener('keydown', e => {
+    if (e.code === 'Space') { e.preventDefault(); playing ? pause() : play(); }
+    if (e.key === 'r' || e.key === 'R') { base = 0; start = performance.now(); paint(0); syncUI(0); play(); }
+  });
+
+  if (EXPORT) {
+    document.body.classList.add('export');
+    renderAt(0);
+  } else if (reduced) {
+    renderAt(2.4);
+    pause();
+  } else {
+    renderAt(0);
+    play();
+  }
+})();
+</script>
+</body>
+</html>

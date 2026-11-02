@@ -14,6 +14,8 @@ This snapshot contains 341 catalog entries, of which 333 have usable prompts. M1
 
 The adapted picker also includes 31 animated demonstrations from the original `Changroro/code-video` project, mapped to X1–X31. These supplement the 193 frozen stills; their separate source/version/checksums are in [preview-lock.json](references/preview-lock.json). Open a thumbnail to enlarge it. They demonstrate the source project's style, not a verified render of the user's future brief. Their MIT notice and upstream reference credits are preserved in `assets/x-previews/LICENSE` and `assets/x-previews/SOURCE-README.md`.
 
+The remaining 109 usable entries now have **DeepSeek Harness 生成示例**, separately bound in [generated-preview-lock.json](references/generated-preview-lock.json). The picker loads posters first; opening one loads its GIF, with pause/play and a full standalone HTML link. Reduced-motion starts on a still. Source prompt hashes, generated files, style-specific limitations and model provenance are separate from original-project media. All 333 usable entries have a visual preview; the eight empty entries remain unavailable. These generated previews are code approximations with silent, six-second examples, not original-author samples or guarantees about future results. Codex verified all asset hashes and GIF/PNG decoding, and viewed all five series contact sheets at thumbnail level; this is not per-item human expert review.
+
 ## 1. Select
 
 - **Named style:** run `python3 scripts/styles.py show A1`. IDs resolve exactly. This returns the original prompt, source path, license classification, and any shared JavaScript needed by A–G examples.

@@ -1,0 +1,440 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>H11 Daisy Days · DeepSeek Harness 生成示例</title>
+<!--
+  Provenance
+  ----------
+  风格来源：code-animation-styles 目录（《来自俯仰观照博主的动画画风整理》整理稿）
+  catalog commit: 01576924a2b316d1f11ae33f75d3c005e8781451
+  style id: H11「Daisy Days」
+  license: upstream-custom-noncommercial（俯仰观照整理稿，非商业）
+  本文件：DeepSeek Harness（deepseek-flash）根据该风格提示词新写的候选示例，
+  不是原作者样片，也不是原项目演示；仅用于风格挑选预览。共享的只有时间轴、
+  尺寸、导出接口与页脚署名，画面与动作按本风格重新设计。
+  原文“只输出代码”等语句属于素材的一部分，不覆盖本任务的交付合同。
+-->
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; min-height: 100%; background: #0c0c10; color: #e9e9ee;
+    font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif; }
+  #app { min-height: 100vh; display: flex; flex-direction: column; align-items: center;
+    justify-content: center; gap: 12px; padding: 20px; }
+  #stage { width: min(94vw, 1000px); aspect-ratio: 16 / 9; background: #000;
+    box-shadow: 0 18px 60px rgba(0,0,0,.55); position: relative; overflow: hidden; }
+  canvas { display: block; width: 100%; height: 100%; }
+  #head, #ui { width: min(94vw, 1000px); }
+  #head h1 { margin: 0 0 4px; font-size: 15px; font-weight: 600; letter-spacing: .02em; }
+  #head p { margin: 0; font-size: 12px; line-height: 1.5; color: #9a9aa8; }
+  #ui { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  #ui button { background: #1d1d26; color: #f2f2f6; border: 1px solid #343444;
+    border-radius: 7px; padding: 6px 12px; font-size: 12px; cursor: pointer; }
+  #ui button:hover { background: #272734; }
+  #ui input[type=range] { flex: 1 1 220px; min-width: 150px; accent-color: #7c8cff; }
+  #clock { font-variant-numeric: tabular-nums; font-size: 12px; color: #a9a9ba; min-width: 78px; }
+  #credit { width: min(94vw, 1000px); font-size: 11px; line-height: 1.6; color: #6f6f80; }
+  #credit b { color: #9c9cae; font-weight: 500; }
+  body.export, body.export #app { display: block; width: 640px; height: 360px; min-height: 0;
+    padding: 0; margin: 0; overflow: hidden; background: #000; }
+  body.export #stage { width: 640px; height: 360px; box-shadow: none; }
+  body.export #head, body.export #ui, body.export #credit { display: none; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="head">
+    <h1>H11 · Daisy Days</h1>
+    <p>阳光花园粉彩卡片：圆角白卡带 3px 炭灰描边与硬投影落进画面，雏菊与太阳缓慢摇摆，圆体字写下「今天，也开一朵」。</p>
+  </div>
+  <div id="stage"><canvas id="c" width="640" height="360" aria-label="Daisy Days 风格动画示例"></canvas></div>
+  <div id="ui">
+    <button id="play" type="button">暂停</button>
+    <button id="replay" type="button">重播</button>
+    <input id="timeline" type="range" min="0" max="6" step="0.01" value="0" aria-label="时间轴">
+    <span id="clock">0.00 / 6.00s</span>
+  </div>
+  <div id="credit">
+    <b>DeepSeek Harness 生成示例</b>（非原项目样片）· 来源：来自俯仰观照博主的动画画风整理 ·
+    许可：upstream-custom-noncommercial（俯仰观照整理稿，非商业） · 画面与文字均由代码绘制，静音。
+  </div>
+</div>
+<script>
+(() => {
+  'use strict';
+  // ===== 共享脚手架（可改，但导出合同不要破坏）=================================
+  const W = 640, H = 360, DURATION = 6;
+  const EXPORT = new URLSearchParams(location.search).get('export') === '1';
+  const canvas = document.getElementById('c');
+  const ctx = canvas.getContext('2d');
+  const FONT = '"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",sans-serif';
+
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  const lerp = (a, b, t) => a + (b - a) * t;
+  const smooth = t => t * t * (3 - 2 * t);
+  const easeOut = t => 1 - Math.pow(1 - t, 3);
+  const easeIn = t => t * t * t;
+  function rng(seed) { let s = seed >>> 0; return () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; }; }
+
+  // ===== 场景（每个 ID 独立设计；下面的注释区由构建器替换）===================
+  // DESC: 阳光花园粉彩卡片：圆角白卡带 3px 炭灰描边与硬投影落进画面，雏菊与太阳缓慢摇摆，圆体字写下「今天，也开一朵」。
+// H11 Daisy Days · DeepSeek Harness 生成示例
+const H11_SKY = '#d9f2f5', H11_CREAM = '#fffaf0', H11_CHAR = '#3a3335';
+const H11_PINK = '#ffc2d1', H11_GREEN = '#bfe3b0', H11_YELLOW = '#ffd97a';
+const H11_ROUND = '"Yuanti SC","Hiragino Maru Gothic ProN","PingFang SC","Hiragino Sans GB",sans-serif';
+const H11_POLLEN = (() => {
+  const r = rng(1111);
+  return Array.from({ length: 18 }, () => ({
+    x: 20 + r() * 600, y: 30 + r() * 300, r: 1.2 + r() * 2.6,
+    sp: 0.3 + r() * 0.7, ph: r() * 6.28, c: [H11_YELLOW, H11_PINK, '#ffffff'][Math.floor(r() * 3)],
+  }));
+})();
+
+function h11seg(t, a, b) { return clamp((t - a) / (b - a), 0, 1); }
+function h11ease(t) { return 1 - Math.pow(1 - t, 3); }
+function h11mix(a, b, u) {
+  const pa = parseInt(a.slice(1), 16), pb = parseInt(b.slice(1), 16);
+  return 'rgb(' + Math.round(lerp((pa >> 16) & 255, (pb >> 16) & 255, u)) + ',' +
+    Math.round(lerp((pa >> 8) & 255, (pb >> 8) & 255, u)) + ',' +
+    Math.round(lerp(pa & 255, pb & 255, u)) + ')';
+}
+function h11drop(p) { // 落下的小回弹
+  if (p <= 0) return -1;
+  if (p >= 1) return 1;
+  const e = 1 - Math.pow(1 - p, 3);
+  return e + Math.sin(p * Math.PI * 2) * 0.035 * (1 - p);
+}
+function h11daisy(cx, cy, r, rot, p) {
+  if (p <= 0) return;
+  const s = p;
+  ctx.save(); ctx.translate(cx, cy); ctx.rotate(rot); ctx.scale(s, s);
+  // 花瓣
+  ctx.beginPath();
+  for (let i = 0; i < 8; i++) {
+    const a = i * Math.PI / 4;
+    const px = Math.cos(a) * r * 0.62, py = Math.sin(a) * r * 0.62;
+    ctx.save(); ctx.translate(px, py); ctx.rotate(a);
+    ctx.ellipse(0, 0, r * 0.5, r * 0.26, 0, 0, Math.PI * 2);
+    ctx.restore();
+  }
+  ctx.fillStyle = '#ffffff'; ctx.fill();
+  ctx.strokeStyle = H11_CHAR; ctx.lineWidth = 3;
+  for (let i = 0; i < 8; i++) {
+    const a = i * Math.PI / 4;
+    const px = Math.cos(a) * r * 0.62, py = Math.sin(a) * r * 0.62;
+    ctx.save(); ctx.translate(px, py); ctx.rotate(a);
+    ctx.beginPath(); ctx.ellipse(0, 0, r * 0.5, r * 0.26, 0, 0, Math.PI * 2); ctx.stroke();
+    ctx.restore();
+  }
+  // 花心
+  ctx.beginPath(); ctx.arc(0, 0, r * 0.32, 0, Math.PI * 2);
+  ctx.fillStyle = H11_YELLOW; ctx.fill();
+  ctx.strokeStyle = H11_CHAR; ctx.lineWidth = 3; ctx.stroke();
+  ctx.restore();
+}
+function h11sun(cx, cy, r, t, p) {
+  if (p <= 0) return;
+  ctx.save(); ctx.translate(cx, cy); ctx.scale(p, p);
+  // 光
+  ctx.save(); ctx.rotate(t * 0.18);
+  ctx.strokeStyle = H11_CHAR; ctx.lineWidth = 3; ctx.lineCap = 'round';
+  for (let i = 0; i < 8; i++) {
+    const a = i * Math.PI / 4;
+    ctx.beginPath();
+    ctx.moveTo(Math.cos(a) * (r + 7), Math.sin(a) * (r + 7));
+    ctx.lineTo(Math.cos(a) * (r + 16), Math.sin(a) * (r + 16));
+    ctx.stroke();
+  }
+  ctx.restore();
+  ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI * 2);
+  ctx.fillStyle = H11_YELLOW; ctx.fill();
+  ctx.strokeStyle = H11_CHAR; ctx.lineWidth = 3; ctx.stroke();
+  ctx.restore();
+}
+function h11cloud(cx, cy, s, p) {
+  if (p <= 0) return;
+  ctx.save(); ctx.translate(cx, cy); ctx.scale(s * p, s * p);
+  ctx.beginPath();
+  ctx.arc(-26, 0, 18, Math.PI, 0);
+  ctx.arc(0, -8, 24, Math.PI, 0);
+  ctx.arc(28, 0, 17, Math.PI, 0);
+  ctx.lineTo(45, 18); ctx.lineTo(-44, 18); ctx.closePath();
+  ctx.fillStyle = '#ffffff'; ctx.fill();
+  ctx.strokeStyle = H11_CHAR; ctx.lineWidth = 3; ctx.lineJoin = 'round'; ctx.stroke();
+  ctx.restore();
+}
+function h11track(text, x, y, gap, size, weight, color, align, font) {
+  ctx.save(); ctx.font = `${weight} ${size}px ${font || H11_ROUND}`; ctx.fillStyle = color;
+  let total = 0; for (const ch of text) total += ctx.measureText(ch).width + gap;
+  total -= gap;
+  let cx = align === 'right' ? x - total : x;
+  ctx.textAlign = 'left';
+  for (const ch of text) { ctx.fillText(ch, cx, y); cx += ctx.measureText(ch).width + gap; }
+  ctx.restore();
+}
+
+function drawScene(t) {
+  // 天空渐变 + 极缓呼吸
+  const bu = 0.5 - 0.5 * Math.cos(t * Math.PI * 2 / 6);
+  const g = ctx.createLinearGradient(0, 0, 0, H);
+  g.addColorStop(0, h11mix(H11_SKY, '#c9e9ee', bu * 0.8));
+  g.addColorStop(1, h11mix('#fdf4dd', '#f8eacd', bu * 0.8));
+  ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  ctx.save();
+  ctx.translate(Math.sin(t * 0.7) * 1.6, Math.cos(t * 0.5) * 1.2);
+
+  // 太阳、云
+  h11sun(66, 62, 30, t, h11ease(h11seg(t, -0.4, 0.3)));
+  h11cloud(402, 34, 0.9, h11ease(h11seg(t, 0.2, 0.8)));
+
+  // 山丘
+  ctx.beginPath();
+  ctx.moveTo(-10, 330); ctx.quadraticCurveTo(160, 268, 360, 300); ctx.quadraticCurveTo(520, 320, 650, 286);
+  ctx.lineTo(650, 360); ctx.lineTo(-10, 360); ctx.closePath();
+  ctx.fillStyle = H11_GREEN; ctx.fill();
+  ctx.strokeStyle = H11_CHAR; ctx.lineWidth = 3; ctx.stroke();
+
+  // 花粉颗粒：持续缓慢漂移
+  H11_POLLEN.forEach((d, i) => {
+    const x = d.x + Math.sin(t * d.sp + d.ph) * 6;
+    const y = d.y + Math.cos(t * d.sp * 0.7 + d.ph) * 7;
+    ctx.save(); ctx.globalAlpha = 0.55;
+    ctx.fillStyle = d.c;
+    ctx.beginPath(); ctx.arc(x, y, d.r, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = 'rgba(58,51,53,.35)'; ctx.lineWidth = 0.8; ctx.stroke();
+    ctx.restore();
+  });
+
+  // 雏菊：缓慢摇摆
+  h11daisy(566, 92, 25, Math.sin(t * 0.6) * 0.12, h11ease(h11seg(t, 0.5, 1.15)));
+  h11daisy(82, 262, 21, -0.15 + Math.sin(t * 0.5 + 1) * 0.12, h11ease(h11seg(t, 0.85, 1.5)));
+  h11daisy(596, 282, 17, 0.2 + Math.sin(t * 0.7 + 2) * 0.14, h11ease(h11seg(t, 1.15, 1.8)));
+
+  // 卡片：落下 + 硬投影
+  const cardP = h11seg(t, -0.4, 0.5);
+  const dy = (1 - h11drop(cardP)) * -150;
+  const bob = Math.sin(t * 1.15) * 2.2;
+  const cardX = 120, cardY = 56 + dy + bob, cardW = 400, cardH = 248;
+  if (cardP > 0) {
+    ctx.save();
+    // 硬投影
+    ctx.fillStyle = H11_CHAR;
+    ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(cardX + 9, cardY + 10, cardW, cardH, 28); else ctx.rect(cardX + 9, cardY + 10, cardW, cardH);
+    ctx.fill();
+    // 卡面
+    ctx.fillStyle = H11_CREAM;
+    ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(cardX, cardY, cardW, cardH, 28); else ctx.rect(cardX, cardY, cardW, cardH);
+    ctx.fill();
+    ctx.strokeStyle = H11_CHAR; ctx.lineWidth = 3; ctx.stroke();
+    ctx.restore();
+  } else return;
+
+  // 卡内内容（随卡片移动）
+  const cx = cardX, cy = cardY;
+  // 徽章
+  const bp = h11ease(h11seg(t, -0.3, 0.35));
+  if (bp > 0) {
+    ctx.save(); ctx.translate(cx + 28, cy + 26); ctx.scale(bp, bp);
+    ctx.fillStyle = H11_PINK;
+    ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(0, 0, 146, 24, 12); else ctx.rect(0, 0, 146, 24);
+    ctx.fill(); ctx.strokeStyle = H11_CHAR; ctx.lineWidth = 2.5; ctx.stroke();
+    ctx.fillStyle = H11_CHAR; ctx.font = `700 9px ${FONT}`; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+    ctx.fillText('DAISY DAYS  ·  11', 12, 13);
+    ctx.restore();
+  }
+
+  // 标题：逐字弹入
+  const title = '今天，也开一朵';
+  const tp = h11seg(t, -0.35, 0.7);
+  if (tp > 0) {
+    ctx.save();
+    ctx.font = `800 34px ${H11_ROUND}`; ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+    let x = cx + 28;
+    for (let i = 0; i < title.length; i++) {
+      const cp = h11ease(clamp(tp * 1.5 - i * 0.08, 0, 1));
+      if (cp > 0) {
+        ctx.save();
+        ctx.translate(x, cy + 94 + (1 - cp) * 8);
+        ctx.globalAlpha = cp;
+        ctx.fillStyle = H11_CHAR;
+        ctx.fillText(title[i], 0, 0);
+        ctx.restore();
+      }
+      x += ctx.measureText(title[i]).width;
+    }
+    ctx.restore();
+  }
+  // 虚线分隔
+  const dp = h11ease(h11seg(t, 0.4, 0.9));
+  if (dp > 0) {
+    ctx.save(); ctx.strokeStyle = 'rgba(58,51,53,.45)'; ctx.lineWidth = 1.4; ctx.setLineDash([5, 5]);
+    ctx.beginPath(); ctx.moveTo(cx + 28, cy + 114); ctx.lineTo(cx + 28 + 250 * dp, cy + 114); ctx.stroke();
+    ctx.restore();
+  }
+  // 正文
+  const body = ['慢慢长，也来得及。', '先把花瓣打开。'];
+  body.forEach((s, i) => {
+    const p = h11ease(h11seg(t, 0.55 + i * 0.2, 1.0 + i * 0.2));
+    if (p <= 0) return;
+    ctx.save(); ctx.globalAlpha = p;
+    ctx.fillStyle = H11_CHAR; ctx.font = `600 15px ${H11_ROUND}`; ctx.textAlign = 'left';
+    ctx.fillText(s, cx + 28, cy + 148 + i * 26 + (1 - p) * 5);
+    ctx.restore();
+  });
+  // 小太阳 + 今日份的小进展
+  const fp = h11ease(h11seg(t, 1.15, 1.7));
+  if (fp > 0) {
+    ctx.save(); ctx.globalAlpha = fp;
+    ctx.translate(cx + 32, cy + 212);
+    ctx.fillStyle = H11_YELLOW; ctx.strokeStyle = H11_CHAR; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(0, 0, 8, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+    ctx.strokeStyle = H11_CHAR; ctx.lineWidth = 2;
+    for (let i = 0; i < 8; i++) {
+      const a = i * Math.PI / 4 + t * 0.2;
+      ctx.beginPath();
+      ctx.moveTo(Math.cos(a) * 11, Math.sin(a) * 11);
+      ctx.lineTo(Math.cos(a) * 15, Math.sin(a) * 15);
+      ctx.stroke();
+    }
+    ctx.fillStyle = H11_CHAR; ctx.font = `700 13px ${H11_ROUND}`; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+    ctx.fillText('今日份的小进展', cx + 54, cy + 213);
+    ctx.restore();
+    // 复选框勾
+    const cp2 = h11ease(h11seg(t, 1.6, 2.05));
+    if (cp2 > 0) {
+      ctx.save(); ctx.strokeStyle = H11_CHAR; ctx.lineWidth = 2.4; ctx.lineCap = 'round';
+      ctx.strokeRect(cx + 286, cy + 203, 20, 20);
+      ctx.beginPath();
+      ctx.moveTo(cx + 290, cy + 213);
+      ctx.lineTo(cx + 295, cy + 218);
+      ctx.lineTo(cx + 305, cy + 206);
+      ctx.stroke(); ctx.restore();
+    }
+  }
+  // 卡脚小字
+  const fpp = h11ease(h11seg(t, 1.85, 2.4));
+  if (fpp > 0) {
+    ctx.save(); ctx.globalAlpha = fpp;
+    ctx.fillStyle = 'rgba(58,51,53,.6)'; ctx.font = `500 12.5px ${H11_ROUND}`; ctx.textAlign = 'left';
+    ctx.fillText('给每一个还在长的念头', cx + 28, cy + 234);
+    ctx.restore();
+  }
+
+  // 卡片右上角探出的雏菊
+  h11daisy(cx + 388, cy + 2, 21, 0.3 + Math.sin(t * 0.7) * 0.1, h11ease(h11seg(t, 0.85, 1.45)));
+
+  // 左下小标签
+  const tagP = h11ease(h11seg(t, 2.2, 2.7));
+  if (tagP > 0) {
+    ctx.save(); ctx.translate(70, 322); ctx.rotate(-0.05); ctx.scale(tagP, tagP);
+    ctx.fillStyle = H11_CREAM; ctx.strokeStyle = H11_CHAR; ctx.lineWidth = 2.5;
+    ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(-46, -13, 92, 26, 13); else ctx.rect(-46, -13, 92, 26);
+    ctx.fill(); ctx.stroke();
+    ctx.fillStyle = H11_CHAR; ctx.font = `700 10px ${FONT}`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('SUNNY  ·  11', 0, 1);
+    ctx.restore();
+  }
+  // 页脚
+  h11track('640 × 360 · 6S LOOP', 606, 330, 1.2, 8, 700, 'rgba(58,51,53,.45)', 'right', FONT);
+
+  ctx.restore();
+}
+
+  // ===== 共享渲染与署名 =======================================================
+  function watermark() {
+    const text = 'DeepSeek Harness 生成示例';
+    ctx.save();
+    ctx.font = '11px ' + FONT;
+    const w = ctx.measureText(text).width + 14;
+    const x = W - w - 8, y = H - 24;
+    ctx.fillStyle = 'rgba(0,0,0,.46)';
+    ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(x, y, w, 18, 4); else ctx.rect(x, y, w, 18);
+    ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,.82)';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(text, x + 7, y + 9.5);
+    ctx.restore();
+  }
+
+  function paint(t) {
+    ctx.save();
+    ctx.clearRect(0, 0, W, H);
+    try { drawScene(t); } catch (err) { console.error(err); }
+    ctx.restore();
+    watermark();
+  }
+
+  function renderAt(seconds) {
+    const t = ((Number(seconds) % DURATION) + DURATION) % DURATION;
+    paint(t);
+    syncUI(t);
+    return t;
+  }
+  window.renderAt = renderAt;
+
+  // ===== 播放、控制、减少动态 =================================================
+  const playBtn = document.getElementById('play');
+  const timeline = document.getElementById('timeline');
+  const clock = document.getElementById('clock');
+  let playing = false, base = 0, start = 0, current = 0;
+  const reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function syncUI(t) {
+    if (EXPORT) return;
+    current = t;
+    if (timeline) timeline.value = String(t.toFixed(2));
+    if (clock) clock.textContent = t.toFixed(2) + ' / ' + DURATION.toFixed(2) + 's';
+  }
+  function frame(now) {
+    if (!playing) return;
+    const t = ((now - start) / 1000 + base) % DURATION;
+    paint(t);
+    syncUI(t);
+    requestAnimationFrame(frame);
+  }
+  function play() {
+    if (playing) return;
+    playing = true;
+    start = performance.now();
+    base = current;
+    if (playBtn) playBtn.textContent = '暂停';
+    requestAnimationFrame(frame);
+  }
+  function pause() {
+    playing = false;
+    if (playBtn) playBtn.textContent = '播放';
+  }
+  if (playBtn) playBtn.addEventListener('click', () => { playing ? pause() : play(); });
+  document.getElementById('replay')?.addEventListener('click', () => {
+    base = 0; start = performance.now(); paint(0); syncUI(0); play();
+  });
+  timeline?.addEventListener('input', () => {
+    pause(); paint(Number(timeline.value)); syncUI(Number(timeline.value));
+  });
+  window.addEventListener('keydown', e => {
+    if (e.code === 'Space') { e.preventDefault(); playing ? pause() : play(); }
+    if (e.key === 'r' || e.key === 'R') { base = 0; start = performance.now(); paint(0); syncUI(0); play(); }
+  });
+
+  if (EXPORT) {
+    document.body.classList.add('export');
+    renderAt(0);
+  } else if (reduced) {
+    renderAt(2.4);
+    pause();
+  } else {
+    renderAt(0);
+    play();
+  }
+})();
+</script>
+</body>
+</html>

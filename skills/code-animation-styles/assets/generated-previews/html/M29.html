@@ -1,0 +1,408 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>M29 日落天空的 3D 空镜加一句话 · DeepSeek Harness 生成示例</title>
+<!--
+  Provenance
+  ----------
+  风格来源：code-animation-styles 目录（《来自俯仰观照博主的动画画风整理》整理稿）
+  catalog commit: 01576924a2b316d1f11ae33f75d3c005e8781451
+  style id: M29「日落天空的 3D 空镜加一句话」
+  license: upstream-custom-noncommercial（俯仰观照整理稿，非商业）
+  本文件：DeepSeek Harness（deepseek-flash）根据该风格提示词新写的候选示例，
+  不是原作者样片，也不是原项目演示；仅用于风格挑选预览。共享的只有时间轴、
+  尺寸、导出接口与页脚署名，画面与动作按本风格重新设计。
+  原文“只输出代码”等语句属于素材的一部分，不覆盖本任务的交付合同。
+-->
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; min-height: 100%; background: #0c0c10; color: #e9e9ee;
+    font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif; }
+  #app { min-height: 100vh; display: flex; flex-direction: column; align-items: center;
+    justify-content: center; gap: 12px; padding: 20px; }
+  #stage { width: min(94vw, 1000px); aspect-ratio: 16 / 9; background: #000;
+    box-shadow: 0 18px 60px rgba(0,0,0,.55); position: relative; overflow: hidden; }
+  canvas { display: block; width: 100%; height: 100%; }
+  #head, #ui { width: min(94vw, 1000px); }
+  #head h1 { margin: 0 0 4px; font-size: 15px; font-weight: 600; letter-spacing: .02em; }
+  #head p { margin: 0; font-size: 12px; line-height: 1.5; color: #9a9aa8; }
+  #ui { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  #ui button { background: #1d1d26; color: #f2f2f6; border: 1px solid #343444;
+    border-radius: 7px; padding: 6px 12px; font-size: 12px; cursor: pointer; }
+  #ui button:hover { background: #272734; }
+  #ui input[type=range] { flex: 1 1 220px; min-width: 150px; accent-color: #7c8cff; }
+  #clock { font-variant-numeric: tabular-nums; font-size: 12px; color: #a9a9ba; min-width: 78px; }
+  #credit { width: min(94vw, 1000px); font-size: 11px; line-height: 1.6; color: #6f6f80; }
+  #credit b { color: #9c9cae; font-weight: 500; }
+  body.export, body.export #app { display: block; width: 640px; height: 360px; min-height: 0;
+    padding: 0; margin: 0; overflow: hidden; background: #000; }
+  body.export #stage { width: 640px; height: 360px; box-shadow: none; }
+  body.export #head, body.export #ui, body.export #credit { display: none; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="head">
+    <h1>M29 · 日落天空的 3D 空镜加一句话</h1>
+    <p>日落海面，紫色积云一层层向后掠过，太阳压在海平线，海面反光碎成金线，镜头缓缓飞过并浮出一句话。</p>
+  </div>
+  <div id="stage"><canvas id="c" width="640" height="360" aria-label="日落天空的 3D 空镜加一句话 风格动画示例"></canvas></div>
+  <div id="ui">
+    <button id="play" type="button">暂停</button>
+    <button id="replay" type="button">重播</button>
+    <input id="timeline" type="range" min="0" max="6" step="0.01" value="0" aria-label="时间轴">
+    <span id="clock">0.00 / 6.00s</span>
+  </div>
+  <div id="credit">
+    <b>DeepSeek Harness 生成示例</b>（非原项目样片）· 来源：来自俯仰观照博主的动画画风整理 ·
+    许可：upstream-custom-noncommercial（俯仰观照整理稿，非商业） · 画面与文字均由代码绘制，静音。
+  </div>
+</div>
+<script>
+(() => {
+  'use strict';
+  // ===== 共享脚手架（可改，但导出合同不要破坏）=================================
+  const W = 640, H = 360, DURATION = 6;
+  const EXPORT = new URLSearchParams(location.search).get('export') === '1';
+  const canvas = document.getElementById('c');
+  const ctx = canvas.getContext('2d');
+  const FONT = '"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",sans-serif';
+
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  const lerp = (a, b, t) => a + (b - a) * t;
+  const smooth = t => t * t * (3 - 2 * t);
+  const easeOut = t => 1 - Math.pow(1 - t, 3);
+  const easeIn = t => t * t * t;
+  function rng(seed) { let s = seed >>> 0; return () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; }; }
+
+  // ===== 场景（每个 ID 独立设计；下面的注释区由构建器替换）===================
+  // DESC: 日落海面，紫色积云一层层向后掠过，太阳压在海平线，海面反光碎成金线，镜头缓缓飞过并浮出一句话。
+// M29 日落天空的 3D 空镜加一句话 · DeepSeek Harness 生成示例
+const M29_SKY = ['#2a1d4a', '#4b2a63', '#8a4670', '#d8735f', '#ffb277'];
+const M29_SUN = '#fff1c9', M29_TEXT = '#fff3e0';
+const M29_CLOUDS = (() => {
+  const r = rng(2929);
+  return Array.from({ length: 7 }, (_, i) => {
+    const depth = 0.15 + (i % 4) * 0.25;        // 0 远 1 近
+    const n = 6 + (i % 3);
+    return {
+      depth,
+      x: r() * (W + 200),
+      y: 54 + (i * 31) % 128,
+      w: 108 + r() * 96,
+      a: 0.82 + r() * 0.16,
+      puffs: Array.from({ length: n }, (_, k) => {
+        const dx = (k / (n - 1) - 0.5) * 1.16;
+        return { dx, dy: -Math.cos(dx * 2.1) * 0.22 + (r() - 0.5) * 0.1, rr: 0.3 + 0.1 * Math.sin(k * 1.9 + i) };
+      }),
+    };
+  });
+})();
+const M29_GRAIN = (() => {
+  const r = rng(99);
+  return Array.from({ length: 300 }, () => ({ x: r() * W, y: r() * H, a: 0.012 + r() * 0.04, s: 0.6 + r() * 1.2 }));
+})();
+
+function m29seg(t, a, b) { return clamp((t - a) / (b - a), 0, 1); }
+function m29e(t) { return 1 - Math.pow(1 - t, 3); }
+
+function m29Sky(t) {
+  const g = ctx.createLinearGradient(0, 0, 0, 268);
+  const stops = [0, 0.28, 0.52, 0.74, 1];
+  stops.forEach((s, i) => g.addColorStop(s, M29_SKY[i]));
+  ctx.fillStyle = g; ctx.fillRect(0, 0, W, 270);
+  // 太阳：压得很低，缓慢下沉
+  const sunX = 404, sunY = 232 + m29e(m29seg(t, 0, 6)) * 8;
+  const halo = ctx.createRadialGradient(sunX, sunY, 4, sunX, sunY, 190);
+  halo.addColorStop(0, 'rgba(255,236,190,.95)');
+  halo.addColorStop(0.16, 'rgba(255,190,130,.55)');
+  halo.addColorStop(0.45, 'rgba(255,140,110,.20)');
+  halo.addColorStop(1, 'rgba(255,120,100,0)');
+  ctx.fillStyle = halo; ctx.fillRect(sunX - 200, sunY - 200, 400, 400);
+  ctx.fillStyle = M29_SUN;
+  ctx.beginPath(); ctx.arc(sunX, sunY, 25, 0, Math.PI * 2); ctx.fill();
+  ctx.save();
+  ctx.globalAlpha = 0.55;
+  ctx.fillStyle = 'rgba(255,246,214,.8)';
+  ctx.beginPath(); ctx.ellipse(sunX, sunY, 54, 2.4, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.globalAlpha = 0.3;
+  ctx.beginPath(); ctx.ellipse(sunX, sunY - 6, 120, 1.4, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.restore();
+}
+
+function m29Cloud(c, t, fly) {
+  // 越近的云走得越快、放大越多，做出「飞过去」的纵深感
+  const speed = 5 + c.depth * 42;
+  const grow = 1 + fly * c.depth * 0.34;
+  const cx = ((c.x + t * speed) % (W + 420)) - 210;
+  const cy = c.y + Math.sin(t * 0.45 + c.x * 0.01) * 1.6;
+  const baseW = c.w * (0.62 + c.depth * 0.5);
+  const litDir = cx > 404 ? -1 : 1;
+  ctx.save();
+  ctx.globalAlpha = c.a;
+  ctx.translate(cx, cy);
+  ctx.scale(grow, grow);
+  // 云体轮廓
+  ctx.beginPath();
+  for (const p of c.puffs) {
+    const px = p.dx * baseW, py = p.dy * baseW, pr = p.rr * baseW * 0.62;
+    ctx.moveTo(px + pr, py);
+    ctx.arc(px, py, pr, 0, Math.PI * 2);
+  }
+  ctx.save();
+  ctx.clip();
+  // 主体：上淡紫、下深紫
+  const cg = ctx.createLinearGradient(0, -baseW * 0.42, 0, baseW * 0.3);
+  cg.addColorStop(0, `rgb(${Math.round(148 + c.depth * 40)},${Math.round(116 + c.depth * 26)},${Math.round(160 + c.depth * 30)})`);
+  cg.addColorStop(0.55, 'rgb(104,74,124)');
+  cg.addColorStop(1, 'rgb(66,46,86)');
+  ctx.fillStyle = cg;
+  ctx.fillRect(-baseW, -baseW, baseW * 2, baseW * 2);
+  // 受光面：朝太阳一侧的暖色
+  const rg = ctx.createRadialGradient(litDir * baseW * 0.3, -baseW * 0.1, 4, litDir * baseW * 0.3, -baseW * 0.1, baseW * 0.72);
+  rg.addColorStop(0, `rgba(255,190,150,${0.55 - c.depth * 0.2})`);
+  rg.addColorStop(0.55, 'rgba(255,160,140,.14)');
+  rg.addColorStop(1, 'rgba(255,150,130,0)');
+  ctx.fillStyle = rg;
+  ctx.fillRect(-baseW, -baseW, baseW * 2, baseW * 2);
+  // 底部压深，云才有体积
+  const bg2 = ctx.createLinearGradient(0, baseW * 0.02, 0, baseW * 0.26);
+  bg2.addColorStop(0, 'rgba(54,36,74,0)');
+  bg2.addColorStop(1, 'rgba(42,28,60,.55)');
+  ctx.fillStyle = bg2;
+  ctx.fillRect(-baseW, 0, baseW * 2, baseW * 0.3);
+  ctx.restore();
+  ctx.restore();
+}
+
+function m29Sea(t) {
+  const horizon = 258;
+  const g = ctx.createLinearGradient(0, horizon, 0, H);
+  g.addColorStop(0, '#8d4a5e');
+  g.addColorStop(0.18, '#5c3359');
+  g.addColorStop(0.62, '#2b1c40');
+  g.addColorStop(1, '#140f24');
+  ctx.fillStyle = g; ctx.fillRect(0, horizon, W, H - horizon);
+  // 海平线
+  ctx.fillStyle = 'rgba(255,196,150,.55)';
+  ctx.fillRect(0, horizon, W, 1.4);
+  // 太阳反光带：碎金线 + 一层柔光柱
+  const sx = 404;
+  const colGlow = ctx.createLinearGradient(sx - 46, 0, sx + 46, 0);
+  colGlow.addColorStop(0, 'rgba(255,196,140,0)');
+  colGlow.addColorStop(0.5, 'rgba(255,206,150,.20)');
+  colGlow.addColorStop(1, 'rgba(255,196,140,0)');
+  ctx.fillStyle = colGlow;
+  ctx.fillRect(sx - 46, horizon, 92, 104);
+  for (let i = 0; i < 34; i++) {
+    const p = i / 34;
+    const y = horizon + 3 + p * p * 96;
+    const spread = 8 + p * 92;
+    const wob = Math.sin(i * 1.7 + t * 2.4) * (2 + p * 9);
+    const w = (14 + p * 46) * (0.6 + 0.4 * Math.sin(t * 3 + i));
+    ctx.fillStyle = `rgba(255,210,150,${(0.5 - p * 0.36) * (0.6 + 0.4 * Math.sin(t * 2 + i * 1.3))})`;
+    ctx.fillRect(sx - w / 2 + wob, y, w, 1.6 + p * 2.2);
+  }
+  // 横向波纹
+  ctx.save();
+  for (let i = 0; i < 26; i++) {
+    const y = horizon + 6 + i * 4.2;
+    const off = Math.sin(t * 0.8 + i * 0.6) * 22;
+    ctx.strokeStyle = `rgba(255,170,150,${0.05 + (i % 3) * 0.03})`;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(((off + i * 37) % (W + 80)) - 40, y);
+    ctx.lineTo(((off + i * 37) % (W + 80)) - 40 + 46, y);
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+function m29Birds(t) {
+  const p = m29e(m29seg(t, 1.2, 5.6));
+  if (p <= 0) return;
+  for (let i = 0; i < 3; i++) {
+    const x = lerp(-30, 660, p) - i * 34;
+    const y = 96 + i * 13 - Math.sin(p * Math.PI) * 14;
+    const flap = Math.sin(t * 9 + i * 1.3) * 3;
+    ctx.save();
+    ctx.strokeStyle = 'rgba(42,26,44,.8)';
+    ctx.lineWidth = 2; ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(x - 7, y + flap);
+    ctx.quadraticCurveTo(x - 3, y - 4 - flap, x, y);
+    ctx.quadraticCurveTo(x + 3, y - 4 - flap, x + 7, y + flap);
+    ctx.stroke();
+    ctx.restore();
+  }
+}
+
+function m29Text(t) {
+  const p = m29e(m29seg(t, 1.4, 2.2));
+  if (p <= 0) return;
+  ctx.save();
+  ctx.globalAlpha = p;
+  ctx.font = `700 30px ${FONT}`;
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  const str = '此刻，就很好。';
+  ctx.shadowColor = 'rgba(30,12,34,.55)';
+  ctx.shadowBlur = 12;
+  ctx.fillStyle = M29_TEXT;
+  ctx.fillText(str, 320, 306 + (1 - p) * 10);
+  ctx.restore();
+  // 细引线：让字不像随便贴上去的
+  const lp = m29e(m29seg(t, 1.9, 2.6));
+  ctx.save();
+  ctx.globalAlpha = lp * 0.5;
+  ctx.fillStyle = 'rgba(255,240,214,.7)';
+  ctx.fillRect(320 - 24 * lp, 330, 48 * lp, 1.4);
+  ctx.restore();
+}
+
+function drawScene(t) {
+  const fly = m29e(m29seg(t, 0, 6));
+  // 镜头：缓慢向前飞，画面重心轻微上浮
+  ctx.save();
+  ctx.translate(W / 2, H * 0.52);
+  ctx.scale(1 + fly * 0.035, 1 + fly * 0.035);
+  ctx.translate(-W / 2 - fly * 6, -H * 0.52 - fly * 4);
+
+  m29Sky(t);
+  // 远云 → 近云
+  const order = M29_CLOUDS.slice().sort((a, b) => a.depth - b.depth);
+  for (const c of order) if (c.depth <= 0.5) m29Cloud(c, t, fly);
+  m29Birds(t);
+  for (const c of order) if (c.depth > 0.5) m29Cloud(c, t, fly);
+  m29Sea(t);
+  ctx.restore();
+
+  // 镜头光晕（横向一撇 + 两枚鬼影），跟着太阳位置
+  const lens = 0.18 + 0.22 * m29e(m29seg(t, 1.0, 3.2));
+  ctx.save();
+  ctx.globalAlpha = lens;
+  const lg = ctx.createLinearGradient(0, 236, W, 244);
+  lg.addColorStop(0, 'rgba(255,190,150,0)');
+  lg.addColorStop(0.42, 'rgba(255,214,170,.55)');
+  lg.addColorStop(0.62, 'rgba(255,226,190,.75)');
+  lg.addColorStop(1, 'rgba(255,190,150,0)');
+  ctx.fillStyle = lg;
+  ctx.fillRect(0, 232, W, 9);
+  for (const gp of [[300, 250, 16], [214, 268, 9]]) {
+    const gg = ctx.createRadialGradient(gp[0], gp[1], 0, gp[0], gp[1], gp[2]);
+    gg.addColorStop(0, 'rgba(255,214,180,.5)');
+    gg.addColorStop(1, 'rgba(255,214,180,0)');
+    ctx.fillStyle = gg;
+    ctx.beginPath(); ctx.arc(gp[0], gp[1], gp[2], 0, Math.PI * 2); ctx.fill();
+  }
+  ctx.restore();
+
+  m29Text(t);
+
+  // 颗粒 + 暗角
+  ctx.save();
+  for (const g of M29_GRAIN) {
+    ctx.fillStyle = `rgba(255,240,220,${g.a})`;
+    ctx.fillRect(g.x, g.y, g.s, g.s);
+  }
+  ctx.restore();
+  const vg = ctx.createRadialGradient(320, 190, 170, 320, 190, 430);
+  vg.addColorStop(0, 'rgba(0,0,0,0)');
+  vg.addColorStop(1, 'rgba(24,8,30,.42)');
+  ctx.fillStyle = vg; ctx.fillRect(0, 0, W, H);
+}
+
+  // ===== 共享渲染与署名 =======================================================
+  function watermark() {
+    const text = 'DeepSeek Harness 生成示例';
+    ctx.save();
+    ctx.font = '11px ' + FONT;
+    const w = ctx.measureText(text).width + 14;
+    const x = W - w - 8, y = H - 24;
+    ctx.fillStyle = 'rgba(0,0,0,.46)';
+    ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(x, y, w, 18, 4); else ctx.rect(x, y, w, 18);
+    ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,.82)';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(text, x + 7, y + 9.5);
+    ctx.restore();
+  }
+
+  function paint(t) {
+    ctx.save();
+    ctx.clearRect(0, 0, W, H);
+    try { drawScene(t); } catch (err) { console.error(err); }
+    ctx.restore();
+    watermark();
+  }
+
+  function renderAt(seconds) {
+    const t = ((Number(seconds) % DURATION) + DURATION) % DURATION;
+    paint(t);
+    syncUI(t);
+    return t;
+  }
+  window.renderAt = renderAt;
+
+  // ===== 播放、控制、减少动态 =================================================
+  const playBtn = document.getElementById('play');
+  const timeline = document.getElementById('timeline');
+  const clock = document.getElementById('clock');
+  let playing = false, base = 0, start = 0, current = 0;
+  const reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function syncUI(t) {
+    if (EXPORT) return;
+    current = t;
+    if (timeline) timeline.value = String(t.toFixed(2));
+    if (clock) clock.textContent = t.toFixed(2) + ' / ' + DURATION.toFixed(2) + 's';
+  }
+  function frame(now) {
+    if (!playing) return;
+    const t = ((now - start) / 1000 + base) % DURATION;
+    paint(t);
+    syncUI(t);
+    requestAnimationFrame(frame);
+  }
+  function play() {
+    if (playing) return;
+    playing = true;
+    start = performance.now();
+    base = current;
+    if (playBtn) playBtn.textContent = '暂停';
+    requestAnimationFrame(frame);
+  }
+  function pause() {
+    playing = false;
+    if (playBtn) playBtn.textContent = '播放';
+  }
+  if (playBtn) playBtn.addEventListener('click', () => { playing ? pause() : play(); });
+  document.getElementById('replay')?.addEventListener('click', () => {
+    base = 0; start = performance.now(); paint(0); syncUI(0); play();
+  });
+  timeline?.addEventListener('input', () => {
+    pause(); paint(Number(timeline.value)); syncUI(Number(timeline.value));
+  });
+  window.addEventListener('keydown', e => {
+    if (e.code === 'Space') { e.preventDefault(); playing ? pause() : play(); }
+    if (e.key === 'r' || e.key === 'R') { base = 0; start = performance.now(); paint(0); syncUI(0); play(); }
+  });
+
+  if (EXPORT) {
+    document.body.classList.add('export');
+    renderAt(0);
+  } else if (reduced) {
+    renderAt(2.4);
+    pause();
+  } else {
+    renderAt(0);
+    play();
+  }
+})();
+</script>
+</body>
+</html>
