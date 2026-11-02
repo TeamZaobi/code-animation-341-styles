@@ -39,6 +39,7 @@ python3 skills/code-animation-styles/scripts/styles.py serve --port 8765
 
 ```bash
 python3 scripts/check_x_previews.py
+python3 scripts/test_install_skill.py
 python3 skills/code-animation-styles/scripts/styles.py check
 python3 skills/code-animation-styles/scripts/test_styles.py
 node --check skills/code-animation-styles/assets/picker-adapter.js

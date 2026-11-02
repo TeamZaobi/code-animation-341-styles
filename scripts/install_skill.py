@@ -15,6 +15,7 @@ def main():
     target = args.target.expanduser().absolute()
     if target.exists() or target.is_symlink():
         parser.error(f'Target already exists; choose a new --target: {target}')
+    target = target.resolve()
     if not (source / 'SKILL.md').is_file():
         parser.error(f'Skill package not found: {source}')
     if target.is_relative_to(source.resolve()):
