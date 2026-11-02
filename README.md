@@ -30,7 +30,7 @@ python3 skills/code-animation-styles/scripts/styles.py serve --port 8765
 ### 已验证范围
 
 - 341 个目录条目，其中 333 个有效提示词；8 个上游空条目在适配挑选器中禁用。
-- 根目录原生挑选器保留 193 张原始静帧与 31 个原项目动图，共 224 个条目有预览。skill 的本机挑选器另叠加 109 个独立标注的 DeepSeek Harness 生成示例，覆盖全部 333 个有效条目；默认加载海报，点击后播放动图。
+- 根目录离线挑选器与 skill 本机挑选器均保留 193 张原始静帧、31 个原项目动图，另加入 109 个独立标注的 DeepSeek Harness 生成示例，覆盖全部 333 个有效条目；生成示例默认加载海报，点击后播放动图。
 - skill 附带 A1 字雨 HTML 样片；它不是 333 种风格均已制作或视觉验收的声明。
 - 原始资料固定在 skill 的 `vendor/`，来源与 SHA-256 清单单独保存，安装后不依赖本仓库其他目录或外接磁盘。
 - 新增 109 个生成示例均有来源摘要、文件哈希和单项局限；已核对全部 ID、原文与资源哈希并解码 GIF/PNG，查看五个系列的海报总览，代表性浏览器交互另行抽检。尚无逐项人类专家风格评分；示例均为静音六秒代码近似，不是原作者提供的样片。
@@ -43,6 +43,7 @@ python3 scripts/test_install_skill.py
 python3 skills/code-animation-styles/scripts/styles.py check
 python3 skills/code-animation-styles/scripts/test_styles.py
 node --check skills/code-animation-styles/assets/picker-adapter.js
+node skills/code-animation-styles/scripts/test_generated_playback.mjs
 ```
 
 许可保持分区：原始资料与本地适配遵循仓库自定义非商业条款，L/V/X 对应第三方内容按其原 MIT 许可；没有将整个合集重新声明为 MIT。修改内容为 skill 封装、检索/本机服务、JSON 交接、空条目保护、A1 示例与 X 系列原项目预览接入。保留原作者与第三方署名，不表示获得作者背书。
