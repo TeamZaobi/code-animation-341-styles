@@ -1,0 +1,390 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>M13 手绘定格，第一人称 · DeepSeek Harness 生成示例</title>
+<!--
+  Provenance
+  ----------
+  风格来源：code-animation-styles 目录（《来自俯仰观照博主的动画画风整理》整理稿）
+  catalog commit: 01576924a2b316d1f11ae33f75d3c005e8781451
+  style id: M13「手绘定格，第一人称」
+  license: upstream-custom-noncommercial（俯仰观照整理稿，非商业）
+  本文件：DeepSeek Harness（deepseek-flash）根据该风格提示词新写的候选示例，
+  不是原作者样片，也不是原项目演示；仅用于风格挑选预览。共享的只有时间轴、
+  尺寸、导出接口与页脚署名，画面与动作按本风格重新设计。
+  原文“只输出代码”等语句属于素材的一部分，不覆盖本任务的交付合同。
+-->
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; min-height: 100%; background: #0c0c10; color: #e9e9ee;
+    font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif; }
+  #app { min-height: 100vh; display: flex; flex-direction: column; align-items: center;
+    justify-content: center; gap: 12px; padding: 20px; }
+  #stage { width: min(94vw, 1000px); aspect-ratio: 16 / 9; background: #000;
+    box-shadow: 0 18px 60px rgba(0,0,0,.55); position: relative; overflow: hidden; }
+  canvas { display: block; width: 100%; height: 100%; }
+  #head, #ui { width: min(94vw, 1000px); }
+  #head h1 { margin: 0 0 4px; font-size: 15px; font-weight: 600; letter-spacing: .02em; }
+  #head p { margin: 0; font-size: 12px; line-height: 1.5; color: #9a9aa8; }
+  #ui { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  #ui button { background: #1d1d26; color: #f2f2f6; border: 1px solid #343444;
+    border-radius: 7px; padding: 6px 12px; font-size: 12px; cursor: pointer; }
+  #ui button:hover { background: #272734; }
+  #ui input[type=range] { flex: 1 1 220px; min-width: 150px; accent-color: #7c8cff; }
+  #clock { font-variant-numeric: tabular-nums; font-size: 12px; color: #a9a9ba; min-width: 78px; }
+  #credit { width: min(94vw, 1000px); font-size: 11px; line-height: 1.6; color: #6f6f80; }
+  #credit b { color: #9c9cae; font-weight: 500; }
+  body.export, body.export #app { display: block; width: 640px; height: 360px; min-height: 0;
+    padding: 0; margin: 0; overflow: hidden; background: #000; }
+  body.export #stage { width: 640px; height: 360px; box-shadow: none; }
+  body.export #head, body.export #ui, body.export #credit { display: none; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="head">
+    <h1>M13 · 手绘定格，第一人称</h1>
+    <p>桌上那张手绘便签自己开口：一蹦一蹦，眼睛看着你，把自己写下的「记得喝水」再提醒一遍。</p>
+  </div>
+  <div id="stage"><canvas id="c" width="640" height="360" aria-label="手绘定格，第一人称 风格动画示例"></canvas></div>
+  <div id="ui">
+    <button id="play" type="button">暂停</button>
+    <button id="replay" type="button">重播</button>
+    <input id="timeline" type="range" min="0" max="6" step="0.01" value="0" aria-label="时间轴">
+    <span id="clock">0.00 / 6.00s</span>
+  </div>
+  <div id="credit">
+    <b>DeepSeek Harness 生成示例</b>（非原项目样片）· 来源：来自俯仰观照博主的动画画风整理 ·
+    许可：upstream-custom-noncommercial（俯仰观照整理稿，非商业） · 画面与文字均由代码绘制，静音。
+  </div>
+</div>
+<script>
+(() => {
+  'use strict';
+  // ===== 共享脚手架（可改，但导出合同不要破坏）=================================
+  const W = 640, H = 360, DURATION = 6;
+  const EXPORT = new URLSearchParams(location.search).get('export') === '1';
+  const canvas = document.getElementById('c');
+  const ctx = canvas.getContext('2d');
+  const FONT = '"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",sans-serif';
+
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  const lerp = (a, b, t) => a + (b - a) * t;
+  const smooth = t => t * t * (3 - 2 * t);
+  const easeOut = t => 1 - Math.pow(1 - t, 3);
+  const easeIn = t => t * t * t;
+  function rng(seed) { let s = seed >>> 0; return () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; }; }
+
+  // ===== 场景（每个 ID 独立设计；下面的注释区由构建器替换）===================
+  // DESC: 桌上那张手绘便签自己开口：一蹦一蹦，眼睛看着你，把自己写下的「记得喝水」再提醒一遍。
+// M13 手绘定格，第一人称 · DeepSeek Harness 生成示例
+const M13_DESK = '#8a5a36', M13_DESK_D = '#6b421f', M13_NOTE = '#f8efd4', M13_INK = '#32404f', M13_RED = '#c4482f';
+
+// 定格：一秒 12 格，动作都踩在格子上
+function m13frame(t) { return Math.floor(t * 12) / 12; }
+function m13p(t, a, b) { return clamp((t - a) / (b - a), 0, 1); }
+function m13hash(n) { const x = Math.sin(n * 127.1 + 311.7) * 43758.5453; return x - Math.floor(x); }
+
+const M13_GRAIN = (() => {
+  const r = rng(1313);
+  return Array.from({ length: 620 }, () => ({
+    x: r() * W, y: r() * H, a: 0.02 + r() * 0.05, s: 0.6 + r() * 1.6
+  }));
+})();
+
+const M13_WOOD = (() => {
+  const r = rng(77);
+  return Array.from({ length: 26 }, () => ({
+    y: r() * H, w: 0.6 + r() * 1.6, a: 0.06 + r() * 0.10, bend: 6 + r() * 16
+  }));
+})();
+
+function m13desk(fr) {
+  const g = ctx.createLinearGradient(0, 0, W * 0.4, H);
+  g.addColorStop(0, '#9a6a41');
+  g.addColorStop(.55, M13_DESK);
+  g.addColorStop(1, M13_DESK_D);
+  ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  // 木纹
+  for (const w of M13_WOOD) {
+    ctx.strokeStyle = 'rgba(60,36,16,' + w.a.toFixed(3) + ')';
+    ctx.lineWidth = w.w;
+    ctx.beginPath();
+    ctx.moveTo(-10, w.y);
+    ctx.bezierCurveTo(180, w.y + w.bend, 420, w.y - w.bend, W + 10, w.y + 4);
+    ctx.stroke();
+  }
+  for (const d of M13_GRAIN) {
+    ctx.fillStyle = 'rgba(255,230,190,' + d.a.toFixed(3) + ')';
+    ctx.fillRect(d.x, d.y, d.s, d.s);
+  }
+  // 右上角的光
+  const r = ctx.createRadialGradient(500, 40, 20, 500, 60, 460);
+  r.addColorStop(0, 'rgba(255,240,210,.34)');
+  r.addColorStop(1, 'rgba(255,240,210,0)');
+  ctx.fillStyle = r; ctx.fillRect(0, 0, W, H);
+  // 暗角
+  const v = ctx.createRadialGradient(320, 190, 120, 320, 200, 430);
+  v.addColorStop(0, 'rgba(30,16,6,0)');
+  v.addColorStop(1, 'rgba(24,12,4,.5)');
+  ctx.fillStyle = v; ctx.fillRect(0, 0, W, H);
+}
+
+// 手绘纸边：按固定的抖动点画，不每帧变
+function m13paperPath(cx, cy, w, h, rot, seed) {
+  const r = rng(seed);
+  const pts = [];
+  const n = 7;
+  for (let i = 0; i < n; i++) pts.push([-w / 2 + i * w / (n - 1), -h / 2 + (r() - 0.5) * 4]);
+  for (let i = 1; i < n; i++) pts.push([w / 2 + (r() - 0.5) * 4, -h / 2 + i * h / (n - 1)]);
+  for (let i = 1; i < n; i++) pts.push([w / 2 - i * w / (n - 1), h / 2 + (r() - 0.5) * 4]);
+  for (let i = 1; i < n; i++) pts.push([-w / 2 + (r() - 0.5) * 4, h / 2 - i * h / (n - 1)]);
+  ctx.save();
+  ctx.translate(cx, cy); ctx.rotate(rot);
+  ctx.beginPath();
+  pts.forEach((p, i) => i ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1]));
+  ctx.closePath();
+  ctx.restore();
+}
+
+function m13handText(text, x, y, size, p, color, rot) {
+  if (p <= 0) return;
+  const e = 1 - Math.pow(1 - clamp(p, 0, 1), 3);
+  ctx.save();
+  ctx.translate(x, y); ctx.rotate(rot || 0);
+  ctx.font = `700 ${size}px ${FONT}`;
+  const tw = ctx.measureText(text).width;
+  ctx.beginPath();
+  ctx.rect(-6, -size * 1.2, (tw + 12) * e, size * 1.5);
+  ctx.clip();
+  ctx.fillStyle = color;
+  ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+  ctx.fillText(text, 0, 0);
+  ctx.restore();
+}
+
+function m13note(tq, t, fr) {
+  // 蹦两下：位置与挤压都是定格的
+  let hop = 0, squash = 1;
+  if (tq > 0.75 && tq < 1.35) { const k = (tq - 0.75) / 0.6; hop = Math.sin(k * Math.PI) * 18; squash = 1 + Math.sin(k * Math.PI) * 0.03; }
+  if (tq > 1.35 && tq < 1.5) squash = 0.96;
+  if (tq > 1.5 && tq < 2.1) { const k = (tq - 1.5) / 0.6; hop = Math.sin(k * Math.PI) * 12; }
+  const tilt = -0.055 + Math.sin(tq * 1.6) * 0.012;
+  const cx = 350 + Math.sin(tq * 0.9) * 4 + (m13hash(fr) - 0.5) * 1.2;
+  const cy = 214 - hop + (m13hash(fr + 7) - 0.5) * 1.2;
+
+  // 投影：两层，做出纸的厚度
+  ctx.save();
+  ctx.translate(cx + 10, cy + 14); ctx.rotate(tilt); ctx.scale(1, squash);
+  m13paperPath(0, 0, 250, 180, 0, 2026);
+  ctx.fillStyle = 'rgba(30,14,4,.34)'; ctx.fill();
+  ctx.translate(-4, -4);
+  m13paperPath(0, 0, 250, 180, 0, 2026);
+  ctx.fillStyle = 'rgba(30,14,4,.18)'; ctx.fill();
+  ctx.restore();
+
+  // 纸
+  ctx.save();
+  ctx.translate(cx, cy); ctx.rotate(tilt); ctx.scale(1, squash);
+  m13paperPath(0, 0, 250, 180, 0, 2026);
+  ctx.fillStyle = M13_NOTE; ctx.fill();
+  ctx.strokeStyle = 'rgba(90,66,40,.35)'; ctx.lineWidth = 1.6; ctx.stroke();
+  // 纸的纤维
+  ctx.save();
+  ctx.clip();
+  for (let i = 0; i < 26; i++) {
+    const h1 = m13hash(i * 3.1), h2 = m13hash(i * 5.7);
+    ctx.strokeStyle = 'rgba(150,120,80,.10)';
+    ctx.lineWidth = 0.8;
+    ctx.beginPath();
+    ctx.moveTo(-116 + h1 * 232, -80 + h2 * 164);
+    ctx.lineTo(-116 + h1 * 232 + 24, -80 + h2 * 164 + 3);
+    ctx.stroke();
+  }
+  ctx.restore();
+
+  // 脸：眼睛（瞳孔会看）
+  const look = m13p(tq, 2.7, 3.1) - m13p(tq, 4.4, 4.9) * 0.6;
+  const eyeY = -30;
+  [-46, 46].forEach((ex) => {
+    ctx.fillStyle = '#fdfaf0';
+    ctx.beginPath(); ctx.ellipse(ex, eyeY, 18, 20, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = 'rgba(50,64,79,.75)'; ctx.lineWidth = 2; ctx.stroke();
+    const px = ex + Math.sin(tq * 1.7) * 4 + look * 6;
+    const py = eyeY + 3 + look * 6;
+    ctx.fillStyle = M13_INK;
+    ctx.beginPath(); ctx.arc(px, py, 7.2, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,.9)';
+    ctx.beginPath(); ctx.arc(px - 2.4, py - 2.6, 2.2, 0, Math.PI * 2); ctx.fill();
+  });
+
+  // 嘴：定格三格
+  const mouth = Math.floor(tq * 3) % 3;
+  ctx.strokeStyle = M13_INK; ctx.lineWidth = 3; ctx.lineCap = 'round';
+  ctx.beginPath();
+  if (mouth === 0) { ctx.moveTo(-14, 2); ctx.quadraticCurveTo(0, 13, 14, 2); }
+  else if (mouth === 1) { ctx.ellipse(0, 6, 10, 7, 0, 0, Math.PI * 2); }
+  else { ctx.moveTo(-13, 7); ctx.lineTo(13, 7); }
+  ctx.stroke();
+
+  // 便签上写的字
+  m13handText('记得喝水', -76, 62, 27, m13p(t, 1.9, 2.7), M13_INK, -0.02);
+  // 红笔圈一下「喝水」
+  const cp = m13p(t, 4.35, 4.95);
+  if (cp > 0) {
+    ctx.save();
+    ctx.strokeStyle = M13_RED; ctx.lineWidth = 2.6; ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.ellipse(-4, 52, 62 * cp, 19 * cp, -0.03, Math.PI * 0.15, Math.PI * 2 * 0.92);
+    ctx.stroke();
+    ctx.restore();
+  }
+  // 一点点胶带
+  ctx.save();
+  ctx.rotate(-0.02);
+  ctx.fillStyle = 'rgba(255,250,225,.55)';
+  ctx.fillRect(-124, -92, 46, 15);
+  ctx.restore();
+  ctx.restore();
+}
+
+function drawScene(t) {
+  const tq = m13frame(t);
+  const fr = Math.round(tq * 12);
+  m13desk(fr);
+
+  // 机位有一点点定格动画的抖
+  ctx.save();
+  ctx.translate((m13hash(fr) - 0.5) * 1.6, (m13hash(fr + 3) - 0.5) * 1.6);
+  m13note(tq, t, fr);
+
+  // 第一人称的纸条：两张，像被随手贴在桌边
+  ctx.save();
+  ctx.translate(184, 52); ctx.rotate(-0.022);
+  ctx.fillStyle = 'rgba(30,14,4,.28)'; ctx.fillRect(-146, -24, 300, 54);
+  ctx.fillStyle = '#fbf3da'; ctx.fillRect(-150, -28, 300, 54);
+  ctx.strokeStyle = 'rgba(90,66,40,.28)'; ctx.lineWidth = 1.4; ctx.strokeRect(-150, -28, 300, 54);
+  m13handText('我是你桌上那张便签', -136, 9, 24, m13p(t, 0.05, 0.9), M13_INK, 0);
+  ctx.restore();
+
+  const cp2 = m13p(t, 3.15, 3.6);
+  if (cp2 > 0) {
+    ctx.save();
+    ctx.translate(206, 104); ctx.rotate(0.014);
+    ctx.fillStyle = 'rgba(30,14,4,.26)'; ctx.fillRect(-146, -21, 288, 46);
+    ctx.fillStyle = '#fbf3da'; ctx.fillRect(-150, -25, 288, 46);
+    ctx.strokeStyle = 'rgba(90,66,40,.28)'; ctx.lineWidth = 1.4; ctx.strokeRect(-150, -25, 288, 46);
+    m13handText('你写下的，我先记着', -138, 8, 22, cp2, M13_INK, 0);
+    ctx.restore();
+  }
+  ctx.restore();
+
+  // 右下角小的手写标记（避开署名区）
+  ctx.save();
+  ctx.globalAlpha = 0.42;
+  ctx.fillStyle = '#f7edd2';
+  ctx.font = `500 13px ${FONT}`;
+  ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+  ctx.fillText('手绘定格 · 一秒 12 格', 34, 336);
+  ctx.restore();
+}
+
+  // ===== 共享渲染与署名 =======================================================
+  function watermark() {
+    const text = 'DeepSeek Harness 生成示例';
+    ctx.save();
+    ctx.font = '11px ' + FONT;
+    const w = ctx.measureText(text).width + 14;
+    const x = W - w - 8, y = H - 24;
+    ctx.fillStyle = 'rgba(0,0,0,.46)';
+    ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(x, y, w, 18, 4); else ctx.rect(x, y, w, 18);
+    ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,.82)';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(text, x + 7, y + 9.5);
+    ctx.restore();
+  }
+
+  function paint(t) {
+    ctx.save();
+    ctx.clearRect(0, 0, W, H);
+    try { drawScene(t); } catch (err) { console.error(err); }
+    ctx.restore();
+    watermark();
+  }
+
+  function renderAt(seconds) {
+    const t = ((Number(seconds) % DURATION) + DURATION) % DURATION;
+    paint(t);
+    syncUI(t);
+    return t;
+  }
+  window.renderAt = renderAt;
+
+  // ===== 播放、控制、减少动态 =================================================
+  const playBtn = document.getElementById('play');
+  const timeline = document.getElementById('timeline');
+  const clock = document.getElementById('clock');
+  let playing = false, base = 0, start = 0, current = 0;
+  let animationFrame = 0;
+  const reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function syncUI(t) {
+    if (EXPORT) return;
+    current = t;
+    if (timeline) timeline.value = String(t.toFixed(2));
+    if (clock) clock.textContent = t.toFixed(2) + ' / ' + DURATION.toFixed(2) + 's';
+  }
+  function frame(now) {
+    animationFrame = 0;
+    if (!playing) return;
+    const t = ((now - start) / 1000 + base) % DURATION;
+    paint(t);
+    syncUI(t);
+    animationFrame = requestAnimationFrame(frame);
+  }
+  function play() {
+    if (playing) return;
+    playing = true;
+    start = performance.now();
+    base = current;
+    if (playBtn) playBtn.textContent = '暂停';
+    animationFrame = requestAnimationFrame(frame);
+  }
+  function pause() {
+    playing = false;
+    cancelAnimationFrame(animationFrame);
+    animationFrame = 0;
+    if (playBtn) playBtn.textContent = '播放';
+  }
+  if (playBtn) playBtn.addEventListener('click', () => { playing ? pause() : play(); });
+  document.getElementById('replay')?.addEventListener('click', () => {
+    base = 0; start = performance.now(); paint(0); syncUI(0); play();
+  });
+  timeline?.addEventListener('input', () => {
+    pause(); paint(Number(timeline.value)); syncUI(Number(timeline.value));
+  });
+  window.addEventListener('keydown', e => {
+    if (e.code === 'Space') { e.preventDefault(); playing ? pause() : play(); }
+    if (e.key === 'r' || e.key === 'R') { base = 0; start = performance.now(); paint(0); syncUI(0); play(); }
+  });
+
+  if (EXPORT) {
+    document.body.classList.add('export');
+    renderAt(0);
+  } else if (reduced) {
+    renderAt(2.4);
+    pause();
+  } else {
+    renderAt(0);
+    play();
+  }
+})();
+</script>
+</body>
+</html>

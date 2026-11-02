@@ -54,7 +54,7 @@ node --check skills/code-animation-styles/assets/picker-adapter.js
 [![Stills](https://img.shields.io/badge/stills-193-green)](#里面有什么)
 [![Third-party](https://img.shields.io/badge/third--party-MIT-lightgrey)](NOTICE.md)
 
-一共 **341 种**风格，每种一个提示词，Opus 5.5 能用，DeepSeek 也能用。其中 **193 种带静帧**（同名 `.jpg`），另补入 X 系列 **31 个原项目动画 GIF**，共 **224 种有预览**。
+一共 **341 种**风格，每种一个提示词，Opus 5.5 能用，DeepSeek 也能用。其中 **193 种带静帧**（同名 `.jpg`），另补入 X 系列 **31 个原项目动画 GIF**，另有 **109 个 DeepSeek Harness 生成示例**，覆盖全部 **333 个有效条目**；8 个空提示词条目保持无预览。
 
 有一些是从网上收集来的，很多是博主自己整理、自己做出来、自己总结的。**全部免费**，不用私信，不用买课。
 
@@ -67,9 +67,10 @@ node --check skills/code-animation-styles/assets/picker-adapter.js
 | [`风格挑选.html`](风格挑选.html) | 挑选网页。用 Chrome 或 Edge 直接双击打开，不用联网。可以按类别筛、搜索、放大看预览、看提示词、勾选、导出清单。不要把它和"风格提示词"文件夹分开。 |
 | [`风格提示词/`](风格提示词) | 341 种风格，每种一个 `.md` 提示词，带静帧的旁边有一张同名 `.jpg` |
 | [`动画预览/X_code-video/`](动画预览/X_code-video) | X1–X31 的原项目动画演示（GIF），可在挑选器中预览、放大；[来源与版本](动画预览/X_code-video/SOURCES.md) |
+| [`生成示例/`](生成示例) | 109 个 DeepSeek Harness 生成示例：HTML、GIF、海报、单项局限及来源校验；不是原作者样片，见[说明](生成示例/SOURCES.md) |
 | [`示例/`](示例) | 两组实测：同一份详细提示词交给 Opus 5.5 和 DeepSeek 的对比；只给一句话交给 DeepSeek 的结果 |
 | [`许可与来源.md`](许可与来源.md)、[`第三方许可/`](第三方许可) | 每一类风格从哪来、用什么许可 |
-| [`_统计.json`](_统计.json) | 机器可读的数量统计（总数 341、带静帧 193、动画预览 31、总预览 224、各系列数量） |
+| [`_统计.json`](_统计.json) | 机器可读的数量统计（总数 341、带静帧 193、原项目动图 31、生成预览 109、总预览 333、各系列数量） |
 
 ### 341 种怎么分
 
@@ -152,3 +153,17 @@ node --check skills/code-animation-styles/assets/picker-adapter.js
 | [NOTICE.md](NOTICE.md) | 第三方来源与 MIT 许可清单 |
 | [许可与来源.md](许可与来源.md) | 作者自述的许可与来源说明（原文保留） |
 | [说明.md](说明.md) | 原始说明文档（原文保留） |
+
+## 生成预览的范围与验证
+
+新增的 109 个生成示例只覆盖原来完全没有预览的有效条目，未替换 193 张静帧或 31 个 code-video 原项目 GIF。由 DeepSeek Harness（界面显示 DeepSeek-V4.1-Flash · High）按原文制作；全部为静音六秒代码近似，3D/笔触/声音等存在局限，卡片可展开查看。不是原作者提供的样片，也不保证未来主题生成效果。
+
+默认显示海报，点击后才加载动图；可切换静帧或打开完整 HTML。生成资源校验覆盖全部 ID、原始提示词摘要及文件哈希；实际解码 GIF/PNG 并检查尺寸、时长和帧数；目视复核为五个系列总览的缩略图级检查和代表性浏览器抽检，不等于逐项人类专家风格评分。原 DSH HTML 的哈希另存，接入时只修复共用播放控制的重复动画循环，场景与 GIF/海报未改。
+
+```bash
+python3 scripts/check_x_previews.py
+python3 scripts/check_generated_previews.py
+node scripts/test_generated_playback.mjs
+```
+
+原始提示词和静帧保持原样；生成示例的 M/K/Z/H 与 V 部分按对应来源分区保留许可，见生成示例目录内的许可文件。

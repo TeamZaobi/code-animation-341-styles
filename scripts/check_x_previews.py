@@ -33,10 +33,12 @@ def main():
             assert (ROOT / entry['img']).is_file(), entry['id']
     stats = json.loads((ROOT / '_统计.json').read_text())
     assert len(entries) == stats['total'] == 341
-    assert sum(bool(e.get('img')) for e in entries) == stats['withPreview'] == 224
-    assert sum(e.get('previewType') == 'gif' for e in entries) == stats['withAnimatedPreview'] == 31
+    generated_count = sum(bool(e.get('generatedPreview')) for e in entries)
+    assert sum(bool(e.get('img')) for e in entries) == stats['withPreview'] == 224 + generated_count
+    assert sum(e.get('previewType') == 'gif' for e in entries) == 31
+    assert stats['withAnimatedPreview'] == 31 + generated_count
     assert len(list((ROOT / '风格提示词').rglob('*.jpg'))) == stats['withStill'] == 193
-    print('PASS: 31 original GIFs, exact mapping and SHA-256; 224 previews; 193 original stills.')
+    print(f'PASS: 31 original GIFs, exact mapping and SHA-256; {224 + generated_count} previews; 193 original stills.')
 
 
 if __name__ == '__main__':

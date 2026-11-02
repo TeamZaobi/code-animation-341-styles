@@ -1,0 +1,430 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>K33 地铁图 · DeepSeek Harness 生成示例</title>
+<!--
+  Provenance
+  ----------
+  风格来源：code-animation-styles 目录（《来自俯仰观照博主的动画画风整理》整理稿）
+  catalog commit: 01576924a2b316d1f11ae33f75d3c005e8781451
+  style id: K33「地铁图」
+  license: upstream-custom-noncommercial（俯仰观照整理稿，非商业）
+  本文件：DeepSeek Harness（deepseek-flash）根据该风格提示词新写的候选示例，
+  不是原作者样片，也不是原项目演示；仅用于风格挑选预览。共享的只有时间轴、
+  尺寸、导出接口与页脚署名，画面与动作按本风格重新设计。
+  原文“只输出代码”等语句属于素材的一部分，不覆盖本任务的交付合同。
+-->
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; min-height: 100%; background: #0c0c10; color: #e9e9ee;
+    font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif; }
+  #app { min-height: 100vh; display: flex; flex-direction: column; align-items: center;
+    justify-content: center; gap: 12px; padding: 20px; }
+  #stage { width: min(94vw, 1000px); aspect-ratio: 16 / 9; background: #000;
+    box-shadow: 0 18px 60px rgba(0,0,0,.55); position: relative; overflow: hidden; }
+  canvas { display: block; width: 100%; height: 100%; }
+  #head, #ui { width: min(94vw, 1000px); }
+  #head h1 { margin: 0 0 4px; font-size: 15px; font-weight: 600; letter-spacing: .02em; }
+  #head p { margin: 0; font-size: 12px; line-height: 1.5; color: #9a9aa8; }
+  #ui { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  #ui button { background: #1d1d26; color: #f2f2f6; border: 1px solid #343444;
+    border-radius: 7px; padding: 6px 12px; font-size: 12px; cursor: pointer; }
+  #ui button:hover { background: #272734; }
+  #ui input[type=range] { flex: 1 1 220px; min-width: 150px; accent-color: #7c8cff; }
+  #clock { font-variant-numeric: tabular-nums; font-size: 12px; color: #a9a9ba; min-width: 78px; }
+  #credit { width: min(94vw, 1000px); font-size: 11px; line-height: 1.6; color: #6f6f80; }
+  #credit b { color: #9c9cae; font-weight: 500; }
+  body.export, body.export #app { display: block; width: 640px; height: 360px; min-height: 0;
+    padding: 0; margin: 0; overflow: hidden; background: #000; }
+  body.export #stage { width: 640px; height: 360px; box-shadow: none; }
+  body.export #head, body.export #ui, body.export #credit { display: none; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="head">
+    <h1>K33 · 地铁图</h1>
+    <p>一张地铁线路图上，红色主线逐段画到终点，小乘客从「发呆站」一路换乘到「做成站」，到站时站点亮起。</p>
+  </div>
+  <div id="stage"><canvas id="c" width="640" height="360" aria-label="地铁图 风格动画示例"></canvas></div>
+  <div id="ui">
+    <button id="play" type="button">暂停</button>
+    <button id="replay" type="button">重播</button>
+    <input id="timeline" type="range" min="0" max="6" step="0.01" value="0" aria-label="时间轴">
+    <span id="clock">0.00 / 6.00s</span>
+  </div>
+  <div id="credit">
+    <b>DeepSeek Harness 生成示例</b>（非原项目样片）· 来源：来自俯仰观照博主的动画画风整理 ·
+    许可：upstream-custom-noncommercial（俯仰观照整理稿，非商业） · 画面与文字均由代码绘制，静音。
+  </div>
+</div>
+<script>
+(() => {
+  'use strict';
+  // ===== 共享脚手架（可改，但导出合同不要破坏）=================================
+  const W = 640, H = 360, DURATION = 6;
+  const EXPORT = new URLSearchParams(location.search).get('export') === '1';
+  const canvas = document.getElementById('c');
+  const ctx = canvas.getContext('2d');
+  const FONT = '"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",sans-serif';
+
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  const lerp = (a, b, t) => a + (b - a) * t;
+  const smooth = t => t * t * (3 - 2 * t);
+  const easeOut = t => 1 - Math.pow(1 - t, 3);
+  const easeIn = t => t * t * t;
+  function rng(seed) { let s = seed >>> 0; return () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; }; }
+
+  // ===== 场景（每个 ID 独立设计；下面的注释区由构建器替换）===================
+  // DESC: 一张地铁线路图上，红色主线逐段画到终点，小乘客从「发呆站」一路换乘到「做成站」，到站时站点亮起。
+// K33 地铁图 · DeepSeek Harness 生成示例
+const K33 = {
+  paper: '#fbfaf6', ink: '#202a33', soft: '#5d6b76', red: '#e4572e',
+  blue: '#2a6fdb', green: '#2a9d5c', pale: '#eef2f4',
+};
+const K33_RED = [[60, 300], [160, 300], [240, 220], [600, 220]];
+const K33_BLUE = [[240, 104], [240, 338]];
+const K33_GREEN = [[480, 112], [480, 338]];
+const k33seg = (t, a, b) => clamp((t - a) / (b - a), 0, 1);
+const k33ease = p => 1 - Math.pow(1 - p, 3);
+const k33InOut = p => p < 0.5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2;
+
+function k33Len(pts) {
+  let s = 0;
+  for (let i = 0; i < pts.length - 1; i++) s += Math.hypot(pts[i + 1][0] - pts[i][0], pts[i + 1][1] - pts[i][1]);
+  return s;
+}
+function k33PointAt(pts, frac) {
+  const total = k33Len(pts);
+  let budget = clamp(frac, 0, 1) * total;
+  for (let i = 0; i < pts.length - 1; i++) {
+    const d = Math.hypot(pts[i + 1][0] - pts[i][0], pts[i + 1][1] - pts[i][1]);
+    if (budget <= d) {
+      const k = d === 0 ? 0 : budget / d;
+      return [lerp(pts[i][0], pts[i + 1][0], k), lerp(pts[i][1], pts[i + 1][1], k)];
+    }
+    budget -= d;
+  }
+  return [pts[pts.length - 1][0], pts[pts.length - 1][1]];
+}
+function k33FracAt(pts, idx) {
+  const total = k33Len(pts);
+  let s = 0;
+  for (let i = 0; i < idx; i++) s += Math.hypot(pts[i + 1][0] - pts[i][0], pts[i + 1][1] - pts[i][1]);
+  return s / total;
+}
+function k33Line(pts, frac, color, width) {
+  if (frac <= 0) return;
+  const total = k33Len(pts);
+  let budget = clamp(frac, 0, 1) * total;
+  ctx.save();
+  ctx.strokeStyle = color; ctx.lineWidth = width || 9;
+  ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+  ctx.beginPath(); ctx.moveTo(pts[0][0], pts[0][1]);
+  for (let i = 0; i < pts.length - 1; i++) {
+    const d = Math.hypot(pts[i + 1][0] - pts[i][0], pts[i + 1][1] - pts[i][1]);
+    if (budget >= d) { ctx.lineTo(pts[i + 1][0], pts[i + 1][1]); budget -= d; }
+    else {
+      const k = budget / d;
+      ctx.lineTo(lerp(pts[i][0], pts[i + 1][0], k), lerp(pts[i][1], pts[i + 1][1], k));
+      break;
+    }
+  }
+  ctx.stroke();
+  ctx.restore();
+}
+function k33Label(text, x, y, align, color, size) {
+  ctx.save();
+  ctx.font = `600 ${size || 13}px ${FONT}`;
+  ctx.textAlign = align || 'left'; ctx.textBaseline = 'middle';
+  ctx.lineJoin = 'round';
+  ctx.strokeStyle = K33.paper; ctx.lineWidth = 4;
+  ctx.strokeText(text, x, y);
+  ctx.fillStyle = color || K33.ink;
+  ctx.fillText(text, x, y);
+  ctx.restore();
+}
+function k33Station(x, y, color, appear, inter) {
+  const p = clamp(appear, 0, 1);
+  if (p <= 0) return;
+  const r = (inter ? 9 : 6.5) * (0.5 + 0.5 * p);
+  ctx.save();
+  ctx.globalAlpha = p;
+  ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2);
+  ctx.fillStyle = '#ffffff'; ctx.fill();
+  ctx.lineWidth = inter ? 3 : 2.6;
+  ctx.strokeStyle = inter ? K33.ink : color;
+  ctx.stroke();
+  ctx.restore();
+}
+function k33Tag(x, y, n, color, p) {
+  if (p <= 0) return;
+  ctx.save();
+  ctx.globalAlpha = clamp(p, 0, 1);
+  const w = 20, h = 16;
+  ctx.beginPath();
+  if (ctx.roundRect) ctx.roundRect(x - w / 2, y - h / 2, w, h, 3); else ctx.rect(x - w / 2, y - h / 2, w, h);
+  ctx.fillStyle = color; ctx.fill();
+  ctx.fillStyle = '#fff'; ctx.font = `700 13px ${FONT}`;
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText(String(n), x, y + 0.5);
+  ctx.restore();
+}
+// 小乘客：地铁图的象形小人
+function k33Rider(x, y, moving, t) {
+  ctx.save();
+  const step = moving ? Math.sin(t * 14) : 0;
+  // 影子
+  ctx.fillStyle = 'rgba(20,30,40,.16)';
+  ctx.beginPath(); ctx.ellipse(x, y + 1, 9, 3, 0, 0, Math.PI * 2); ctx.fill();
+  // 腿
+  ctx.strokeStyle = K33.ink; ctx.lineWidth = 3; ctx.lineCap = 'round';
+  ctx.beginPath();
+  ctx.moveTo(x - 3, y - 8); ctx.lineTo(x - 3 - step * 2, y);
+  ctx.moveTo(x + 3, y - 8); ctx.lineTo(x + 3 + step * 2, y);
+  ctx.stroke();
+  // 身体
+  ctx.fillStyle = K33.red;
+  ctx.beginPath();
+  ctx.moveTo(x - 5, y - 9); ctx.lineTo(x + 5, y - 9);
+  ctx.lineTo(x + 4, y - 20); ctx.lineTo(x - 4, y - 20); ctx.closePath(); ctx.fill();
+  // 包
+  ctx.fillStyle = K33.blue;
+  ctx.beginPath(); ctx.roundRect(x + 4, y - 18, 6, 8, 2); ctx.fill();
+  // 手臂
+  ctx.strokeStyle = K33.ink; ctx.lineWidth = 2.4;
+  ctx.beginPath(); ctx.moveTo(x - 4, y - 18); ctx.lineTo(x - 8, y - 12 - step); ctx.stroke();
+  // 头
+  ctx.fillStyle = '#f6c99f';
+  ctx.beginPath(); ctx.arc(x, y - 25, 5, 0, Math.PI * 2); ctx.fill();
+  ctx.strokeStyle = K33.ink; ctx.lineWidth = 1.4; ctx.stroke();
+  // 头发
+  ctx.fillStyle = K33.ink;
+  ctx.beginPath(); ctx.arc(x, y - 26, 5, Math.PI * 1.05, Math.PI * 1.95); ctx.fill();
+  ctx.restore();
+}
+
+function baseScene(t) {
+  ctx.fillStyle = K33.paper; ctx.fillRect(0, 0, W, H);
+  // 极淡的图幅网格
+  ctx.save();
+  ctx.strokeStyle = 'rgba(70,90,105,.045)'; ctx.lineWidth = 1;
+  for (let x = 0; x <= W; x += 32) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke(); }
+  for (let y = 0; y <= H; y += 32) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke(); }
+  // 左下角淡绿地（公园）
+  ctx.fillStyle = 'rgba(150,190,150,.18)';
+  ctx.beginPath(); ctx.roundRect(74, 150, 84, 58, 10); ctx.fill();
+  ctx.fillStyle = 'rgba(110,150,110,.42)';
+  ctx.font = `500 12px ${FONT}`; ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+  ctx.fillText('公园', 86, 170);
+  ctx.restore();
+
+  // 三条线
+  const redP = 0.34 + 0.66 * k33ease(k33seg(t, 0.0, 1.1));
+  k33Line(K33_BLUE, 1, K33.blue, 9);
+  k33Line(K33_GREEN, 1, K33.green, 9);
+  k33Line(K33_RED, redP, K33.red, 9);
+
+  // 线号牌
+  k33Tag(40, 300, 1, K33.red, 1);
+  k33Tag(240, 82, 2, K33.blue, 1);
+  k33Tag(480, 90, 3, K33.green, 1);
+
+  // 主线站点（随线路推进出现）
+  const st = [
+    { p: [60, 300], name: '发呆', label: [60, 330], align: 'center', at: 0.0 },
+    { p: [160, 300], tick: true, at: k33FracAt(K33_RED, 1) },
+    { p: [240, 220], name: '灵感', inter: true, label: [254, 238], align: 'left', at: k33FracAt(K33_RED, 2) },
+    { p: [370, 220], name: '试一下', label: [370, 202], align: 'center', at: 0.42 },
+    { p: [500, 220], tick: true, at: 0.62 },
+    { p: [600, 220], name: '做成', terminal: true, label: [598, 274], align: 'right', at: 0.955 },
+  ];
+  for (const s of st) {
+    const appear = k33seg(redP, s.at + 0.015, s.at + 0.055);
+    k33Station(s.p[0], s.p[1], K33.red, appear, s.inter);
+    if (s.name) {
+      ctx.globalAlpha = 1;
+      if (appear > 0.4) k33Label(s.name, s.label[0], s.label[1], s.align, K33.ink, 13);
+    }
+  }
+  // 蓝线、绿线上的站
+  k33Station(240, 150, K33.blue, 1, false);
+  k33Station(240, 220, K33.blue, k33seg(redP, 0.27, 0.33), true);
+  k33Station(240, 312, K33.blue, 1, false);
+  k33Station(480, 150, K33.green, 1, false);
+  k33Station(480, 220, K33.green, k33seg(redP, 0.63, 0.69), true);
+  k33Station(480, 312, K33.green, 1, false);
+  if (k33seg(t, 0.5, 0.9) > 0) {
+    k33Label('换乘 2 号线', 256, 208, 'left', K33.soft, 13);
+    k33Label('换乘 3 号线', 496, 208, 'left', K33.soft, 13);
+  }
+  k33Label('2 号线', 252, 150, 'left', K33.blue, 13);
+  k33Label('3 号线', 492, 150, 'left', K33.green, 13);
+
+  // 乘客行程
+  const jp = k33InOut(k33seg(t, 1.35, 4.35));
+  const pos = k33PointAt(K33_RED, 0.032 + jp * 0.962);
+  const moving = jp > 0.001 && jp < 0.998;
+  // 走过的路径淡红高亮
+  if (jp > 0.001) {
+    ctx.save();
+    ctx.globalAlpha = 0.22;
+    k33Line(K33_RED, jp, '#ffb199', 9);
+    ctx.restore();
+  }
+  // 终点到站光圈
+  const arrive = k33seg(t, 4.25, 5.2);
+  if (arrive > 0) {
+    const fx = 600, fy = 220;
+    for (let i = 0; i < 2; i++) {
+      const rp = (arrive + i * 0.35) % 1;
+      ctx.save();
+      ctx.globalAlpha = (1 - rp) * 0.6;
+      ctx.strokeStyle = K33.red; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.arc(fx, fy, 12 + rp * 26, 0, Math.PI * 2); ctx.stroke();
+      ctx.restore();
+    }
+    k33Label('到站了', 592, 168, 'right', K33.red, 15);
+  }
+
+  k33Rider(pos[0], pos[1] - 4, moving, t);
+
+  // 标题
+  ctx.save();
+  ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+  ctx.fillStyle = K33.ink;
+  ctx.font = `800 26px ${FONT}`;
+  ctx.fillText('地铁图', 26, 44);
+  ctx.fillStyle = K33.soft;
+  ctx.font = `600 13px ${FONT}`;
+  ctx.fillText('一条线，把念头送到终点', 27, 64);
+  ctx.strokeStyle = 'rgba(32,42,51,.18)'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(26, 76); ctx.lineTo(206, 76); ctx.stroke();
+  // 图例
+  if (k33seg(t, 0.8, 1.2) > 0) {
+    ctx.globalAlpha = k33seg(t, 0.8, 1.2);
+    const rows = [['主线 · 想法线', K33.red, 96], ['支线 2 · 灵感线', K33.blue, 114], ['支线 3 · 换乘线', K33.green, 132]];
+    for (const [txt, col, y] of rows) {
+      ctx.strokeStyle = col; ctx.lineWidth = 5; ctx.lineCap = 'round';
+      ctx.beginPath(); ctx.moveTo(28, y); ctx.lineTo(48, y); ctx.stroke();
+      ctx.fillStyle = K33.soft; ctx.font = `500 13px ${FONT}`;
+      ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+      ctx.fillText(txt, 56, y);
+    }
+    ctx.globalAlpha = 1;
+  }
+  ctx.restore();
+}
+
+
+// 极轻的镜头呼吸：整段画面持续有变化，循环回到起点
+function drawScene(t) {
+  const a = t / 6 * Math.PI * 2;
+  ctx.save();
+  ctx.translate(320, 180);
+  const z = 1.022 + 0.012 * Math.sin(a + 1.1);
+  ctx.scale(z, z);
+  ctx.translate(-320 + 2.6 * Math.sin(a), -180 + 2.0 * Math.cos(a + 0.4));
+  baseScene(t);
+  ctx.restore();
+}
+
+  // ===== 共享渲染与署名 =======================================================
+  function watermark() {
+    const text = 'DeepSeek Harness 生成示例';
+    ctx.save();
+    ctx.font = '11px ' + FONT;
+    const w = ctx.measureText(text).width + 14;
+    const x = W - w - 8, y = H - 24;
+    ctx.fillStyle = 'rgba(0,0,0,.46)';
+    ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(x, y, w, 18, 4); else ctx.rect(x, y, w, 18);
+    ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,.82)';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(text, x + 7, y + 9.5);
+    ctx.restore();
+  }
+
+  function paint(t) {
+    ctx.save();
+    ctx.clearRect(0, 0, W, H);
+    try { drawScene(t); } catch (err) { console.error(err); }
+    ctx.restore();
+    watermark();
+  }
+
+  function renderAt(seconds) {
+    const t = ((Number(seconds) % DURATION) + DURATION) % DURATION;
+    paint(t);
+    syncUI(t);
+    return t;
+  }
+  window.renderAt = renderAt;
+
+  // ===== 播放、控制、减少动态 =================================================
+  const playBtn = document.getElementById('play');
+  const timeline = document.getElementById('timeline');
+  const clock = document.getElementById('clock');
+  let playing = false, base = 0, start = 0, current = 0;
+  let animationFrame = 0;
+  const reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function syncUI(t) {
+    if (EXPORT) return;
+    current = t;
+    if (timeline) timeline.value = String(t.toFixed(2));
+    if (clock) clock.textContent = t.toFixed(2) + ' / ' + DURATION.toFixed(2) + 's';
+  }
+  function frame(now) {
+    animationFrame = 0;
+    if (!playing) return;
+    const t = ((now - start) / 1000 + base) % DURATION;
+    paint(t);
+    syncUI(t);
+    animationFrame = requestAnimationFrame(frame);
+  }
+  function play() {
+    if (playing) return;
+    playing = true;
+    start = performance.now();
+    base = current;
+    if (playBtn) playBtn.textContent = '暂停';
+    animationFrame = requestAnimationFrame(frame);
+  }
+  function pause() {
+    playing = false;
+    cancelAnimationFrame(animationFrame);
+    animationFrame = 0;
+    if (playBtn) playBtn.textContent = '播放';
+  }
+  if (playBtn) playBtn.addEventListener('click', () => { playing ? pause() : play(); });
+  document.getElementById('replay')?.addEventListener('click', () => {
+    base = 0; start = performance.now(); paint(0); syncUI(0); play();
+  });
+  timeline?.addEventListener('input', () => {
+    pause(); paint(Number(timeline.value)); syncUI(Number(timeline.value));
+  });
+  window.addEventListener('keydown', e => {
+    if (e.code === 'Space') { e.preventDefault(); playing ? pause() : play(); }
+    if (e.key === 'r' || e.key === 'R') { base = 0; start = performance.now(); paint(0); syncUI(0); play(); }
+  });
+
+  if (EXPORT) {
+    document.body.classList.add('export');
+    renderAt(0);
+  } else if (reduced) {
+    renderAt(2.4);
+    pause();
+  } else {
+    renderAt(0);
+    play();
+  }
+})();
+</script>
+</body>
+</html>

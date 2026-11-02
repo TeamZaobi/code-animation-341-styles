@@ -73,3 +73,9 @@ NOTICE —— 版权归 **wqb578 / 俯仰观照（动画画风整理）** 所有
 以根目录 [LICENSE](LICENSE) 的自定义非商业许可发布。
 
 各系列归属的详细自述见 [`许可与来源.md`](许可与来源.md)。
+
+## 五、生成示例（独立标注）
+
+`生成示例/` 中的 109 份 HTML、GIF 和海报为 DeepSeek Harness 按冻结提示词制作的新示例，不属于 code-video 原项目演示。逐项原文摘要、模型标识、生成局限、原始交付 HTML 摘要及接入修改记录见 `生成示例/source-lock.json`，制作与复核范围见 `生成示例/SOURCES.md`。
+
+来源：来自俯仰观照博主的动画画风整理。M/K/Z/H 的生成适配采用本仓库自定义非商业条款（同目录 `LICENSE-NONCOMMERCIAL.txt`）；V 系列保留 Copyright (c) 2026 Vincentwei1021 的 MIT 声明（`LICENSE-V-MIT.txt`）。没有将整个合集重新许可为 MIT，也不表示获得原作者或模型提供方背书。

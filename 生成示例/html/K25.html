@@ -1,0 +1,502 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>K25 皮克斯式 3D · DeepSeek Harness 生成示例</title>
+<!--
+  Provenance
+  ----------
+  风格来源：code-animation-styles 目录（《来自俯仰观照博主的动画画风整理》整理稿）
+  catalog commit: 01576924a2b316d1f11ae33f75d3c005e8781451
+  style id: K25「皮克斯式 3D」
+  license: upstream-custom-noncommercial（俯仰观照整理稿，非商业）
+  本文件：DeepSeek Harness（deepseek-flash）根据该风格提示词新写的候选示例，
+  不是原作者样片，也不是原项目演示；仅用于风格挑选预览。共享的只有时间轴、
+  尺寸、导出接口与页脚署名，画面与动作按本风格重新设计。
+  原文“只输出代码”等语句属于素材的一部分，不覆盖本任务的交付合同。
+-->
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; min-height: 100%; background: #0c0c10; color: #e9e9ee;
+    font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif; }
+  #app { min-height: 100vh; display: flex; flex-direction: column; align-items: center;
+    justify-content: center; gap: 12px; padding: 20px; }
+  #stage { width: min(94vw, 1000px); aspect-ratio: 16 / 9; background: #000;
+    box-shadow: 0 18px 60px rgba(0,0,0,.55); position: relative; overflow: hidden; }
+  canvas { display: block; width: 100%; height: 100%; }
+  #head, #ui { width: min(94vw, 1000px); }
+  #head h1 { margin: 0 0 4px; font-size: 15px; font-weight: 600; letter-spacing: .02em; }
+  #head p { margin: 0; font-size: 12px; line-height: 1.5; color: #9a9aa8; }
+  #ui { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  #ui button { background: #1d1d26; color: #f2f2f6; border: 1px solid #343444;
+    border-radius: 7px; padding: 6px 12px; font-size: 12px; cursor: pointer; }
+  #ui button:hover { background: #272734; }
+  #ui input[type=range] { flex: 1 1 220px; min-width: 150px; accent-color: #7c8cff; }
+  #clock { font-variant-numeric: tabular-nums; font-size: 12px; color: #a9a9ba; min-width: 78px; }
+  #credit { width: min(94vw, 1000px); font-size: 11px; line-height: 1.6; color: #6f6f80; }
+  #credit b { color: #9c9cae; font-weight: 500; }
+  body.export, body.export #app { display: block; width: 640px; height: 360px; min-height: 0;
+    padding: 0; margin: 0; overflow: hidden; background: #000; }
+  body.export #stage { width: 640px; height: 360px; box-shadow: none; }
+  body.export #head, body.export #ui, body.export #credit { display: none; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="head">
+    <h1>K25 · 皮克斯式 3D</h1>
+    <p>皮克斯式 3D：暖橙圆团角色，巨大湿亮眼睛，看见一颗发光的小球后睁大眼、跳起来伸手。</p>
+  </div>
+  <div id="stage"><canvas id="c" width="640" height="360" aria-label="皮克斯式 3D 风格动画示例"></canvas></div>
+  <div id="ui">
+    <button id="play" type="button">暂停</button>
+    <button id="replay" type="button">重播</button>
+    <input id="timeline" type="range" min="0" max="6" step="0.01" value="0" aria-label="时间轴">
+    <span id="clock">0.00 / 6.00s</span>
+  </div>
+  <div id="credit">
+    <b>DeepSeek Harness 生成示例</b>（非原项目样片）· 来源：来自俯仰观照博主的动画画风整理 ·
+    许可：upstream-custom-noncommercial（俯仰观照整理稿，非商业） · 画面与文字均由代码绘制，静音。
+  </div>
+</div>
+<script>
+(() => {
+  'use strict';
+  // ===== 共享脚手架（可改，但导出合同不要破坏）=================================
+  const W = 640, H = 360, DURATION = 6;
+  const EXPORT = new URLSearchParams(location.search).get('export') === '1';
+  const canvas = document.getElementById('c');
+  const ctx = canvas.getContext('2d');
+  const FONT = '"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",sans-serif';
+
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  const lerp = (a, b, t) => a + (b - a) * t;
+  const smooth = t => t * t * (3 - 2 * t);
+  const easeOut = t => 1 - Math.pow(1 - t, 3);
+  const easeIn = t => t * t * t;
+  function rng(seed) { let s = seed >>> 0; return () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; }; }
+
+  // ===== 场景（每个 ID 独立设计；下面的注释区由构建器替换）===================
+  // DESC: 皮克斯式 3D：暖橙圆团角色，巨大湿亮眼睛，看见一颗发光的小球后睁大眼、跳起来伸手。
+const K25_DARK = '#0e2430';
+const K25_DEEP = '#173845';
+const K25_CREAM = '#fff1d6';
+const K25_ORANGE = '#f08a3c';
+const K25_ORANGE_L = '#ffc47c';
+const K25_ORANGE_D = '#b34718';
+const K25_CYAN = '#7fe3f2';
+
+const K25_BOKEH = (() => {
+  const r = rng(2525);
+  return Array.from({ length: 18 }, () => ({
+    x: r() * W, y: r() * H * 0.85, r: 8 + r() * 46, a: 0.04 + r() * 0.12, ph: r() * 6.28,
+  }));
+})();
+
+function k25seg(t, a, b) { return clamp((t - a) / (b - a), 0, 1); }
+function k25ease(p) { return 1 - Math.pow(1 - p, 3); }
+function k25pop(p) {
+  p = clamp(p, 0, 1);
+  const c1 = 1.7, c3 = c1 + 1;
+  return 1 + c3 * Math.pow(p - 1, 3) + c1 * Math.pow(p - 1, 2);
+}
+function k25SoftEllipse(x, y, rx, ry, color, blur) {
+  ctx.save();
+  ctx.shadowColor = color; ctx.shadowBlur = blur || 18;
+  ctx.fillStyle = color;
+  ctx.beginPath(); ctx.ellipse(x, y, rx, ry, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.restore();
+}
+function k25Orb(t) {
+  const p = k25ease(k25seg(t, 0.9, 2.0));
+  const x = lerp(500, 478, p) + Math.sin(t * 1.3) * 3;
+  const y = lerp(-30, 118, p) + Math.sin(t * 2.2) * 3;
+  return { x, y, p };
+}
+
+function k25Eye(ex, ey, rx, ry, blink, ox, oy) {
+  ctx.save();
+  ctx.translate(ex, ey);
+  ctx.scale(1, blink);
+  // 眼白
+  const sg = ctx.createRadialGradient(-rx * 0.3, -ry * 0.4, 2, 0, 0, ry * 1.25);
+  sg.addColorStop(0, '#ffffff');
+  sg.addColorStop(0.7, '#eaf2f5');
+  sg.addColorStop(1, '#b9cdd8');
+  ctx.fillStyle = sg;
+  ctx.beginPath(); ctx.ellipse(0, 0, rx, ry, 0, 0, Math.PI * 2); ctx.fill();
+  // 上眼睑阴影
+  ctx.save();
+  ctx.beginPath(); ctx.ellipse(0, 0, rx, ry, 0, 0, Math.PI * 2); ctx.clip();
+  const lg = ctx.createLinearGradient(0, -ry, 0, ry * 0.2);
+  lg.addColorStop(0, 'rgba(90,120,140,.38)');
+  lg.addColorStop(1, 'rgba(90,120,140,0)');
+  ctx.fillStyle = lg; ctx.fillRect(-rx, -ry, rx * 2, ry * 1.4);
+  // 虹膜
+  ctx.save();
+  ctx.translate(ox, oy);
+  const ig = ctx.createRadialGradient(-4, -6, 1, 0, 0, 20);
+  ig.addColorStop(0, '#b8f6ff');
+  ig.addColorStop(0.45, '#4fbcd6');
+  ig.addColorStop(0.85, '#14657f');
+  ig.addColorStop(1, '#0a3d4e');
+  ctx.fillStyle = ig;
+  ctx.beginPath(); ctx.arc(0, 0, 19, 0, Math.PI * 2); ctx.fill();
+  // 瞳孔
+  ctx.fillStyle = '#08222c';
+  ctx.beginPath(); ctx.arc(0, 1, 9.5, 0, Math.PI * 2); ctx.fill();
+  // 高光
+  ctx.fillStyle = 'rgba(255,255,255,.95)';
+  ctx.beginPath(); ctx.ellipse(-6.5, -7, 5.6, 4.2, -0.4, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = 'rgba(255,255,255,.55)';
+  ctx.beginPath(); ctx.arc(5, 5, 2.6, 0, Math.PI * 2); ctx.fill();
+  ctx.restore();
+  ctx.restore();
+  // 眼球边缘
+  ctx.strokeStyle = 'rgba(120,60,30,.35)'; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.ellipse(0, 0, rx + 0.5, ry + 0.5, 0, 0, Math.PI * 2); ctx.stroke();
+  ctx.restore();
+}
+
+function drawScene(t) {
+  // 背景：深色摄影棚
+  const bg = ctx.createLinearGradient(0, 0, 0, H);
+  bg.addColorStop(0, K25_DARK);
+  bg.addColorStop(0.55, K25_DEEP);
+  bg.addColorStop(1, '#0a1b24');
+  ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+  // 背后柔光
+  const back = ctx.createRadialGradient(330, 190, 20, 330, 190, 300);
+  back.addColorStop(0, 'rgba(120,190,210,.22)');
+  back.addColorStop(0.6, 'rgba(60,120,150,.10)');
+  back.addColorStop(1, 'rgba(60,120,150,0)');
+  ctx.fillStyle = back; ctx.fillRect(0, 0, W, H);
+  // 焦外光斑
+  for (const b of K25_BOKEH) {
+    const x = b.x + Math.sin(t * 0.3 + b.ph) * 6;
+    const y = b.y + Math.cos(t * 0.24 + b.ph) * 5;
+    const g = ctx.createRadialGradient(x, y, 0, x, y, b.r);
+    g.addColorStop(0, `rgba(150,220,235,${b.a})`);
+    g.addColorStop(0.6, `rgba(120,200,220,${b.a * 0.5})`);
+    g.addColorStop(1, 'rgba(120,200,220,0)');
+    ctx.fillStyle = g;
+    ctx.beginPath(); ctx.arc(x, y, b.r, 0, Math.PI * 2); ctx.fill();
+  }
+  // 地面
+  const floor = ctx.createLinearGradient(0, 292, 0, H);
+  floor.addColorStop(0, 'rgba(4,14,20,0)');
+  floor.addColorStop(0.4, 'rgba(4,14,20,.55)');
+  floor.addColorStop(1, 'rgba(2,8,12,.85)');
+  ctx.fillStyle = floor; ctx.fillRect(0, 292, W, H - 292);
+
+  const orb = k25Orb(t);
+  const jumpP = k25seg(t, 3.45, 4.1);
+  const jump = Math.sin(jumpP * Math.PI) * 22;
+  const bob = Math.sin(t * 2.1) * 3;
+  const baseY = -jump + bob;
+  const orbSeen = orb.p > 0.05;
+  const lookX = orbSeen ? clamp((orb.x - 325) / 40, -6, 6) : 0;
+  const lookY = orbSeen ? clamp((orb.y - 176) / 55, -5, 4) : 0;
+  const tilt = orbSeen ? clamp((orb.x - 325) / 3000, -0.05, 0.05) : 0;
+  const blink1 = 1 - 0.92 * Math.max(0, Math.sin(k25seg(t, 2.6, 2.78) * Math.PI));
+  const blink2 = 1 - 0.92 * Math.max(0, Math.sin(k25seg(t, 5.25, 5.4) * Math.PI));
+  const blink = Math.min(blink1, blink2);
+  const sq = 1 + Math.sin(jumpP * Math.PI) * 0.06;
+
+  // 接地影
+  k25SoftEllipse(325, 330, 86 * (1 + jump / 120), 17, 'rgba(0,0,0,.5)', 26);
+
+  // 角色
+  ctx.save();
+  ctx.translate(0, baseY);
+  // 脚
+  for (const fx of [292, 358]) {
+    const fg = ctx.createRadialGradient(fx - 9, 318, 2, fx, 328, 30);
+    fg.addColorStop(0, K25_ORANGE_L);
+    fg.addColorStop(0.65, K25_ORANGE);
+    fg.addColorStop(1, K25_ORANGE_D);
+    ctx.fillStyle = fg;
+    ctx.beginPath(); ctx.ellipse(fx, 328, 27, 15, 0, 0, Math.PI * 2); ctx.fill();
+  }
+  // 身体
+  ctx.save();
+  ctx.translate(325, 280); ctx.scale(1 / sq, sq); ctx.translate(-325, -280);
+  const bodyG = ctx.createRadialGradient(292, 244, 6, 325, 282, 86);
+  bodyG.addColorStop(0, K25_ORANGE_L);
+  bodyG.addColorStop(0.5, K25_ORANGE);
+  bodyG.addColorStop(1, K25_ORANGE_D);
+  ctx.fillStyle = bodyG;
+  ctx.beginPath(); ctx.ellipse(325, 280, 68, 58, 0, 0, Math.PI * 2); ctx.fill();
+  // 腹部亮面
+  ctx.fillStyle = 'rgba(255,220,170,.30)';
+  ctx.beginPath(); ctx.ellipse(316, 290, 36, 26, -0.2, 0, Math.PI * 2); ctx.fill();
+  // 身体底部环境光
+  ctx.fillStyle = 'rgba(90,20,10,.25)';
+  ctx.beginPath(); ctx.ellipse(325, 330, 54, 10, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.restore();
+
+  // 手臂
+  const armLift = k25ease(k25seg(t, 2.4, 3.4));
+  const drawArm = (x, y, ang, sc) => {
+    ctx.save();
+    ctx.translate(x, y); ctx.rotate(ang);
+    const ag = ctx.createLinearGradient(-x, 0, 24, 0);
+    ag.addColorStop(0, K25_ORANGE_L); ag.addColorStop(1, K25_ORANGE_D);
+    ctx.fillStyle = ag;
+    ctx.beginPath(); ctx.roundRect(-11, 0, 22, 50 * sc, 11); ctx.fill();
+    ctx.restore();
+  };
+  drawArm(268, 272, 0.42 + armLift * 0.25, 1);
+  drawArm(382, 272, -0.42 - armLift * 2.0, 1);
+
+  // 头
+  ctx.save();
+  ctx.translate(325, 268);
+  ctx.rotate(tilt);
+  ctx.translate(-325, -268);
+  const headY = 176;
+  const hg = ctx.createRadialGradient(288, 128, 12, 325, 180, 120);
+  hg.addColorStop(0, '#ffd79c');
+  hg.addColorStop(0.38, K25_ORANGE_L);
+  hg.addColorStop(0.72, K25_ORANGE);
+  hg.addColorStop(1, '#a63f14');
+  ctx.fillStyle = hg;
+  ctx.beginPath(); ctx.arc(325, headY, 86, 0, Math.PI * 2); ctx.fill();
+  // 头顶柔光
+  ctx.save();
+  ctx.shadowColor = 'rgba(255,240,210,.8)'; ctx.shadowBlur = 16;
+  ctx.fillStyle = 'rgba(255,245,220,.35)';
+  ctx.beginPath(); ctx.ellipse(293, 120, 34, 21, -0.5, 0, Math.PI * 2); ctx.fill();
+  ctx.restore();
+  // 右侧冷调轮廓光
+  ctx.save();
+  ctx.strokeStyle = 'rgba(130,225,240,.55)'; ctx.lineWidth = 5;
+  ctx.beginPath(); ctx.arc(325, headY, 83, -0.55, 0.55); ctx.stroke();
+  ctx.strokeStyle = 'rgba(130,225,240,.2)'; ctx.lineWidth = 10;
+  ctx.beginPath(); ctx.arc(325, headY, 80, -0.5, 0.5); ctx.stroke();
+  ctx.restore();
+  // 下巴环境暗部
+  ctx.save();
+  ctx.beginPath(); ctx.arc(325, headY, 86, 0, Math.PI * 2); ctx.clip();
+  const ao = ctx.createRadialGradient(325, headY + 70, 10, 325, headY + 60, 70);
+  ao.addColorStop(0, 'rgba(90,24,10,.35)');
+  ao.addColorStop(1, 'rgba(90,24,10,0)');
+  ctx.fillStyle = ao; ctx.fillRect(239, 90, 172, 172);
+  ctx.restore();
+  // 腮红
+  for (const cx of [276, 374]) {
+    const cg = ctx.createRadialGradient(cx, headY + 30, 1, cx, headY + 30, 20);
+    cg.addColorStop(0, 'rgba(235,110,70,.4)');
+    cg.addColorStop(1, 'rgba(235,110,70,0)');
+    ctx.fillStyle = cg;
+    ctx.beginPath(); ctx.arc(cx, headY + 30, 20, 0, Math.PI * 2); ctx.fill();
+  }
+  // 眼睛
+  k25Eye(294, 166, 28, 33, blink, lookX, lookY);
+  k25Eye(358, 166, 28, 33, blink, lookX, lookY);
+  // 眉毛（细软）
+  ctx.strokeStyle = 'rgba(140,58,24,.55)'; ctx.lineWidth = 4; ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.arc(294, 148, 24, Math.PI * 1.15, Math.PI * 1.75); ctx.stroke();
+  ctx.beginPath(); ctx.arc(358, 148, 24, Math.PI * 1.25, Math.PI * 1.85); ctx.stroke();
+  // 嘴
+  ctx.strokeStyle = 'rgba(120,40,20,.7)'; ctx.lineWidth = 3.6; ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.arc(325, 216, 15, 0.25, Math.PI - 0.25); ctx.stroke();
+  ctx.strokeStyle = 'rgba(255,200,160,.4)'; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.arc(325, 219, 15, 0.4, Math.PI - 0.4); ctx.stroke();
+  // 鼻头
+  ctx.fillStyle = 'rgba(190,80,34,.5)';
+  ctx.beginPath(); ctx.ellipse(325, 200, 7, 5, 0, 0, Math.PI * 2); ctx.fill();
+  // 天线
+  const antX = 325 + Math.sin(t * 2.4) * 4;
+  ctx.strokeStyle = K25_ORANGE_D; ctx.lineWidth = 4; ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.moveTo(325, 92); ctx.quadraticCurveTo(340, 76, antX + 18, 56); ctx.stroke();
+  const bulbGlow = ctx.createRadialGradient(antX + 20, 52, 1, antX + 20, 52, 24);
+  bulbGlow.addColorStop(0, 'rgba(200,250,255,.9)');
+  bulbGlow.addColorStop(0.4, 'rgba(120,225,240,.5)');
+  bulbGlow.addColorStop(1, 'rgba(120,225,240,0)');
+  ctx.fillStyle = bulbGlow;
+  ctx.beginPath(); ctx.arc(antX + 20, 52, 24, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = '#dffbff';
+  ctx.beginPath(); ctx.arc(antX + 20, 52, 7, 0, Math.PI * 2); ctx.fill();
+  ctx.restore();
+
+  ctx.restore();
+
+  // 发光小球
+  if (orb.p > 0.01) {
+    const glowR = 90 + Math.sin(t * 2.5) * 8;
+    const og = ctx.createRadialGradient(orb.x, orb.y, 4, orb.x, orb.y, glowR);
+    og.addColorStop(0, 'rgba(190,250,255,.75)');
+    og.addColorStop(0.25, 'rgba(110,225,245,.4)');
+    og.addColorStop(0.6, 'rgba(70,170,200,.14)');
+    og.addColorStop(1, 'rgba(70,170,200,0)');
+    ctx.fillStyle = og;
+    ctx.beginPath(); ctx.arc(orb.x, orb.y, glowR, 0, Math.PI * 2); ctx.fill();
+    // 球体
+    const sg = ctx.createRadialGradient(orb.x - 6, orb.y - 7, 2, orb.x, orb.y, 18);
+    sg.addColorStop(0, '#ffffff');
+    sg.addColorStop(0.4, '#c8f8ff');
+    sg.addColorStop(0.8, '#5fd4e8');
+    sg.addColorStop(1, '#1b8ba8');
+    ctx.fillStyle = sg;
+    ctx.beginPath(); ctx.arc(orb.x, orb.y, 17, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,.95)';
+    ctx.beginPath(); ctx.ellipse(orb.x - 5, orb.y - 6, 4.4, 3.2, -0.5, 0, Math.PI * 2); ctx.fill();
+  }
+
+  // 小星芒
+  const sp = k25ease(k25seg(t, 2.0, 2.8));
+  if (sp > 0 && orb.p > 0.3) {
+    const pts = [[430, 70], [540, 150], [452, 200], [560, 60], [400, 140]];
+    pts.forEach((p, i) => {
+      const tw = 0.35 + 0.65 * Math.abs(Math.sin(t * 2.4 + i * 1.7));
+      ctx.save();
+      ctx.globalAlpha = sp * tw;
+      ctx.translate(p[0] + Math.sin(t * 1.5 + i) * 4, p[1] + Math.cos(t * 1.2 + i) * 4);
+      ctx.rotate(t * 0.4 + i);
+      ctx.fillStyle = K25_CYAN;
+      for (let k = 0; k < 2; k++) {
+        ctx.rotate(Math.PI / 2);
+        ctx.beginPath();
+        ctx.moveTo(0, -9); ctx.quadraticCurveTo(2, -2, 9, 0);
+        ctx.quadraticCurveTo(2, 2, 0, 9); ctx.quadraticCurveTo(-2, 2, -9, 0);
+        ctx.quadraticCurveTo(-2, -2, 0, -9); ctx.fill();
+      }
+      ctx.restore();
+    });
+  }
+
+  // 标题
+  ctx.save();
+  ctx.shadowColor = 'rgba(0,0,0,.5)'; ctx.shadowBlur = 12; ctx.shadowOffsetY = 3;
+  ctx.fillStyle = K25_CREAM;
+  ctx.font = `800 38px ${FONT}`; ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+  ctx.fillText('亮起来', 36, 72);
+  ctx.shadowBlur = 0;
+  ctx.fillStyle = 'rgba(255,241,214,.6)';
+  ctx.font = `600 13px ${FONT}`;
+  ctx.fillText('皮克斯式 3D  ·  大眼、圆润、有质感', 38, 96);
+  ctx.restore();
+
+  // 字幕
+  const cp = k25ease(k25seg(t, 4.4, 5.0));
+  if (cp > 0) {
+    ctx.save();
+    ctx.globalAlpha = cp;
+    ctx.fillStyle = K25_CREAM;
+    ctx.font = `600 15px ${FONT}`; ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+    ctx.fillText('看见光，就笑了。', 38, 332);
+    ctx.restore();
+  }
+
+  // 暗角
+  const vg = ctx.createRadialGradient(330, 180, 140, 330, 180, 460);
+  vg.addColorStop(0, 'rgba(0,0,0,0)');
+  vg.addColorStop(1, 'rgba(0,0,0,.45)');
+  ctx.fillStyle = vg; ctx.fillRect(0, 0, W, H);
+
+  // 收口
+  const fp = k25seg(t, 5.75, 6.0);
+  if (fp > 0) {
+    ctx.save(); ctx.globalAlpha = fp * 0.4; ctx.fillStyle = K25_DARK; ctx.fillRect(0, 0, W, H); ctx.restore();
+  }
+}
+
+  // ===== 共享渲染与署名 =======================================================
+  function watermark() {
+    const text = 'DeepSeek Harness 生成示例';
+    ctx.save();
+    ctx.font = '11px ' + FONT;
+    const w = ctx.measureText(text).width + 14;
+    const x = W - w - 8, y = H - 24;
+    ctx.fillStyle = 'rgba(0,0,0,.46)';
+    ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(x, y, w, 18, 4); else ctx.rect(x, y, w, 18);
+    ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,.82)';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(text, x + 7, y + 9.5);
+    ctx.restore();
+  }
+
+  function paint(t) {
+    ctx.save();
+    ctx.clearRect(0, 0, W, H);
+    try { drawScene(t); } catch (err) { console.error(err); }
+    ctx.restore();
+    watermark();
+  }
+
+  function renderAt(seconds) {
+    const t = ((Number(seconds) % DURATION) + DURATION) % DURATION;
+    paint(t);
+    syncUI(t);
+    return t;
+  }
+  window.renderAt = renderAt;
+
+  // ===== 播放、控制、减少动态 =================================================
+  const playBtn = document.getElementById('play');
+  const timeline = document.getElementById('timeline');
+  const clock = document.getElementById('clock');
+  let playing = false, base = 0, start = 0, current = 0;
+  let animationFrame = 0;
+  const reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function syncUI(t) {
+    if (EXPORT) return;
+    current = t;
+    if (timeline) timeline.value = String(t.toFixed(2));
+    if (clock) clock.textContent = t.toFixed(2) + ' / ' + DURATION.toFixed(2) + 's';
+  }
+  function frame(now) {
+    animationFrame = 0;
+    if (!playing) return;
+    const t = ((now - start) / 1000 + base) % DURATION;
+    paint(t);
+    syncUI(t);
+    animationFrame = requestAnimationFrame(frame);
+  }
+  function play() {
+    if (playing) return;
+    playing = true;
+    start = performance.now();
+    base = current;
+    if (playBtn) playBtn.textContent = '暂停';
+    animationFrame = requestAnimationFrame(frame);
+  }
+  function pause() {
+    playing = false;
+    cancelAnimationFrame(animationFrame);
+    animationFrame = 0;
+    if (playBtn) playBtn.textContent = '播放';
+  }
+  if (playBtn) playBtn.addEventListener('click', () => { playing ? pause() : play(); });
+  document.getElementById('replay')?.addEventListener('click', () => {
+    base = 0; start = performance.now(); paint(0); syncUI(0); play();
+  });
+  timeline?.addEventListener('input', () => {
+    pause(); paint(Number(timeline.value)); syncUI(Number(timeline.value));
+  });
+  window.addEventListener('keydown', e => {
+    if (e.code === 'Space') { e.preventDefault(); playing ? pause() : play(); }
+    if (e.key === 'r' || e.key === 'R') { base = 0; start = performance.now(); paint(0); syncUI(0); play(); }
+  });
+
+  if (EXPORT) {
+    document.body.classList.add('export');
+    renderAt(0);
+  } else if (reduced) {
+    renderAt(2.4);
+    pause();
+  } else {
+    renderAt(0);
+    play();
+  }
+})();
+</script>
+</body>
+</html>

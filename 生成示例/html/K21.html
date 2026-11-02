@@ -1,0 +1,527 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>K21 手工纸艺 · DeepSeek Harness 生成示例</title>
+<!--
+  Provenance
+  ----------
+  风格来源：code-animation-styles 目录（《来自俯仰观照博主的动画画风整理》整理稿）
+  catalog commit: 01576924a2b316d1f11ae33f75d3c005e8781451
+  style id: K21「手工纸艺」
+  license: upstream-custom-noncommercial（俯仰观照整理稿，非商业）
+  本文件：DeepSeek Harness（deepseek-flash）根据该风格提示词新写的候选示例，
+  不是原作者样片，也不是原项目演示；仅用于风格挑选预览。共享的只有时间轴、
+  尺寸、导出接口与页脚署名，画面与动作按本风格重新设计。
+  原文“只输出代码”等语句属于素材的一部分，不覆盖本任务的交付合同。
+-->
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; min-height: 100%; background: #0c0c10; color: #e9e9ee;
+    font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif; }
+  #app { min-height: 100vh; display: flex; flex-direction: column; align-items: center;
+    justify-content: center; gap: 12px; padding: 20px; }
+  #stage { width: min(94vw, 1000px); aspect-ratio: 16 / 9; background: #000;
+    box-shadow: 0 18px 60px rgba(0,0,0,.55); position: relative; overflow: hidden; }
+  canvas { display: block; width: 100%; height: 100%; }
+  #head, #ui { width: min(94vw, 1000px); }
+  #head h1 { margin: 0 0 4px; font-size: 15px; font-weight: 600; letter-spacing: .02em; }
+  #head p { margin: 0; font-size: 12px; line-height: 1.5; color: #9a9aa8; }
+  #ui { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  #ui button { background: #1d1d26; color: #f2f2f6; border: 1px solid #343444;
+    border-radius: 7px; padding: 6px 12px; font-size: 12px; cursor: pointer; }
+  #ui button:hover { background: #272734; }
+  #ui input[type=range] { flex: 1 1 220px; min-width: 150px; accent-color: #7c8cff; }
+  #clock { font-variant-numeric: tabular-nums; font-size: 12px; color: #a9a9ba; min-width: 78px; }
+  #credit { width: min(94vw, 1000px); font-size: 11px; line-height: 1.6; color: #6f6f80; }
+  #credit b { color: #9c9cae; font-weight: 500; }
+  body.export, body.export #app { display: block; width: 640px; height: 360px; min-height: 0;
+    padding: 0; margin: 0; overflow: hidden; background: #000; }
+  body.export #stage { width: 640px; height: 360px; box-shadow: none; }
+  body.export #head, body.export #ui, body.export #credit { display: none; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="head">
+    <h1>K21 · 手工纸艺</h1>
+    <p>手工纸艺：瓦楞纸板机器人当场组装，纽扣眼睛、麻线嘴巴、毛根手臂与纸片星星，胶带压角。</p>
+  </div>
+  <div id="stage"><canvas id="c" width="640" height="360" aria-label="手工纸艺 风格动画示例"></canvas></div>
+  <div id="ui">
+    <button id="play" type="button">暂停</button>
+    <button id="replay" type="button">重播</button>
+    <input id="timeline" type="range" min="0" max="6" step="0.01" value="0" aria-label="时间轴">
+    <span id="clock">0.00 / 6.00s</span>
+  </div>
+  <div id="credit">
+    <b>DeepSeek Harness 生成示例</b>（非原项目样片）· 来源：来自俯仰观照博主的动画画风整理 ·
+    许可：upstream-custom-noncommercial（俯仰观照整理稿，非商业） · 画面与文字均由代码绘制，静音。
+  </div>
+</div>
+<script>
+(() => {
+  'use strict';
+  // ===== 共享脚手架（可改，但导出合同不要破坏）=================================
+  const W = 640, H = 360, DURATION = 6;
+  const EXPORT = new URLSearchParams(location.search).get('export') === '1';
+  const canvas = document.getElementById('c');
+  const ctx = canvas.getContext('2d');
+  const FONT = '"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",sans-serif';
+
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  const lerp = (a, b, t) => a + (b - a) * t;
+  const smooth = t => t * t * (3 - 2 * t);
+  const easeOut = t => 1 - Math.pow(1 - t, 3);
+  const easeIn = t => t * t * t;
+  function rng(seed) { let s = seed >>> 0; return () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; }; }
+
+  // ===== 场景（每个 ID 独立设计；下面的注释区由构建器替换）===================
+  // DESC: 手工纸艺：瓦楞纸板机器人当场组装，纽扣眼睛、麻线嘴巴、毛根手臂与纸片星星，胶带压角。
+const K21_KRAFT = '#ca9a62';
+const K21_KRAFT_D = '#9c6f40';
+const K21_KRAFT_L = '#ddb57e';
+const K21_TABLE = '#e9dcc2';
+const K21_CREAM = '#f6ecd8';
+const K21_INK = '#4a3320';
+const K21_GREEN = '#6f8f5f';
+const K21_RED = '#c65b4a';
+const K21_BLUE = '#5b7fa6';
+
+const K21_GRAIN = (() => {
+  const c = document.createElement('canvas'); c.width = W; c.height = H;
+  const g = c.getContext('2d');
+  const r = rng(2121);
+  for (let i = 0; i < 900; i++) {
+    g.fillStyle = `rgba(90,64,36,${0.02 + r() * 0.05})`;
+    g.fillRect(r() * W, r() * H, 0.6 + r() * 1.6, 0.6 + r() * 1.6);
+  }
+  for (let i = 0; i < 60; i++) {
+    const x = r() * W, y = r() * H, a = (r() - 0.5) * 1.2, l = 3 + r() * 14;
+    g.strokeStyle = `rgba(110,80,44,${0.02 + r() * 0.04})`; g.lineWidth = 0.8;
+    g.beginPath(); g.moveTo(x, y); g.lineTo(x + Math.cos(a) * l, y + Math.sin(a) * l); g.stroke();
+  }
+  return c;
+})();
+
+function k21seg(t, a, b) { return clamp((t - a) / (b - a), 0, 1); }
+function k21ease(p) { return 1 - Math.pow(1 - p, 3); }
+function k21pop(p) {
+  p = clamp(p, 0, 1);
+  const c1 = 1.7, c3 = c1 + 1;
+  return 1 + c3 * Math.pow(p - 1, 3) + c1 * Math.pow(p - 1, 2);
+}
+function k21Drop(t, a, dur, dist) {
+  const raw = k21seg(t, a, a + dur);
+  const p = k21pop(raw);
+  return { p: k21ease(raw), dy: (1 - p) * dist };
+}
+function k21WobbleRect(x, y, w, h, seed, amp) {
+  const r = rng(seed);
+  const j = () => (r() - 0.5) * 2 * amp;
+  ctx.beginPath();
+  ctx.moveTo(x + j(), y + j());
+  ctx.lineTo(x + w + j(), y + j());
+  ctx.lineTo(x + w + j(), y + h + j());
+  ctx.lineTo(x + j(), y + h + j());
+  ctx.closePath();
+}
+function k21Box(x, y, w, h, seed, fill, edge) {
+  // 纸板：暗边 + 主色 + 瓦楞切口
+  k21WobbleRect(x + 2, y + 3, w, h, seed + 1, 1.2);
+  ctx.fillStyle = 'rgba(74,51,32,.22)'; ctx.fill();
+  k21WobbleRect(x, y, w, h, seed, 1.1);
+  ctx.fillStyle = fill; ctx.fill();
+  ctx.strokeStyle = edge || 'rgba(74,51,32,.45)'; ctx.lineWidth = 1.6; ctx.stroke();
+  // 顶面亮边
+  ctx.strokeStyle = 'rgba(255,240,205,.45)'; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(x + 3, y + 2); ctx.lineTo(x + w - 3, y + 2); ctx.stroke();
+}
+function k21Flutes(x, y, w, h, seed, color) {
+  const r = rng(seed);
+  ctx.save();
+  ctx.strokeStyle = color || 'rgba(120,80,44,.55)'; ctx.lineWidth = 1.3;
+  const n = Math.floor(w / 9);
+  for (let i = 0; i < n; i++) {
+    const px = x + 4 + i * 9 + r() * 2;
+    ctx.beginPath();
+    ctx.moveTo(px, y + 3);
+    ctx.quadraticCurveTo(px + 2.4, y + h * 0.5, px, y + h - 3);
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+function k21Button(x, y, r, color, rot, t) {
+  ctx.save();
+  ctx.translate(x, y); ctx.rotate(rot || 0);
+  ctx.fillStyle = 'rgba(74,51,32,.22)';
+  ctx.beginPath(); ctx.arc(1.8, 2.4, r, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = color;
+  ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI * 2); ctx.fill();
+  ctx.strokeStyle = 'rgba(255,255,255,.4)'; ctx.lineWidth = 1.6;
+  ctx.beginPath(); ctx.arc(0, 0, r - 1.6, Math.PI * 1.05, Math.PI * 1.9); ctx.stroke();
+  ctx.fillStyle = 'rgba(60,40,22,.85)';
+  for (const [hx, hy] of [[-r * 0.3, -r * 0.3], [r * 0.3, -r * 0.3], [-r * 0.3, r * 0.3], [r * 0.3, r * 0.3]]) {
+    ctx.beginPath(); ctx.arc(hx, hy, r * 0.11 + 0.8, 0, Math.PI * 2); ctx.fill();
+  }
+  // 缝线十字
+  ctx.strokeStyle = 'rgba(246,236,216,.9)'; ctx.lineWidth = 1.6;
+  ctx.beginPath(); ctx.moveTo(-r * 0.3, -r * 0.3); ctx.lineTo(r * 0.3, r * 0.3); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(r * 0.3, -r * 0.3); ctx.lineTo(-r * 0.3, r * 0.3); ctx.stroke();
+  ctx.restore();
+}
+function k21Star(x, y, r1, r2, rot) {
+  ctx.beginPath();
+  for (let i = 0; i < 10; i++) {
+    const a = rot + (i * Math.PI) / 5 - Math.PI / 2;
+    const rr = i % 2 ? r2 : r1;
+    if (i === 0) ctx.moveTo(x + Math.cos(a) * rr, y + Math.sin(a) * rr);
+    else ctx.lineTo(x + Math.cos(a) * rr, y + Math.sin(a) * rr);
+  }
+  ctx.closePath();
+}
+
+function drawScene(t) {
+  // 手作桌面
+  ctx.fillStyle = K21_TABLE; ctx.fillRect(0, 0, W, H);
+  ctx.save();
+  ctx.strokeStyle = 'rgba(120,92,56,.13)'; ctx.lineWidth = 1;
+  for (let x = 0; x < W; x += 32) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke(); }
+  for (let y = 0; y < H; y += 32) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke(); }
+  ctx.restore();
+
+  // 桌面小物：线轴、纽扣、铅笔
+  ctx.save();
+  ctx.fillStyle = K21_CREAM;
+  ctx.beginPath(); ctx.roundRect(44, 236, 42, 66, 6); ctx.fill();
+  ctx.strokeStyle = 'rgba(74,51,32,.35)'; ctx.lineWidth = 1.4; ctx.stroke();
+  ctx.strokeStyle = K21_GREEN; ctx.lineWidth = 2;
+  for (let i = 0; i < 7; i++) {
+    ctx.beginPath(); ctx.moveTo(48, 244 + i * 8); ctx.lineTo(82, 243 + i * 8); ctx.stroke();
+  }
+  ctx.fillStyle = '#8f6a44';
+  ctx.beginPath(); ctx.ellipse(65, 236, 21, 5, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(65, 302, 21, 5, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.restore();
+  // 散落纽扣
+  k21Button(118, 300, 10, K21_BLUE, 0.4, t);
+  k21Button(142, 318, 8, K21_RED, -0.2, t);
+  // 铅笔
+  ctx.save();
+  ctx.translate(530, 300); ctx.rotate(-0.45);
+  ctx.fillStyle = '#e2b23f'; ctx.fillRect(0, -4, 82, 8);
+  ctx.fillStyle = '#d9c7a6'; ctx.fillRect(82, -4, 14, 8);
+  ctx.fillStyle = '#4a3320'; ctx.beginPath(); ctx.moveTo(96, -4); ctx.lineTo(104, 0); ctx.lineTo(96, 4); ctx.closePath(); ctx.fill();
+  ctx.fillStyle = 'rgba(74,51,32,.4)'; ctx.fillRect(0, -4, 6, 8);
+  ctx.restore();
+  // 剪刀
+  ctx.save();
+  ctx.translate(520, 84); ctx.rotate(0.5);
+  ctx.strokeStyle = '#9aa2a6'; ctx.lineWidth = 4; ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(42, -14); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(42, 12); ctx.stroke();
+  ctx.strokeStyle = K21_RED; ctx.lineWidth = 4;
+  ctx.beginPath(); ctx.arc(-10, -4, 9, 0.2, Math.PI * 1.8); ctx.stroke();
+  ctx.beginPath(); ctx.arc(-10, 4, 9, -Math.PI * 0.8, Math.PI * 0.8); ctx.stroke();
+  ctx.fillStyle = '#6d7276';
+  ctx.beginPath(); ctx.arc(0, 0, 3, 0, Math.PI * 2); ctx.fill();
+  ctx.restore();
+
+  // 腿（纸条）
+  const legs = k21Drop(t, -0.5, 0.55, -30);
+  ctx.save();
+  ctx.translate(0, legs.dy);
+  k21Box(272, 288, 18, 38, 2101, K21_KRAFT_L);
+  k21Box(316, 288, 18, 38, 2102, K21_KRAFT_L);
+  ctx.fillStyle = K21_KRAFT_D;
+  ctx.beginPath(); ctx.roundRect(262, 320, 36, 12, 4); ctx.fill();
+  ctx.beginPath(); ctx.roundRect(308, 320, 36, 12, 4); ctx.fill();
+  ctx.restore();
+
+  // 身体
+  const body = k21Drop(t, -0.35, 0.7, -110);
+  ctx.save();
+  ctx.translate(0, body.dy);
+  k21Box(238, 198, 132, 100, 2111, K21_KRAFT);
+  k21Flutes(238, 276, 132, 20, 2112, 'rgba(110,74,40,.5)');
+  // 胸前胶带
+  ctx.save();
+  ctx.globalAlpha = 0.82;
+  ctx.fillStyle = 'rgba(235,226,201,.55)';
+  ctx.fillRect(270, 214, 62, 18);
+  ctx.strokeStyle = 'rgba(255,255,255,.35)'; ctx.lineWidth = 1;
+  ctx.strokeRect(270, 214, 62, 18);
+  ctx.restore();
+  ctx.restore();
+
+  // 手臂：毛根（扭扭棒）
+  const armP = k21ease(k21seg(t, 1.9, 2.7));
+  if (armP > 0.01) {
+    const drawArm = (pts, sway) => {
+      ctx.save();
+      ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+      for (let i = 0; i < pts.length - 1; i++) {
+        const a = pts[i], b = pts[i + 1];
+        ctx.strokeStyle = 'rgba(74,51,32,.2)'; ctx.lineWidth = 9;
+        ctx.beginPath(); ctx.moveTo(a[0] + 1.4, a[1] + 2); ctx.lineTo(b[0] + 1.4, b[1] + 2); ctx.stroke();
+        ctx.strokeStyle = K21_GREEN; ctx.lineWidth = 6;
+        ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]); ctx.stroke();
+      }
+      // 绒毛
+      ctx.strokeStyle = 'rgba(246,236,216,.35)'; ctx.lineWidth = 1;
+      for (const p of pts) {
+        ctx.beginPath(); ctx.moveTo(p[0] - 4, p[1] - 3); ctx.lineTo(p[0] + 4, p[1] + 3); ctx.stroke();
+      }
+      ctx.restore();
+    };
+    const L = 1 - armP;
+    const ptsL = [[242, 226], [222 - L * 10, 248], [208 - L * 14, 268 + Math.sin(t * 3) * 3]];
+    const ptsR = [[366, 226], [386 + L * 10, 246], [404 + L * 16, 258 + Math.sin(t * 3.4 + 1) * 4]];
+    drawArm(ptsL);
+    drawArm(ptsR);
+    // 纸手
+    ctx.fillStyle = K21_CREAM;
+    ctx.strokeStyle = 'rgba(74,51,32,.4)'; ctx.lineWidth = 1.4;
+    ctx.beginPath(); ctx.arc(208 - L * 14, 268 + Math.sin(t * 3) * 3, 11, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+    ctx.beginPath(); ctx.arc(404 + L * 16, 258 + Math.sin(t * 3.4 + 1) * 4, 11, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+  }
+
+  // 头
+  const head = k21Drop(t, 0.55, 0.75, -130);
+  ctx.save();
+  ctx.translate(0, head.dy + Math.sin(t * 2.4) * 1.2);
+  ctx.save();
+  ctx.translate(304, 156); ctx.rotate(-0.025); ctx.translate(-304, -156);
+  k21Box(258, 112, 92, 82, 2121, K21_KRAFT_L);
+  // 侧边瓦楞
+  k21Flutes(258, 116, 12, 74, 2122, 'rgba(120,80,44,.55)');
+  k21Flutes(338, 116, 12, 74, 2123, 'rgba(120,80,44,.55)');
+  // 眼睛：纽扣
+  const eyeP = k21pop(k21seg(t, 1.25, 1.8));
+  if (eyeP > 0.01) {
+    ctx.save();
+    ctx.translate(0, 0);
+    ctx.scale(eyeP, eyeP);
+    k21Button(284, 148, 14, K21_RED, 0.2, t);
+    k21Button(330, 150, 14, K21_BLUE, -0.15, t);
+    ctx.restore();
+  }
+  // 麻线嘴
+  const mouthP = k21ease(k21seg(t, 1.7, 2.15));
+  if (mouthP > 0) {
+    ctx.save();
+    ctx.strokeStyle = 'rgba(74,51,32,.8)'; ctx.lineWidth = 2; ctx.lineCap = 'round';
+    ctx.setLineDash([3, 4]);
+    ctx.beginPath(); ctx.moveTo(288, 174); ctx.lineTo(288 + 34 * mouthP, 174); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.lineWidth = 1.4;
+    for (let i = 0; i < 4; i++) {
+      const x = 288 + 8 * i;
+      ctx.beginPath(); ctx.moveTo(x, 170); ctx.lineTo(x, 178); ctx.stroke();
+    }
+    ctx.restore();
+  }
+  // 天线
+  const antP = k21ease(k21seg(t, 2.45, 3.2));
+  if (antP > 0) {
+    const wig = Math.sin(t * 2.6) * 4;
+    ctx.save();
+    ctx.strokeStyle = K21_GREEN; ctx.lineWidth = 4; ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(304, 112);
+    ctx.bezierCurveTo(304, 92, 322 + wig, 88, 330 + wig * 0.6, 68);
+    ctx.stroke();
+    ctx.strokeStyle = 'rgba(246,236,216,.5)'; ctx.lineWidth = 1.2;
+    ctx.beginPath(); ctx.moveTo(304, 110); ctx.bezierCurveTo(304, 92, 322 + wig, 86, 330 + wig * 0.6, 66); ctx.stroke();
+    if (antP > 0.55) {
+      const sp = k21pop(clamp((antP - 0.55) / 0.45, 0, 1));
+      ctx.translate(330 + wig * 0.6, 56);
+      ctx.scale(sp, sp);
+      ctx.fillStyle = 'rgba(74,51,32,.2)';
+      k21Star(2, 3, 18, 8, 0.1); ctx.fill();
+      ctx.fillStyle = K21_CREAM;
+      k21Star(0, 0, 18, 8, 0); ctx.fill();
+      ctx.strokeStyle = 'rgba(74,51,32,.45)'; ctx.lineWidth = 1.2; ctx.stroke();
+      ctx.strokeStyle = 'rgba(160,130,90,.4)'; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(0, -18); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(0, 18); ctx.stroke();
+    }
+    ctx.restore();
+  }
+  ctx.restore();
+  ctx.restore();
+
+  // 胶带压角
+  const tapeP = k21ease(k21seg(t, 3.0, 3.7));
+  if (tapeP > 0) {
+    ctx.save();
+    ctx.globalAlpha = 0.8 * tapeP;
+    ctx.fillStyle = 'rgba(236,226,200,.72)';
+    ctx.translate(250, 112); ctx.rotate(-0.7);
+    ctx.fillRect(-16, -7, 32 * tapeP, 14);
+    ctx.restore();
+    ctx.save();
+    ctx.globalAlpha = 0.8 * tapeP;
+    ctx.fillStyle = 'rgba(236,226,200,.72)';
+    ctx.translate(372, 292); ctx.rotate(-0.6);
+    ctx.fillRect(-16, -7, 32 * tapeP, 14);
+    ctx.restore();
+  }
+
+  // 想法：纸心
+  const hp = k21pop(k21seg(t, 4.0, 4.6));
+  if (hp > 0.01) {
+    ctx.save();
+    ctx.translate(410, 120); ctx.scale(hp, hp); ctx.rotate(Math.sin(t * 2) * 0.06);
+    ctx.fillStyle = 'rgba(74,51,32,.18)';
+    ctx.beginPath(); ctx.moveTo(2, 10);
+    ctx.bezierCurveTo(-22, -6, -12, -26, 2, -14);
+    ctx.bezierCurveTo(16, -26, 26, -6, 2, 10);
+    ctx.fill();
+    ctx.fillStyle = K21_RED;
+    ctx.beginPath(); ctx.moveTo(0, 8);
+    ctx.bezierCurveTo(-24, -8, -14, -28, 0, -16);
+    ctx.bezierCurveTo(14, -28, 24, -8, 0, 8);
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(74,51,32,.4)'; ctx.lineWidth = 1.2; ctx.stroke();
+    ctx.restore();
+  }
+
+  // 纸张颗粒
+  ctx.drawImage(K21_GRAIN, 0, 0);
+  // 铅笔辅助线
+  ctx.save();
+  ctx.strokeStyle = 'rgba(120,92,56,.18)'; ctx.lineWidth = 1; ctx.setLineDash([5, 6]);
+  ctx.beginPath(); ctx.moveTo(304, 30); ctx.lineTo(304, 100); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.restore();
+
+  // 标题
+  ctx.save();
+  ctx.fillStyle = K21_INK;
+  ctx.font = `800 32px ${FONT}`; ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+  ctx.fillText('动手做一个', 34, 66);
+  ctx.fillStyle = 'rgba(74,51,32,.62)';
+  ctx.font = `600 13px ${FONT}`;
+  ctx.fillText('手工纸艺  ·  纸板与纽扣', 36, 90);
+  // 高亮
+  ctx.fillStyle = 'rgba(198,91,74,.45)';
+  ctx.fillRect(34, 74, 128, 4);
+  ctx.restore();
+
+  // 字幕
+  const cp = k21ease(k21seg(t, 4.4, 5.0));
+  if (cp > 0) {
+    ctx.save();
+    ctx.globalAlpha = cp;
+    ctx.fillStyle = K21_INK;
+    ctx.font = `600 15px ${FONT}`; ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+    ctx.fillText('纸板、麻线、两粒纽扣。', 36, 332);
+    ctx.restore();
+  }
+
+  // 收口
+  const fp = k21seg(t, 5.75, 6.0);
+  if (fp > 0) {
+    ctx.save(); ctx.globalAlpha = fp * 0.4; ctx.fillStyle = K21_TABLE; ctx.fillRect(0, 0, W, H); ctx.restore();
+  }
+}
+
+  // ===== 共享渲染与署名 =======================================================
+  function watermark() {
+    const text = 'DeepSeek Harness 生成示例';
+    ctx.save();
+    ctx.font = '11px ' + FONT;
+    const w = ctx.measureText(text).width + 14;
+    const x = W - w - 8, y = H - 24;
+    ctx.fillStyle = 'rgba(0,0,0,.46)';
+    ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(x, y, w, 18, 4); else ctx.rect(x, y, w, 18);
+    ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,.82)';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(text, x + 7, y + 9.5);
+    ctx.restore();
+  }
+
+  function paint(t) {
+    ctx.save();
+    ctx.clearRect(0, 0, W, H);
+    try { drawScene(t); } catch (err) { console.error(err); }
+    ctx.restore();
+    watermark();
+  }
+
+  function renderAt(seconds) {
+    const t = ((Number(seconds) % DURATION) + DURATION) % DURATION;
+    paint(t);
+    syncUI(t);
+    return t;
+  }
+  window.renderAt = renderAt;
+
+  // ===== 播放、控制、减少动态 =================================================
+  const playBtn = document.getElementById('play');
+  const timeline = document.getElementById('timeline');
+  const clock = document.getElementById('clock');
+  let playing = false, base = 0, start = 0, current = 0;
+  let animationFrame = 0;
+  const reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function syncUI(t) {
+    if (EXPORT) return;
+    current = t;
+    if (timeline) timeline.value = String(t.toFixed(2));
+    if (clock) clock.textContent = t.toFixed(2) + ' / ' + DURATION.toFixed(2) + 's';
+  }
+  function frame(now) {
+    animationFrame = 0;
+    if (!playing) return;
+    const t = ((now - start) / 1000 + base) % DURATION;
+    paint(t);
+    syncUI(t);
+    animationFrame = requestAnimationFrame(frame);
+  }
+  function play() {
+    if (playing) return;
+    playing = true;
+    start = performance.now();
+    base = current;
+    if (playBtn) playBtn.textContent = '暂停';
+    animationFrame = requestAnimationFrame(frame);
+  }
+  function pause() {
+    playing = false;
+    cancelAnimationFrame(animationFrame);
+    animationFrame = 0;
+    if (playBtn) playBtn.textContent = '播放';
+  }
+  if (playBtn) playBtn.addEventListener('click', () => { playing ? pause() : play(); });
+  document.getElementById('replay')?.addEventListener('click', () => {
+    base = 0; start = performance.now(); paint(0); syncUI(0); play();
+  });
+  timeline?.addEventListener('input', () => {
+    pause(); paint(Number(timeline.value)); syncUI(Number(timeline.value));
+  });
+  window.addEventListener('keydown', e => {
+    if (e.code === 'Space') { e.preventDefault(); playing ? pause() : play(); }
+    if (e.key === 'r' || e.key === 'R') { base = 0; start = performance.now(); paint(0); syncUI(0); play(); }
+  });
+
+  if (EXPORT) {
+    document.body.classList.add('export');
+    renderAt(0);
+  } else if (reduced) {
+    renderAt(2.4);
+    pause();
+  } else {
+    renderAt(0);
+    play();
+  }
+})();
+</script>
+</body>
+</html>

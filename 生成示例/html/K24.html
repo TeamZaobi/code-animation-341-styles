@@ -1,0 +1,452 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>K24 粘土 · DeepSeek Harness 生成示例</title>
+<!--
+  Provenance
+  ----------
+  风格来源：code-animation-styles 目录（《来自俯仰观照博主的动画画风整理》整理稿）
+  catalog commit: 01576924a2b316d1f11ae33f75d3c005e8781451
+  style id: K24「粘土」
+  license: upstream-custom-noncommercial（俯仰观照整理稿，非商业）
+  本文件：DeepSeek Harness（deepseek-flash）根据该风格提示词新写的候选示例，
+  不是原作者样片，也不是原项目演示；仅用于风格挑选预览。共享的只有时间轴、
+  尺寸、导出接口与页脚署名，画面与动作按本风格重新设计。
+  原文“只输出代码”等语句属于素材的一部分，不覆盖本任务的交付合同。
+-->
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; min-height: 100%; background: #0c0c10; color: #e9e9ee;
+    font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif; }
+  #app { min-height: 100vh; display: flex; flex-direction: column; align-items: center;
+    justify-content: center; gap: 12px; padding: 20px; }
+  #stage { width: min(94vw, 1000px); aspect-ratio: 16 / 9; background: #000;
+    box-shadow: 0 18px 60px rgba(0,0,0,.55); position: relative; overflow: hidden; }
+  canvas { display: block; width: 100%; height: 100%; }
+  #head, #ui { width: min(94vw, 1000px); }
+  #head h1 { margin: 0 0 4px; font-size: 15px; font-weight: 600; letter-spacing: .02em; }
+  #head p { margin: 0; font-size: 12px; line-height: 1.5; color: #9a9aa8; }
+  #ui { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  #ui button { background: #1d1d26; color: #f2f2f6; border: 1px solid #343444;
+    border-radius: 7px; padding: 6px 12px; font-size: 12px; cursor: pointer; }
+  #ui button:hover { background: #272734; }
+  #ui input[type=range] { flex: 1 1 220px; min-width: 150px; accent-color: #7c8cff; }
+  #clock { font-variant-numeric: tabular-nums; font-size: 12px; color: #a9a9ba; min-width: 78px; }
+  #credit { width: min(94vw, 1000px); font-size: 11px; line-height: 1.6; color: #6f6f80; }
+  #credit b { color: #9c9cae; font-weight: 500; }
+  body.export, body.export #app { display: block; width: 640px; height: 360px; min-height: 0;
+    padding: 0; margin: 0; overflow: hidden; background: #000; }
+  body.export #stage { width: 640px; height: 360px; box-shadow: none; }
+  body.export #head, body.export #ui, body.export #credit { display: none; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="head">
+    <h1>K24 · 粘土</h1>
+    <p>粘土定格：陶土色的圆团滚落、压扁、捏出耳朵与手脚，指印和刮痕留在表面，最后捏出一颗小心。</p>
+  </div>
+  <div id="stage"><canvas id="c" width="640" height="360" aria-label="粘土 风格动画示例"></canvas></div>
+  <div id="ui">
+    <button id="play" type="button">暂停</button>
+    <button id="replay" type="button">重播</button>
+    <input id="timeline" type="range" min="0" max="6" step="0.01" value="0" aria-label="时间轴">
+    <span id="clock">0.00 / 6.00s</span>
+  </div>
+  <div id="credit">
+    <b>DeepSeek Harness 生成示例</b>（非原项目样片）· 来源：来自俯仰观照博主的动画画风整理 ·
+    许可：upstream-custom-noncommercial（俯仰观照整理稿，非商业） · 画面与文字均由代码绘制，静音。
+  </div>
+</div>
+<script>
+(() => {
+  'use strict';
+  // ===== 共享脚手架（可改，但导出合同不要破坏）=================================
+  const W = 640, H = 360, DURATION = 6;
+  const EXPORT = new URLSearchParams(location.search).get('export') === '1';
+  const canvas = document.getElementById('c');
+  const ctx = canvas.getContext('2d');
+  const FONT = '"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",sans-serif';
+
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  const lerp = (a, b, t) => a + (b - a) * t;
+  const smooth = t => t * t * (3 - 2 * t);
+  const easeOut = t => 1 - Math.pow(1 - t, 3);
+  const easeIn = t => t * t * t;
+  function rng(seed) { let s = seed >>> 0; return () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; }; }
+
+  // ===== 场景（每个 ID 独立设计；下面的注释区由构建器替换）===================
+  // DESC: 粘土定格：陶土色的圆团滚落、压扁、捏出耳朵与手脚，指印和刮痕留在表面，最后捏出一颗小心。
+const K24_BG = '#e7d8c4';
+const K24_CLAY = '#c97a55';
+const K24_CLAY_L = '#e2a17d';
+const K24_CLAY_D = '#9c583b';
+const K24_CREAM = '#f6ecda';
+const K24_SAGE = '#93a48c';
+const K24_INK = '#4a3428';
+
+const K24_GRAIN = (() => {
+  const c = document.createElement('canvas'); c.width = W; c.height = H;
+  const g = c.getContext('2d');
+  const r = rng(2424);
+  for (let i = 0; i < 1000; i++) {
+    g.fillStyle = `rgba(90,60,36,${0.012 + r() * 0.04})`;
+    g.fillRect(r() * W, r() * H, 0.6 + r() * 1.5, 0.6 + r() * 1.5);
+  }
+  return c;
+})();
+
+function k24seg(t, a, b) { return clamp((t - a) / (b - a), 0, 1); }
+function k24ease(p) { return 1 - Math.pow(1 - p, 3); }
+function k24pop(p) {
+  p = clamp(p, 0, 1);
+  const c1 = 1.7, c3 = c1 + 1;
+  return 1 + c3 * Math.pow(p - 1, 3) + c1 * Math.pow(p - 1, 2);
+}
+function k24Land(t, a, dur, dist) {
+  const raw = k24seg(t, a, a + dur);
+  if (raw <= 0) return { p: 0, dy: -dist, sq: 1 };
+  const p = k24pop(raw);
+  const land = raw >= 1 ? 1 : 0;
+  const settle = Math.sin(clamp(raw, 0, 1) * Math.PI * 3) * 0.06 * Math.max(0, 1 - raw);
+  return { p: k24ease(raw), dy: -dist * (1 - p), sq: 1 + settle };
+}
+
+function k24Blob(cx, cy, rx, ry, base, light, dark, rot, sq) {
+  ctx.save();
+  ctx.translate(cx, cy); ctx.rotate(rot || 0);
+  const sy = (sq === undefined ? 1 : sq);
+  ctx.scale(1 / sy, sy);
+  const g = ctx.createRadialGradient(-rx * 0.32, -ry * 0.42, Math.max(2, rx * 0.08), 0, 0, Math.max(rx, ry) * 1.18);
+  g.addColorStop(0, light);
+  g.addColorStop(0.52, base);
+  g.addColorStop(1, dark);
+  ctx.fillStyle = g;
+  ctx.beginPath(); ctx.ellipse(0, 0, rx, ry, 0, 0, Math.PI * 2); ctx.fill();
+  // 底部接地阴影
+  ctx.strokeStyle = 'rgba(70,36,22,.22)'; ctx.lineWidth = Math.max(3, rx * 0.09);
+  ctx.beginPath(); ctx.ellipse(0, 1, rx * 0.9, ry * 0.9, 0, Math.PI * 0.15, Math.PI * 0.85); ctx.stroke();
+  // 顶部受光
+  ctx.fillStyle = 'rgba(255,235,215,.18)';
+  ctx.beginPath(); ctx.ellipse(-rx * 0.3, -ry * 0.42, rx * 0.3, ry * 0.16, -0.3, 0, Math.PI * 2); ctx.fill();
+  ctx.restore();
+}
+function k24Print(cx, cy, r, rot, alpha, light) {
+  if (alpha <= 0) return;
+  ctx.save();
+  ctx.translate(cx, cy); ctx.rotate(rot || 0);
+  ctx.lineWidth = 1.1; ctx.lineCap = 'round';
+  for (let k = 0; k < 4; k++) {
+    const rr = r * (0.34 + k * 0.22);
+    ctx.strokeStyle = light ? `rgba(255,235,210,${alpha * 0.4})` : `rgba(92,46,28,${alpha})`;
+    ctx.beginPath(); ctx.arc(0, 0, rr, -0.9, 1.5); ctx.stroke();
+  }
+  // 指印边缘的小月牙
+  ctx.strokeStyle = `rgba(92,46,28,${alpha * 0.6})`;
+  ctx.beginPath(); ctx.arc(0, 0, r, 1.9, 3.3); ctx.stroke();
+  ctx.restore();
+}
+
+const K24_PRINTS = [
+  [268, 126, 15, 0.3], [330, 132, 14, -0.5], [300, 168, 10, 0.9], [252, 250, 18, -0.4],
+  [352, 260, 17, 0.6], [300, 290, 13, 0.1], [228, 150, 9, 1.2], [372, 155, 9, -1.1],
+];
+
+function drawScene(t) {
+  // 背景：陶土工作台
+  ctx.fillStyle = K24_BG; ctx.fillRect(0, 0, W, H);
+  const bg = ctx.createLinearGradient(0, 0, 0, H);
+  bg.addColorStop(0, 'rgba(255,240,220,.35)');
+  bg.addColorStop(0.6, 'rgba(200,160,120,.06)');
+  bg.addColorStop(1, 'rgba(120,80,50,.18)');
+  ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+  // 背景大圆：鼠尾草绿
+  ctx.save();
+  ctx.globalAlpha = 0.55;
+  ctx.fillStyle = K24_SAGE;
+  ctx.beginPath(); ctx.arc(480, 140, 120, 0, Math.PI * 2); ctx.fill();
+  ctx.restore();
+  // 背景指印
+  k24Print(92, 96, 22, 0.4, 0.05);
+  k24Print(560, 268, 26, -0.6, 0.05);
+  k24Print(140, 300, 18, 0.9, 0.04);
+
+  // 桌面小物：木刮刀、陶土球
+  ctx.save();
+  ctx.translate(542, 292); ctx.rotate(-0.32);
+  ctx.fillStyle = '#a97c4f'; ctx.beginPath(); ctx.roundRect(-12, -54, 24, 108, 8); ctx.fill();
+  ctx.fillStyle = '#c99a63'; ctx.beginPath(); ctx.roundRect(-9, -54, 8, 104, 4); ctx.fill();
+  ctx.restore();
+  ctx.save();
+  for (const [x, y, r] of [[78, 306, 22], [112, 320, 16], [60, 276, 12]]) {
+    k24Blob(x, y, r, r * 0.92, K24_CLAY, K24_CLAY_L, K24_CLAY_D, 0, 1);
+  }
+  ctx.restore();
+
+  // 身体
+  const body = k24Land(t, -0.4, 0.8, 160);
+  if (body.p > 0) {
+    k24Blob(300, 246 + body.dy, 82, 70, K24_CLAY, K24_CLAY_L, K24_CLAY_D, 0, body.sq);
+    // 肚皮浅色
+    ctx.save();
+    ctx.globalAlpha = 0.85 * body.p;
+    ctx.fillStyle = K24_CLAY_L;
+    ctx.beginPath(); ctx.ellipse(300, 262 + body.dy, 44, 40, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.restore();
+    // 身体上的指印与刮痕
+    const bp = k24ease(k24seg(t, 2.1, 3.3));
+    K24_PRINTS.forEach((p, i) => {
+      if (i < 4 || i === 5) k24Print(p[0], p[1] + body.dy, p[2], p[3], 0.22 * bp);
+    });
+    ctx.save();
+    ctx.strokeStyle = `rgba(120,64,40,${0.16 * bp})`; ctx.lineWidth = 1.4; ctx.lineCap = 'round';
+    for (let i = 0; i < 4; i++) {
+      const y = 226 + i * 16;
+      ctx.beginPath(); ctx.moveTo(254, y + body.dy); ctx.quadraticCurveTo(300, y + 4 + body.dy, 348, y + body.dy); ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  // 脚
+  const fp = k24pop(k24seg(t, 0.9, 1.4));
+  if (fp > 0) {
+    ctx.save();
+    ctx.translate(300, 318); ctx.scale(fp, fp);
+    k24Blob(-36, 0, 34, 19, K24_CLAY, K24_CLAY_L, K24_CLAY_D, 0, 1);
+    k24Blob(36, 0, 34, 19, K24_CLAY, K24_CLAY_L, K24_CLAY_D, 0, 1);
+    ctx.restore();
+  }
+
+  // 手臂
+  const ap = k24pop(k24seg(t, 1.5, 2.1));
+  if (ap > 0.01) {
+    ctx.save();
+    ctx.translate(300, 250);
+    ctx.scale(ap, ap);
+    k24Blob(-84, 6, 26, 44, K24_CLAY, K24_CLAY_L, K24_CLAY_D, -0.35, 1);
+    k24Blob(84, 6, 26, 44, K24_CLAY, K24_CLAY_L, K24_CLAY_D, 0.35, 1);
+    ctx.restore();
+  }
+
+  // 耳朵
+  const ep = k24pop(k24seg(t, 1.3, 1.8));
+  if (ep > 0.01) {
+    ctx.save();
+    ctx.translate(300, 152);
+    ctx.scale(ep, ep);
+    k24Blob(-72, 0, 22, 26, K24_CLAY, K24_CLAY_L, K24_CLAY_D, -0.2, 1);
+    k24Blob(72, 0, 22, 26, K24_CLAY, K24_CLAY_L, K24_CLAY_D, 0.2, 1);
+    ctx.restore();
+  }
+
+  // 头
+  const head = k24Land(t, 0.55, 0.8, 190);
+  if (head.p > 0) {
+    const hy = 148 + head.dy + Math.sin(t * 2.2) * 1.5;
+    k24Blob(300, hy, 76, 66, K24_CLAY, K24_CLAY_L, K24_CLAY_D, 0, head.sq);
+    // 头顶高光与指印
+    const hp = k24ease(k24seg(t, 2.2, 3.4));
+    k24Print(268, hy - 26, 15, 0.3, 0.24 * hp);
+    k24Print(332, hy - 24, 14, -0.4, 0.24 * hp);
+    k24Print(300, hy + 20, 10, 0.8, 0.2 * hp);
+    // 鼻子
+    const np = k24pop(k24seg(t, 2.3, 2.8));
+    if (np > 0.01) {
+      ctx.save();
+      ctx.translate(300, hy + 16); ctx.scale(np, np);
+      k24Blob(0, 0, 15, 13, '#c06f4c', '#dd9c78', '#9a5438', 0, 1);
+      ctx.restore();
+    }
+    // 眼睛：按进去的小泥球
+    const eye = k24pop(k24seg(t, 2.55, 3.05));
+    if (eye > 0.01) {
+      ctx.save();
+      ctx.translate(300, hy);
+      ctx.scale(eye, eye);
+      k24Blob(-27, -8, 12, 12, '#f4e8d2', '#fff8ea', '#cbb99c', 0, 1);
+      k24Blob(27, -8, 12, 12, '#f4e8d2', '#fff8ea', '#cbb99c', 0, 1);
+      ctx.fillStyle = '#3a2418';
+      ctx.beginPath(); ctx.arc(-25, -7, 4.6, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(29, -7, 4.6, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = 'rgba(255,250,240,.9)';
+      ctx.beginPath(); ctx.arc(-26.6, -9, 1.5, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(27.4, -9, 1.5, 0, Math.PI * 2); ctx.fill();
+      ctx.restore();
+    }
+    // 嘴：压出的一道弧
+    const mp = k24ease(k24seg(t, 3.1, 3.55));
+    if (mp > 0) {
+      ctx.save();
+      ctx.strokeStyle = 'rgba(110,56,36,.8)'; ctx.lineWidth = 2.6; ctx.lineCap = 'round';
+      ctx.beginPath(); ctx.arc(300, hy + 34, 13, 0.25, Math.PI - 0.25); ctx.stroke();
+      ctx.strokeStyle = 'rgba(255,220,195,.4)'; ctx.lineWidth = 1.4;
+      ctx.beginPath(); ctx.arc(300, hy + 36, 13, 0.4, Math.PI - 0.4); ctx.stroke();
+      ctx.restore();
+    }
+    // 腮红指印
+    const cp2 = k24ease(k24seg(t, 3.2, 3.8));
+    if (cp2 > 0) {
+      ctx.save();
+      ctx.globalAlpha = 0.35 * cp2;
+      ctx.fillStyle = '#d8876a';
+      ctx.beginPath(); ctx.ellipse(256, hy + 18, 15, 10, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.ellipse(344, hy + 18, 15, 10, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.restore();
+    }
+  }
+
+  // 小心
+  const hpp = k24pop(k24seg(t, 4.15, 4.65));
+  if (hpp > 0.01) {
+    ctx.save();
+    ctx.translate(412, 112 + Math.sin(t * 2.2) * 3);
+    ctx.scale(hpp * 1.25, hpp * 1.25); ctx.rotate(-0.06);
+    ctx.fillStyle = '#c06f4c';
+    ctx.beginPath();
+    ctx.moveTo(0, 14);
+    ctx.bezierCurveTo(-27, -8, -14, -28, 0, -13);
+    ctx.bezierCurveTo(14, -28, 27, -8, 0, 14);
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(110,54,34,.5)'; ctx.lineWidth = 1.4; ctx.stroke();
+    ctx.fillStyle = 'rgba(255,220,190,.35)';
+    ctx.beginPath(); ctx.ellipse(-10, -8, 6, 4, -0.5, 0, Math.PI * 2); ctx.fill();
+    ctx.restore();
+  }
+
+  // 纸黏土颗粒
+  ctx.drawImage(K24_GRAIN, 0, 0);
+  // 暗角
+  const vg = ctx.createRadialGradient(W / 2, H / 2, 160, W / 2, H / 2, 430);
+  vg.addColorStop(0, 'rgba(90,60,36,0)');
+  vg.addColorStop(1, 'rgba(90,60,36,.16)');
+  ctx.fillStyle = vg; ctx.fillRect(0, 0, W, H);
+
+  // 标题
+  ctx.save();
+  ctx.fillStyle = K24_INK;
+  ctx.font = `800 34px ${FONT}`; ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+  ctx.fillText('捏一个', 36, 66);
+  ctx.fillStyle = 'rgba(74,52,40,.62)';
+  ctx.font = `600 13px ${FONT}`;
+  ctx.fillText('粘土  ·  指印与手作纹理', 38, 90);
+  ctx.fillStyle = K24_SAGE;
+  ctx.fillRect(36, 75, 100, 4);
+  ctx.restore();
+
+  // 字幕
+  const tp = k24ease(k24seg(t, 4.5, 5.05));
+  if (tp > 0) {
+    ctx.save();
+    ctx.globalAlpha = tp;
+    ctx.fillStyle = K24_INK;
+    ctx.font = `600 15px ${FONT}`; ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+    ctx.fillText('圆一点，软一点。', 36, 332);
+    ctx.restore();
+  }
+
+  // 收口
+  const fp2 = k24seg(t, 5.75, 6.0);
+  if (fp2 > 0) {
+    ctx.save(); ctx.globalAlpha = fp2 * 0.4; ctx.fillStyle = K24_BG; ctx.fillRect(0, 0, W, H); ctx.restore();
+  }
+}
+
+  // ===== 共享渲染与署名 =======================================================
+  function watermark() {
+    const text = 'DeepSeek Harness 生成示例';
+    ctx.save();
+    ctx.font = '11px ' + FONT;
+    const w = ctx.measureText(text).width + 14;
+    const x = W - w - 8, y = H - 24;
+    ctx.fillStyle = 'rgba(0,0,0,.46)';
+    ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(x, y, w, 18, 4); else ctx.rect(x, y, w, 18);
+    ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,.82)';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(text, x + 7, y + 9.5);
+    ctx.restore();
+  }
+
+  function paint(t) {
+    ctx.save();
+    ctx.clearRect(0, 0, W, H);
+    try { drawScene(t); } catch (err) { console.error(err); }
+    ctx.restore();
+    watermark();
+  }
+
+  function renderAt(seconds) {
+    const t = ((Number(seconds) % DURATION) + DURATION) % DURATION;
+    paint(t);
+    syncUI(t);
+    return t;
+  }
+  window.renderAt = renderAt;
+
+  // ===== 播放、控制、减少动态 =================================================
+  const playBtn = document.getElementById('play');
+  const timeline = document.getElementById('timeline');
+  const clock = document.getElementById('clock');
+  let playing = false, base = 0, start = 0, current = 0;
+  let animationFrame = 0;
+  const reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function syncUI(t) {
+    if (EXPORT) return;
+    current = t;
+    if (timeline) timeline.value = String(t.toFixed(2));
+    if (clock) clock.textContent = t.toFixed(2) + ' / ' + DURATION.toFixed(2) + 's';
+  }
+  function frame(now) {
+    animationFrame = 0;
+    if (!playing) return;
+    const t = ((now - start) / 1000 + base) % DURATION;
+    paint(t);
+    syncUI(t);
+    animationFrame = requestAnimationFrame(frame);
+  }
+  function play() {
+    if (playing) return;
+    playing = true;
+    start = performance.now();
+    base = current;
+    if (playBtn) playBtn.textContent = '暂停';
+    animationFrame = requestAnimationFrame(frame);
+  }
+  function pause() {
+    playing = false;
+    cancelAnimationFrame(animationFrame);
+    animationFrame = 0;
+    if (playBtn) playBtn.textContent = '播放';
+  }
+  if (playBtn) playBtn.addEventListener('click', () => { playing ? pause() : play(); });
+  document.getElementById('replay')?.addEventListener('click', () => {
+    base = 0; start = performance.now(); paint(0); syncUI(0); play();
+  });
+  timeline?.addEventListener('input', () => {
+    pause(); paint(Number(timeline.value)); syncUI(Number(timeline.value));
+  });
+  window.addEventListener('keydown', e => {
+    if (e.code === 'Space') { e.preventDefault(); playing ? pause() : play(); }
+    if (e.key === 'r' || e.key === 'R') { base = 0; start = performance.now(); paint(0); syncUI(0); play(); }
+  });
+
+  if (EXPORT) {
+    document.body.classList.add('export');
+    renderAt(0);
+  } else if (reduced) {
+    renderAt(2.4);
+    pause();
+  } else {
+    renderAt(0);
+    play();
+  }
+})();
+</script>
+</body>
+</html>

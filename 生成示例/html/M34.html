@@ -1,0 +1,457 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>M34 新闻快讯盘点 · DeepSeek Harness 生成示例</title>
+<!--
+  Provenance
+  ----------
+  风格来源：code-animation-styles 目录（《来自俯仰观照博主的动画画风整理》整理稿）
+  catalog commit: 01576924a2b316d1f11ae33f75d3c005e8781451
+  style id: M34「新闻快讯盘点」
+  license: upstream-custom-noncommercial（俯仰观照整理稿，非商业）
+  本文件：DeepSeek Harness（deepseek-flash）根据该风格提示词新写的候选示例，
+  不是原作者样片，也不是原项目演示；仅用于风格挑选预览。共享的只有时间轴、
+  尺寸、导出接口与页脚署名，画面与动作按本风格重新设计。
+  原文“只输出代码”等语句属于素材的一部分，不覆盖本任务的交付合同。
+-->
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; min-height: 100%; background: #0c0c10; color: #e9e9ee;
+    font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif; }
+  #app { min-height: 100vh; display: flex; flex-direction: column; align-items: center;
+    justify-content: center; gap: 12px; padding: 20px; }
+  #stage { width: min(94vw, 1000px); aspect-ratio: 16 / 9; background: #000;
+    box-shadow: 0 18px 60px rgba(0,0,0,.55); position: relative; overflow: hidden; }
+  canvas { display: block; width: 100%; height: 100%; }
+  #head, #ui { width: min(94vw, 1000px); }
+  #head h1 { margin: 0 0 4px; font-size: 15px; font-weight: 600; letter-spacing: .02em; }
+  #head p { margin: 0; font-size: 12px; line-height: 1.5; color: #9a9aa8; }
+  #ui { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  #ui button { background: #1d1d26; color: #f2f2f6; border: 1px solid #343444;
+    border-radius: 7px; padding: 6px 12px; font-size: 12px; cursor: pointer; }
+  #ui button:hover { background: #272734; }
+  #ui input[type=range] { flex: 1 1 220px; min-width: 150px; accent-color: #7c8cff; }
+  #clock { font-variant-numeric: tabular-nums; font-size: 12px; color: #a9a9ba; min-width: 78px; }
+  #credit { width: min(94vw, 1000px); font-size: 11px; line-height: 1.6; color: #6f6f80; }
+  #credit b { color: #9c9cae; font-weight: 500; }
+  body.export, body.export #app { display: block; width: 640px; height: 360px; min-height: 0;
+    padding: 0; margin: 0; overflow: hidden; background: #000; }
+  body.export #stage { width: 640px; height: 360px; box-shadow: none; }
+  body.export #head, body.export #ui, body.export #credit { display: none; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="head">
+    <h1>M34 · 新闻快讯盘点</h1>
+    <p>新闻快讯式盘点：顶部栏+大编号+色块标签，三条消息逐条硬切推进，下方滚动字幕条与下三分之一信息条收尾。</p>
+  </div>
+  <div id="stage"><canvas id="c" width="640" height="360" aria-label="新闻快讯盘点 风格动画示例"></canvas></div>
+  <div id="ui">
+    <button id="play" type="button">暂停</button>
+    <button id="replay" type="button">重播</button>
+    <input id="timeline" type="range" min="0" max="6" step="0.01" value="0" aria-label="时间轴">
+    <span id="clock">0.00 / 6.00s</span>
+  </div>
+  <div id="credit">
+    <b>DeepSeek Harness 生成示例</b>（非原项目样片）· 来源：来自俯仰观照博主的动画画风整理 ·
+    许可：upstream-custom-noncommercial（俯仰观照整理稿，非商业） · 画面与文字均由代码绘制，静音。
+  </div>
+</div>
+<script>
+(() => {
+  'use strict';
+  // ===== 共享脚手架（可改，但导出合同不要破坏）=================================
+  const W = 640, H = 360, DURATION = 6;
+  const EXPORT = new URLSearchParams(location.search).get('export') === '1';
+  const canvas = document.getElementById('c');
+  const ctx = canvas.getContext('2d');
+  const FONT = '"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",sans-serif';
+
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  const lerp = (a, b, t) => a + (b - a) * t;
+  const smooth = t => t * t * (3 - 2 * t);
+  const easeOut = t => 1 - Math.pow(1 - t, 3);
+  const easeIn = t => t * t * t;
+  function rng(seed) { let s = seed >>> 0; return () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; }; }
+
+  // ===== 场景（每个 ID 独立设计；下面的注释区由构建器替换）===================
+  // DESC: 新闻快讯式盘点：顶部栏+大编号+色块标签，三条消息逐条硬切推进，下方滚动字幕条与下三分之一信息条收尾。
+// M34 新闻快讯盘点 · DeepSeek Harness 生成示例
+const M34_BG = '#0d1220', M34_PANEL = '#131a2b', M34_TEXT = '#eef2f8';
+const M34_ITEMS = [
+  { tag: '工具', color: '#ff4d5e', title: '小工具也能串成一线', look: '不用来回导入导出', kind: 'nodes' },
+  { tag: '写作', color: '#4da3ff', title: '写字先搭骨架', look: '结构清楚，再往里填', kind: 'text' },
+  { tag: '自动化', color: '#3ddc97', title: '重复的活交出去', look: '省下的时间才是真的', kind: 'loop' },
+];
+const M34_DUR = 1.85;
+
+function m34seg(t, a, b) { return clamp((t - a) / (b - a), 0, 1); }
+function m34e(t) { return 1 - Math.pow(1 - t, 3); }
+function m34spring(p) {
+  if (p <= 0) return 0;
+  if (p >= 1) return 1;
+  return 1 - Math.exp(-7 * p) * Math.cos(10 * p) * (1 - p * 0.5);
+}
+
+// 三类抽象配图
+function m34Graphic(kind, cx, cy, w, h, color, p, t) {
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.globalAlpha = p;
+  ctx.fillStyle = 'rgba(255,255,255,.04)';
+  ctx.beginPath();
+  if (ctx.roundRect) ctx.roundRect(-w / 2, -h / 2, w, h, 8); else ctx.rect(-w / 2, -h / 2, w, h);
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(255,255,255,.08)'; ctx.lineWidth = 1; ctx.stroke();
+  ctx.scale(0.9 + 0.1 * p, 0.9 + 0.1 * p);
+
+  if (kind === 'nodes') {
+    const pts = [[-46, -18], [-6, 22], [36, -12], [44, 30]];
+    ctx.strokeStyle = color; ctx.lineWidth = 2;
+    ctx.globalAlpha = p * 0.85;
+    for (let i = 0; i < pts.length - 1; i++) {
+      ctx.beginPath();
+      ctx.moveTo(pts[i][0], pts[i][1]);
+      ctx.lineTo(pts[i + 1][0], pts[i + 1][1]);
+      ctx.stroke();
+    }
+    pts.forEach((pt, i) => {
+      const s = m34spring(clamp(p * 1.6 - i * 0.18, 0, 1));
+      ctx.fillStyle = i === pts.length - 1 ? color : '#1b2436';
+      ctx.strokeStyle = color; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.arc(pt[0], pt[1], 11 * s, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+    });
+  } else if (kind === 'text') {
+    ctx.fillStyle = 'rgba(238,242,248,.75)';
+    ctx.fillRect(-52, -32, 104, 7);
+    ctx.fillStyle = 'rgba(238,242,248,.28)';
+    for (let i = 0; i < 3; i++) ctx.fillRect(-52, -12 + i * 15, 84 - i * 18, 4);
+    ctx.strokeStyle = color; ctx.lineWidth = 3; ctx.lineCap = 'round';
+    const pen = m34e(clamp((p - 0.2) / 0.8, 0, 1));
+    ctx.beginPath();
+    ctx.moveTo(-24 + pen * 40, 40);
+    ctx.lineTo(-4 + pen * 40, 20);
+    ctx.stroke();
+    ctx.fillStyle = color;
+    ctx.beginPath(); ctx.moveTo(-4 + pen * 40, 20); ctx.lineTo(-14 + pen * 40, 24); ctx.lineTo(-8 + pen * 40, 31); ctx.closePath(); ctx.fill();
+  } else {
+    ctx.strokeStyle = color; ctx.lineWidth = 3; ctx.lineCap = 'round';
+    for (let i = 0; i < 3; i++) {
+      ctx.save();
+      ctx.translate(0, 0);
+      ctx.rotate(i * Math.PI * 2 / 3 + t * 0.6);
+      ctx.beginPath();
+      ctx.arc(0, 0, 26, -0.5, 1.4);
+      ctx.stroke();
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      ctx.moveTo(Math.cos(-0.5) * 26, Math.sin(-0.5) * 26);
+      ctx.lineTo(Math.cos(-0.85) * 20, Math.sin(-0.85) * 20);
+      ctx.lineTo(Math.cos(-0.15) * 20, Math.sin(-0.45) * 20);
+      ctx.closePath(); ctx.fill();
+      ctx.restore();
+    }
+    ctx.fillStyle = 'rgba(238,242,248,.5)';
+    ctx.beginPath(); ctx.arc(0, 0, 5, 0, Math.PI * 2); ctx.fill();
+  }
+  ctx.restore();
+}
+
+function m34Item(idx, lt, t) {
+  const it = M34_ITEMS[idx];
+  const enter = m34e(m34seg(lt, -0.12, 0.22));
+  const slide = (1 - m34spring(enter)) * 26;
+  ctx.save();
+  ctx.globalAlpha = clamp(enter * 1.6, 0, 1);
+
+  // 大编号
+  ctx.fillStyle = it.color;
+  ctx.globalAlpha = clamp(enter * 1.6, 0, 1) * 0.92;
+  ctx.font = `800 76px ${FONT}`;
+  ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+  ctx.fillText('0' + (idx + 1), 30, 186);
+  ctx.globalAlpha = clamp(enter * 1.6, 0, 1);
+  // 编号下的短竖线
+  ctx.fillStyle = it.color;
+  ctx.fillRect(34, 198, 54, 3);
+
+  // 标签
+  ctx.save();
+  ctx.translate(150, 84 + slide);
+  ctx.fillStyle = it.color;
+  ctx.beginPath();
+  if (ctx.roundRect) ctx.roundRect(0, -15, 62, 30, 4); else ctx.rect(0, -15, 62, 30);
+  ctx.fill();
+  ctx.fillStyle = '#0b0f18';
+  ctx.font = `700 14px ${FONT}`;
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText(it.tag, 31, 1);
+  ctx.restore();
+
+  // 标题
+  ctx.fillStyle = M34_TEXT;
+  ctx.font = `800 31px ${FONT}`;
+  ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+  ctx.fillText(it.title, 150, 146 + slide);
+  // 看点
+  const lp = m34e(m34seg(lt, 0.22, 0.5));
+  if (lp > 0) {
+    ctx.save();
+    ctx.globalAlpha = lp;
+    ctx.translate(0, (1 - lp) * 10);
+    ctx.fillStyle = it.color;
+    ctx.fillRect(152, 172, 5, 14);
+    ctx.fillStyle = 'rgba(238,242,248,.72)';
+    ctx.font = `500 14px ${FONT}`;
+    ctx.fillText(it.look, 168, 184);
+    ctx.restore();
+  }
+  // 配图
+  const gp = m34spring(m34seg(lt, 0.1, 0.46));
+  if (gp > 0.01) {
+    m34Graphic(it.kind, 522, 118, 168, 116, it.color, gp, t);
+  }
+
+  // 右侧竖排记者条
+  ctx.save();
+  ctx.globalAlpha = 0.5;
+  ctx.translate(616, 92);
+  ctx.rotate(Math.PI / 2);
+  ctx.fillStyle = 'rgba(238,242,248,.5)';
+  ctx.font = `600 9px ${FONT}`;
+  ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+  ctx.fillText('WEEKLY  ·  ' + String(idx + 1) + '/' + M34_ITEMS.length, 0, 0);
+  ctx.restore();
+  ctx.restore();
+}
+
+function drawScene(t) {
+  // 背景
+  const g = ctx.createLinearGradient(0, 0, 0, H);
+  g.addColorStop(0, '#101728');
+  g.addColorStop(0.55, M34_BG);
+  g.addColorStop(1, '#080b13');
+  ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  ctx.save();
+  ctx.strokeStyle = 'rgba(120,160,255,.05)'; ctx.lineWidth = 1;
+  for (let i = -6; i < 20; i++) {
+    ctx.beginPath(); ctx.moveTo(i * 46, 0); ctx.lineTo(i * 46 - 120, H); ctx.stroke();
+  }
+  ctx.restore();
+
+  const idx = Math.min(2, Math.floor(t / M34_DUR));
+  const lt = t - idx * M34_DUR;
+  const it = M34_ITEMS[idx];
+  const finish = t > M34_ITEMS.length * M34_DUR;
+
+  // 内容：第 2 条起用色块擦除进场
+  const wipe = idx > 0 ? m34seg(lt, 0, 0.18) : 1;
+  if (finish) {
+    // 收尾一句
+    const p = m34e(m34seg(t, 5.6, 5.85));
+    ctx.save();
+    ctx.globalAlpha = p;
+    ctx.fillStyle = M34_TEXT;
+    ctx.font = `800 34px ${FONT}`;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('这一周，就这些。', 320, 150);
+    ctx.fillStyle = 'rgba(238,242,248,.6)';
+    ctx.font = `500 14px ${FONT}`;
+    ctx.fillText('三条，说人话', 320, 186);
+    ctx.restore();
+  } else if (wipe >= 1) {
+    m34Item(idx, lt, t);
+  } else {
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(W * (1 - wipe), 0, W * wipe, 262);
+    ctx.clip();
+    m34Item(idx, lt, t);
+    ctx.restore();
+    ctx.save();
+    ctx.fillStyle = it.color;
+    ctx.fillRect(W * (1 - wipe) - 3, 56, 3, 206);
+    ctx.restore();
+  }
+
+  // 顶部栏
+  ctx.save();
+  ctx.fillStyle = 'rgba(8,11,19,.9)';
+  ctx.fillRect(0, 0, W, 52);
+  ctx.fillStyle = it.color;
+  ctx.fillRect(0, 50, W, 2);
+  ctx.fillStyle = it.color;
+  ctx.fillRect(24, 16, 5, 22);
+  ctx.fillStyle = M34_TEXT;
+  ctx.font = `800 21px ${FONT}`;
+  ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+  ctx.fillText('本周快讯', 40, 27);
+  ctx.fillStyle = 'rgba(238,242,248,.45)';
+  ctx.font = `500 11px ${FONT}`;
+  ctx.fillText('WEEKLY  ·  人话版', 150, 28);
+  // 右侧 LIVE + 条数
+  const blink = Math.floor(t * 2) % 2 === 0;
+  ctx.fillStyle = blink ? '#ff4d5e' : 'rgba(255,77,94,.35)';
+  ctx.beginPath();
+  if (ctx.roundRect) ctx.roundRect(506, 17, 46, 20, 3); else ctx.rect(506, 17, 46, 20);
+  ctx.fill();
+  ctx.fillStyle = '#0b0f18';
+  ctx.font = `700 10px ${FONT}`;
+  ctx.textAlign = 'center';
+  ctx.fillText('LIVE', 529, 28);
+  ctx.fillStyle = 'rgba(238,242,248,.65)';
+  ctx.textAlign = 'right';
+  ctx.font = `500 11px ${FONT}`;
+  ctx.fillText('03 条', 616, 28);
+  ctx.restore();
+
+  // 下三分之一信息条
+  ctx.save();
+  ctx.fillStyle = 'rgba(6,9,16,.88)';
+  ctx.fillRect(0, 240, W, 48);
+  ctx.fillStyle = it.color;
+  ctx.fillRect(0, 240, W, 3);
+  ctx.fillStyle = M34_TEXT;
+  ctx.font = `700 15px ${FONT}`;
+  ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+  ctx.fillText('快讯台', 24, 262);
+  ctx.fillStyle = 'rgba(238,242,248,.5)';
+  ctx.font = `500 12px ${FONT}`;
+  ctx.fillText('· 每条只说清好在哪', 84, 263);
+  // 三条进度
+  for (let i = 0; i < 3; i++) {
+    ctx.fillStyle = i <= idx ? it.color : 'rgba(255,255,255,.16)';
+    ctx.fillRect(430 + i * 38, 259, 30, 4);
+  }
+  ctx.restore();
+
+  // 滚动字幕
+  ctx.save();
+  ctx.fillStyle = 'rgba(12,17,28,.95)';
+  ctx.fillRect(0, 292, W, 26);
+  ctx.strokeStyle = 'rgba(255,255,255,.08)';
+  ctx.beginPath(); ctx.moveTo(0, 292); ctx.lineTo(W, 292); ctx.stroke();
+  ctx.beginPath();
+  ctx.rect(0, 292, 468, 26);
+  ctx.clip();
+  const ticker = '· 三条看完，不堆术语  · 每条都说清好在哪  · 下周三同一时间  · 快讯台';
+  ctx.font = `500 12px ${FONT}`;
+  ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+  const tw = ctx.measureText(ticker).width + 28;
+  const off = (t * 46) % tw;
+  for (let k = 0; k < 3; k++) {
+    ctx.fillStyle = 'rgba(238,242,248,.6)';
+    ctx.fillText(ticker, 12 + k * tw - off, 306);
+  }
+  ctx.restore();
+  // 字幕右侧的标签
+  ctx.save();
+  ctx.fillStyle = it.color;
+  ctx.fillRect(468, 292, 4, 26);
+  ctx.fillStyle = 'rgba(238,242,248,.5)';
+  ctx.font = `600 10px ${FONT}`;
+  ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+  ctx.fillText('滚动中', 480, 306);
+  ctx.restore();
+}
+
+  // ===== 共享渲染与署名 =======================================================
+  function watermark() {
+    const text = 'DeepSeek Harness 生成示例';
+    ctx.save();
+    ctx.font = '11px ' + FONT;
+    const w = ctx.measureText(text).width + 14;
+    const x = W - w - 8, y = H - 24;
+    ctx.fillStyle = 'rgba(0,0,0,.46)';
+    ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(x, y, w, 18, 4); else ctx.rect(x, y, w, 18);
+    ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,.82)';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(text, x + 7, y + 9.5);
+    ctx.restore();
+  }
+
+  function paint(t) {
+    ctx.save();
+    ctx.clearRect(0, 0, W, H);
+    try { drawScene(t); } catch (err) { console.error(err); }
+    ctx.restore();
+    watermark();
+  }
+
+  function renderAt(seconds) {
+    const t = ((Number(seconds) % DURATION) + DURATION) % DURATION;
+    paint(t);
+    syncUI(t);
+    return t;
+  }
+  window.renderAt = renderAt;
+
+  // ===== 播放、控制、减少动态 =================================================
+  const playBtn = document.getElementById('play');
+  const timeline = document.getElementById('timeline');
+  const clock = document.getElementById('clock');
+  let playing = false, base = 0, start = 0, current = 0;
+  let animationFrame = 0;
+  const reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function syncUI(t) {
+    if (EXPORT) return;
+    current = t;
+    if (timeline) timeline.value = String(t.toFixed(2));
+    if (clock) clock.textContent = t.toFixed(2) + ' / ' + DURATION.toFixed(2) + 's';
+  }
+  function frame(now) {
+    animationFrame = 0;
+    if (!playing) return;
+    const t = ((now - start) / 1000 + base) % DURATION;
+    paint(t);
+    syncUI(t);
+    animationFrame = requestAnimationFrame(frame);
+  }
+  function play() {
+    if (playing) return;
+    playing = true;
+    start = performance.now();
+    base = current;
+    if (playBtn) playBtn.textContent = '暂停';
+    animationFrame = requestAnimationFrame(frame);
+  }
+  function pause() {
+    playing = false;
+    cancelAnimationFrame(animationFrame);
+    animationFrame = 0;
+    if (playBtn) playBtn.textContent = '播放';
+  }
+  if (playBtn) playBtn.addEventListener('click', () => { playing ? pause() : play(); });
+  document.getElementById('replay')?.addEventListener('click', () => {
+    base = 0; start = performance.now(); paint(0); syncUI(0); play();
+  });
+  timeline?.addEventListener('input', () => {
+    pause(); paint(Number(timeline.value)); syncUI(Number(timeline.value));
+  });
+  window.addEventListener('keydown', e => {
+    if (e.code === 'Space') { e.preventDefault(); playing ? pause() : play(); }
+    if (e.key === 'r' || e.key === 'R') { base = 0; start = performance.now(); paint(0); syncUI(0); play(); }
+  });
+
+  if (EXPORT) {
+    document.body.classList.add('export');
+    renderAt(0);
+  } else if (reduced) {
+    renderAt(2.4);
+    pause();
+  } else {
+    renderAt(0);
+    play();
+  }
+})();
+</script>
+</body>
+</html>

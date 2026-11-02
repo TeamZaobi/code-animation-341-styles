@@ -1,0 +1,450 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>K12 报纸四格 · DeepSeek Harness 生成示例</title>
+<!--
+  Provenance
+  ----------
+  风格来源：code-animation-styles 目录（《来自俯仰观照博主的动画画风整理》整理稿）
+  catalog commit: 01576924a2b316d1f11ae33f75d3c005e8781451
+  style id: K12「报纸四格」
+  license: upstream-custom-noncommercial（俯仰观照整理稿，非商业）
+  本文件：DeepSeek Harness（deepseek-flash）根据该风格提示词新写的候选示例，
+  不是原作者样片，也不是原项目演示；仅用于风格挑选预览。共享的只有时间轴、
+  尺寸、导出接口与页脚署名，画面与动作按本风格重新设计。
+  原文“只输出代码”等语句属于素材的一部分，不覆盖本任务的交付合同。
+-->
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; min-height: 100%; background: #0c0c10; color: #e9e9ee;
+    font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif; }
+  #app { min-height: 100vh; display: flex; flex-direction: column; align-items: center;
+    justify-content: center; gap: 12px; padding: 20px; }
+  #stage { width: min(94vw, 1000px); aspect-ratio: 16 / 9; background: #000;
+    box-shadow: 0 18px 60px rgba(0,0,0,.55); position: relative; overflow: hidden; }
+  canvas { display: block; width: 100%; height: 100%; }
+  #head, #ui { width: min(94vw, 1000px); }
+  #head h1 { margin: 0 0 4px; font-size: 15px; font-weight: 600; letter-spacing: .02em; }
+  #head p { margin: 0; font-size: 12px; line-height: 1.5; color: #9a9aa8; }
+  #ui { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  #ui button { background: #1d1d26; color: #f2f2f6; border: 1px solid #343444;
+    border-radius: 7px; padding: 6px 12px; font-size: 12px; cursor: pointer; }
+  #ui button:hover { background: #272734; }
+  #ui input[type=range] { flex: 1 1 220px; min-width: 150px; accent-color: #7c8cff; }
+  #clock { font-variant-numeric: tabular-nums; font-size: 12px; color: #a9a9ba; min-width: 78px; }
+  #credit { width: min(94vw, 1000px); font-size: 11px; line-height: 1.6; color: #6f6f80; }
+  #credit b { color: #9c9cae; font-weight: 500; }
+  body.export, body.export #app { display: block; width: 640px; height: 360px; min-height: 0;
+    padding: 0; margin: 0; overflow: hidden; background: #000; }
+  body.export #stage { width: 640px; height: 360px; box-shadow: none; }
+  body.export #head, body.export #ui, body.export #credit { display: none; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="head">
+    <h1>K12 · 报纸四格</h1>
+    <p>报纸四格漫画，黑白线条讲一个小笑话：种下一颗想法，浇水，等，最后长出一朵花。</p>
+  </div>
+  <div id="stage"><canvas id="c" width="640" height="360" aria-label="报纸四格 风格动画示例"></canvas></div>
+  <div id="ui">
+    <button id="play" type="button">暂停</button>
+    <button id="replay" type="button">重播</button>
+    <input id="timeline" type="range" min="0" max="6" step="0.01" value="0" aria-label="时间轴">
+    <span id="clock">0.00 / 6.00s</span>
+  </div>
+  <div id="credit">
+    <b>DeepSeek Harness 生成示例</b>（非原项目样片）· 来源：来自俯仰观照博主的动画画风整理 ·
+    许可：upstream-custom-noncommercial（俯仰观照整理稿，非商业） · 画面与文字均由代码绘制，静音。
+  </div>
+</div>
+<script>
+(() => {
+  'use strict';
+  // ===== 共享脚手架（可改，但导出合同不要破坏）=================================
+  const W = 640, H = 360, DURATION = 6;
+  const EXPORT = new URLSearchParams(location.search).get('export') === '1';
+  const canvas = document.getElementById('c');
+  const ctx = canvas.getContext('2d');
+  const FONT = '"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",sans-serif';
+
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  const lerp = (a, b, t) => a + (b - a) * t;
+  const smooth = t => t * t * (3 - 2 * t);
+  const easeOut = t => 1 - Math.pow(1 - t, 3);
+  const easeIn = t => t * t * t;
+  function rng(seed) { let s = seed >>> 0; return () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; }; }
+
+  // ===== 场景（每个 ID 独立设计；下面的注释区由构建器替换）===================
+  // DESC: 报纸四格漫画，黑白线条讲一个小笑话：种下一颗想法，浇水，等，最后长出一朵花。
+// K12 报纸四格 · DeepSeek Harness 生成示例
+const K12_PAPER = '#efe8d8', K12_INK = '#1d1c1a', K12_GREY = '#6d6a63';
+
+const K12_GRAIN = (() => {
+  const r = rng(20261112);
+  return Array.from({ length: 620 }, () => ({ x: r() * W, y: r() * H, s: 0.6 + r() * 1.4, a: 0.02 + r() * 0.05 }));
+})();
+
+function k12seg(t, a, b) { return clamp((t - a) / (b - a), 0, 1); }
+function k12ease(p) { return 1 - Math.pow(1 - p, 3); }
+function k12line(w) { ctx.lineWidth = w || 1.8; ctx.strokeStyle = K12_INK; ctx.lineCap = 'round'; ctx.lineJoin = 'round'; }
+
+// 报纸里的小人：圆头、点眼、大鼻子、细四肢
+function k12guy(x, y, s, pose, t) {
+  ctx.save();
+  ctx.translate(x, y); ctx.scale(s, s);
+  k12line(1.8);
+  // 腿
+  ctx.beginPath(); ctx.moveTo(-5, 26); ctx.lineTo(-8, 46); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(5, 26); ctx.lineTo(8, 46); ctx.stroke();
+  // 鞋
+  ctx.beginPath(); ctx.moveTo(-8, 46); ctx.lineTo(-15, 46); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(8, 46); ctx.lineTo(15, 46); ctx.stroke();
+  // 身体
+  ctx.beginPath(); ctx.moveTo(0, 4); ctx.lineTo(0, 26); ctx.stroke();
+  // 手臂
+  if (pose === 'plant') {
+    ctx.beginPath(); ctx.moveTo(0, 10); ctx.lineTo(-16, 26); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(0, 10); ctx.lineTo(16, 22); ctx.stroke();
+  } else if (pose === 'water') {
+    ctx.beginPath(); ctx.moveTo(0, 10); ctx.lineTo(-14, 18); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(0, 10); ctx.lineTo(16, 6); ctx.stroke();
+    // 水壶
+    ctx.save();
+    ctx.translate(20, 6); ctx.rotate(-0.35);
+    k12line(1.8);
+    ctx.strokeRect(-6, -8, 15, 14);
+    ctx.beginPath(); ctx.moveTo(9, -4); ctx.lineTo(19, -10); ctx.stroke();
+    ctx.restore();
+  } else if (pose === 'wait') {
+    ctx.beginPath(); ctx.moveTo(0, 10); ctx.lineTo(-12, 18); ctx.lineTo(4, 22); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(0, 10); ctx.lineTo(12, 18); ctx.lineTo(-4, 22); ctx.stroke();
+  } else {
+    // cheer
+    const bob = Math.sin(t * 6) * 3;
+    ctx.beginPath(); ctx.moveTo(0, 10); ctx.lineTo(-16, -6 + bob); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(0, 10); ctx.lineTo(16, -6 - bob); ctx.stroke();
+  }
+  // 头
+  ctx.fillStyle = K12_PAPER;
+  ctx.beginPath(); ctx.arc(0, -6, 11, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+  // 头发
+  ctx.beginPath(); ctx.arc(0, -7, 11, Math.PI * 1.05, Math.PI * 1.95); ctx.stroke();
+  // 鼻子
+  ctx.fillStyle = K12_INK;
+  ctx.beginPath(); ctx.arc(1, -4, 2.4, 0, Math.PI * 2); ctx.fill();
+  // 眼睛
+  const blink = ((t + x * 0.01) % 3.2) < 0.12 ? 0.2 : 1;
+  ctx.beginPath(); ctx.ellipse(-4.5, -8, 1.5, 1.9 * blink, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(4.5, -8, 1.5, 1.9 * blink, 0, 0, Math.PI * 2); ctx.fill();
+  // 嘴
+  ctx.beginPath(); ctx.arc(1, 0, 3, 0.2, Math.PI - 0.2); ctx.stroke();
+  ctx.restore();
+}
+
+function k12panel(px, py, pw, ph, p, children) {
+  if (p <= 0.02) return;
+  ctx.save();
+  const k = 1 + (1 - k12ease(clamp(p, 0, 1))) * 0.06;
+  ctx.translate(px + pw / 2, py + ph / 2);
+  ctx.scale(k, k);
+  ctx.translate(-(px + pw / 2), -(py + ph / 2));
+  ctx.globalAlpha = clamp(p * 2.2, 0, 1);
+  // 面板底
+  ctx.fillStyle = '#f7f2e4';
+  ctx.fillRect(px, py, pw, ph);
+  // 内容
+  ctx.save();
+  ctx.beginPath(); ctx.rect(px, py, pw, ph); ctx.clip();
+  children();
+  ctx.restore();
+  // 边框
+  k12line(2);
+  ctx.strokeRect(px, py, pw, ph);
+  ctx.restore();
+}
+
+function drawScene(t) {
+  ctx.fillStyle = K12_PAPER; ctx.fillRect(0, 0, W, H);
+  ctx.save();
+  ctx.translate(320, 180);
+  ctx.rotate(0.006 * Math.sin(Math.PI * 2 * t / 6) + 0.003 * Math.sin(Math.PI * 4 * t / 6 + 1));
+  ctx.scale(1.035, 1.035);
+  ctx.translate(-320, -180);
+  for (const g of K12_GRAIN) {
+    ctx.fillStyle = `rgba(70,60,45,${g.a})`;
+    ctx.fillRect(g.x, g.y, g.s, g.s);
+  }
+  const vg = ctx.createRadialGradient(320, 180, 120, 320, 180, 400);
+  vg.addColorStop(0, 'rgba(255,255,255,0)');
+  vg.addColorStop(1, 'rgba(120,105,80,.12)');
+  ctx.fillStyle = vg; ctx.fillRect(0, 0, W, H);
+
+  // 报头
+  ctx.save();
+  ctx.fillStyle = K12_INK; ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
+  ctx.font = `800 27px ${FONT}`;
+  ctx.fillText('小 日 报', 320, 34);
+  ctx.font = `500 13px ${FONT}`;
+  ctx.fillStyle = K12_GREY;
+  ctx.textAlign = 'left'; ctx.fillText('第 1 期', 22, 52);
+  ctx.textAlign = 'right'; ctx.fillText('说点小事', 618, 52);
+  ctx.restore();
+  k12line(2.4);
+  ctx.beginPath(); ctx.moveTo(22, 40); ctx.lineTo(618, 40); ctx.stroke();
+  k12line(1);
+  ctx.beginPath(); ctx.moveTo(22, 58); ctx.lineTo(618, 58); ctx.stroke();
+
+  const top = 66, gut = 8, m = 22;
+  const pw = (W - m * 2 - gut) / 2, ph = 126;
+  const gy = 1.42; // 小人放大一点，面板才不空
+
+  // 面板 1：种下去
+  k12panel(m, top, pw, ph, k12seg(t, -1.2, -0.6), () => {
+    const bx = m + 80, by = top + 102;
+    k12line(1.6);
+    ctx.beginPath(); ctx.moveTo(m + 12, by); ctx.lineTo(m + pw - 12, by); ctx.stroke();
+    // 土坑 + 种子
+    ctx.beginPath(); ctx.ellipse(m + 200, by, 26, 6, 0, 0, Math.PI); ctx.stroke();
+    const seedP = k12seg(t, 0.9, 1.6);
+    if (seedP > 0) {
+      ctx.fillStyle = K12_INK;
+      const drop = 1 - k12ease(seedP);
+      ctx.beginPath();
+      ctx.ellipse(m + 200, by - 4 - 46 * drop, 4, 5.5, 0.3 + t * 2, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    k12guy(bx, by, gy, 'plant', t);
+    ctx.fillStyle = K12_INK; ctx.font = `600 13px ${FONT}`; ctx.textAlign = 'left';
+    ctx.fillText('① 先把想法种下去', m + 12, top + 20);
+  });
+
+  // 面板 2：浇水
+  k12panel(m + pw + gut, top, pw, ph, k12seg(t, -1.05, -0.45), () => {
+    const px = m + pw + gut, bx = px + 80, by = top + 102;
+    k12line(1.6);
+    ctx.beginPath(); ctx.moveTo(px + 12, by); ctx.lineTo(px + pw - 12, by); ctx.stroke();
+    const sprout = k12seg(t, 1.5, 2.6);
+    if (sprout > 0) {
+      ctx.save();
+      ctx.strokeStyle = K12_INK; ctx.lineWidth = 2;
+      const h = 24 * k12ease(sprout);
+      ctx.beginPath(); ctx.moveTo(px + 206, by); ctx.lineTo(px + 206 + Math.sin(t * 2) * 2, by - h); ctx.stroke();
+      ctx.beginPath();
+      ctx.ellipse(px + 196, by - h * 0.8, 9 * sprout, 5 * sprout, -0.5, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+    }
+    k12guy(bx, by, gy, 'water', t);
+    // 水滴
+    if (t > 1.2) {
+      ctx.save(); ctx.fillStyle = K12_INK;
+      for (let i = 0; i < 3; i++) {
+        const ph2 = (t * 1.6 + i * 0.33) % 1;
+        const dx = px + 116 + Math.sin(ph2 * 5) * 5;
+        const dy = top + 74 + ph2 * 34;
+        ctx.globalAlpha = 0.8 * (1 - ph2);
+        ctx.beginPath(); ctx.ellipse(dx, dy, 2, 3.2, 0, 0, Math.PI * 2); ctx.fill();
+      }
+      ctx.restore();
+    }
+    ctx.fillStyle = K12_INK; ctx.font = `600 13px ${FONT}`; ctx.textAlign = 'left';
+    ctx.fillText('② 每天浇一点水', px + 12, top + 20);
+  });
+
+  // 面板 3：等
+  k12panel(m, top + ph + gut, pw, ph, k12seg(t, -0.9, -0.3), () => {
+    const py = top + ph + gut;
+    const bx = m + 80, by = py + 102;
+    k12line(1.6);
+    ctx.beginPath(); ctx.moveTo(m + 12, by); ctx.lineTo(m + pw - 12, by); ctx.stroke();
+    ctx.beginPath(); ctx.ellipse(m + 200, by, 22, 5, 0, 0, Math.PI); ctx.stroke();
+    k12guy(bx, by, gy, 'wait', t);
+    // 省略号
+    const dots = k12seg(t, 2.0, 3.0);
+    ctx.save(); ctx.fillStyle = K12_INK;
+    for (let i = 0; i < 3; i++) {
+      if (dots * 3 > i) {
+        ctx.beginPath(); ctx.arc(m + 240 + i * 11, by - 24 - Math.sin(t * 3 + i) * 2, 2.4, 0, Math.PI * 2); ctx.fill();
+      }
+    }
+    ctx.restore();
+    // 时钟
+    ctx.save();
+    k12line(1.6);
+    const cx = m + pw - 44, cy = py + 34;
+    ctx.beginPath(); ctx.arc(cx, cy, 16, 0, Math.PI * 2); ctx.stroke();
+    const ha = -Math.PI / 2 + t * 0.6;
+    ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx + Math.cos(ha) * 11, cy + Math.sin(ha) * 11); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx + Math.cos(ha * 0.15 + 1) * 7, cy + Math.sin(ha * 0.15 + 1) * 7); ctx.stroke();
+    ctx.restore();
+    ctx.fillStyle = K12_INK; ctx.font = `600 13px ${FONT}`; ctx.textAlign = 'left';
+    ctx.fillText('③ 等啊等', m + 12, py + 20);
+  });
+
+  // 面板 4：长出来了
+  k12panel(m + pw + gut, top + ph + gut, pw, ph, k12seg(t, -0.75, -0.15), () => {
+    const px = m + pw + gut, py = top + ph + gut;
+    const bx = px + 76, by = py + 102;
+    k12line(1.6);
+    ctx.beginPath(); ctx.moveTo(px + 12, by); ctx.lineTo(px + pw - 12, by); ctx.stroke();
+    // 大花
+    const growP = k12ease(k12seg(t, 2.2, 4.0));
+    if (growP > 0) {
+      const sx = px + 190;
+      const sway = Math.sin(t * 1.8) * 3 * growP;
+      ctx.save();
+      ctx.strokeStyle = K12_INK; ctx.lineWidth = 2.4;
+      ctx.beginPath();
+      ctx.moveTo(sx, by);
+      ctx.quadraticCurveTo(sx + sway * 0.5, by - 40 * growP, sx + sway, by - 78 * growP);
+      ctx.stroke();
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.ellipse(sx - 14, by - 42 * growP, 14 * growP, 7 * growP, -0.5, 0, Math.PI * 2);
+      ctx.stroke();
+      if (growP > 0.55) {
+        const fp = (growP - 0.55) / 0.45;
+        ctx.translate(sx + sway, by - 78 * growP);
+        ctx.fillStyle = '#f7f2e4';
+        for (let i = 0; i < 8; i++) {
+          const a = i * Math.PI / 4 + Math.sin(t * 1.6) * 0.05;
+          ctx.beginPath();
+          ctx.ellipse(Math.cos(a) * 13 * fp, Math.sin(a) * 13 * fp, 9 * fp, 6 * fp, a, 0, Math.PI * 2);
+          ctx.fill(); ctx.stroke();
+        }
+        ctx.fillStyle = K12_INK;
+        ctx.beginPath(); ctx.arc(0, 0, 7 * fp, 0, Math.PI * 2); ctx.fill();
+      }
+      ctx.restore();
+    }
+    k12guy(bx, by, gy, 'cheer', t);
+    // 小牌子：急不得
+    const signP = k12seg(t, 4.1, 4.8);
+    if (signP > 0) {
+      ctx.save();
+      ctx.globalAlpha = k12ease(signP);
+      const sxx = px + 244, syy = by - 76 + Math.sin(t * 1.9) * 2;
+      ctx.strokeStyle = K12_INK; ctx.lineWidth = 2.2;
+      ctx.beginPath(); ctx.moveTo(sxx, syy + 12); ctx.lineTo(sxx, by); ctx.stroke();
+      ctx.translate(sxx, syy);
+      ctx.rotate(-0.05 + Math.sin(t * 1.4) * 0.02);
+      ctx.fillStyle = '#f7f2e4';
+      k12line(1.8);
+      ctx.fillRect(-36, -17, 72, 30);
+      ctx.strokeRect(-36, -17, 72, 30);
+      ctx.fillStyle = K12_INK; ctx.font = `800 18px ${FONT}`; ctx.textAlign = 'center';
+      ctx.fillText('急不得', 0, 5);
+      ctx.restore();
+    }
+    ctx.fillStyle = K12_INK; ctx.font = `600 13px ${FONT}`; ctx.textAlign = 'left';
+    ctx.fillText('④ 长出来了！', px + 12, py + 20);
+  });
+
+  // 底部小字
+  ctx.save();
+  ctx.fillStyle = K12_GREY; ctx.font = `500 13px ${FONT}`; ctx.textAlign = 'left';
+  ctx.fillText('K12 · 报纸四格 / newspaper strip', 22, 348);
+  ctx.restore();
+  ctx.restore();
+}
+
+  // ===== 共享渲染与署名 =======================================================
+  function watermark() {
+    const text = 'DeepSeek Harness 生成示例';
+    ctx.save();
+    ctx.font = '11px ' + FONT;
+    const w = ctx.measureText(text).width + 14;
+    const x = W - w - 8, y = H - 24;
+    ctx.fillStyle = 'rgba(0,0,0,.46)';
+    ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(x, y, w, 18, 4); else ctx.rect(x, y, w, 18);
+    ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,.82)';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(text, x + 7, y + 9.5);
+    ctx.restore();
+  }
+
+  function paint(t) {
+    ctx.save();
+    ctx.clearRect(0, 0, W, H);
+    try { drawScene(t); } catch (err) { console.error(err); }
+    ctx.restore();
+    watermark();
+  }
+
+  function renderAt(seconds) {
+    const t = ((Number(seconds) % DURATION) + DURATION) % DURATION;
+    paint(t);
+    syncUI(t);
+    return t;
+  }
+  window.renderAt = renderAt;
+
+  // ===== 播放、控制、减少动态 =================================================
+  const playBtn = document.getElementById('play');
+  const timeline = document.getElementById('timeline');
+  const clock = document.getElementById('clock');
+  let playing = false, base = 0, start = 0, current = 0;
+  let animationFrame = 0;
+  const reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function syncUI(t) {
+    if (EXPORT) return;
+    current = t;
+    if (timeline) timeline.value = String(t.toFixed(2));
+    if (clock) clock.textContent = t.toFixed(2) + ' / ' + DURATION.toFixed(2) + 's';
+  }
+  function frame(now) {
+    animationFrame = 0;
+    if (!playing) return;
+    const t = ((now - start) / 1000 + base) % DURATION;
+    paint(t);
+    syncUI(t);
+    animationFrame = requestAnimationFrame(frame);
+  }
+  function play() {
+    if (playing) return;
+    playing = true;
+    start = performance.now();
+    base = current;
+    if (playBtn) playBtn.textContent = '暂停';
+    animationFrame = requestAnimationFrame(frame);
+  }
+  function pause() {
+    playing = false;
+    cancelAnimationFrame(animationFrame);
+    animationFrame = 0;
+    if (playBtn) playBtn.textContent = '播放';
+  }
+  if (playBtn) playBtn.addEventListener('click', () => { playing ? pause() : play(); });
+  document.getElementById('replay')?.addEventListener('click', () => {
+    base = 0; start = performance.now(); paint(0); syncUI(0); play();
+  });
+  timeline?.addEventListener('input', () => {
+    pause(); paint(Number(timeline.value)); syncUI(Number(timeline.value));
+  });
+  window.addEventListener('keydown', e => {
+    if (e.code === 'Space') { e.preventDefault(); playing ? pause() : play(); }
+    if (e.key === 'r' || e.key === 'R') { base = 0; start = performance.now(); paint(0); syncUI(0); play(); }
+  });
+
+  if (EXPORT) {
+    document.body.classList.add('export');
+    renderAt(0);
+  } else if (reduced) {
+    renderAt(2.4);
+    pause();
+  } else {
+    renderAt(0);
+    play();
+  }
+})();
+</script>
+</body>
+</html>

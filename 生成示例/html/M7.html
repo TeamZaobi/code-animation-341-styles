@@ -1,0 +1,293 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>M7 极简卡点 · DeepSeek Harness 生成示例</title>
+<!--
+  Provenance
+  ----------
+  风格来源：code-animation-styles 目录（《来自俯仰观照博主的动画画风整理》整理稿）
+  catalog commit: 01576924a2b316d1f11ae33f75d3c005e8781451
+  style id: M7「极简卡点」
+  license: upstream-custom-noncommercial（俯仰观照整理稿，非商业）
+  本文件：DeepSeek Harness（deepseek-flash）根据该风格提示词新写的候选示例，
+  不是原作者样片，也不是原项目演示；仅用于风格挑选预览。共享的只有时间轴、
+  尺寸、导出接口与页脚署名，画面与动作按本风格重新设计。
+  原文“只输出代码”等语句属于素材的一部分，不覆盖本任务的交付合同。
+-->
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; min-height: 100%; background: #0c0c10; color: #e9e9ee;
+    font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif; }
+  #app { min-height: 100vh; display: flex; flex-direction: column; align-items: center;
+    justify-content: center; gap: 12px; padding: 20px; }
+  #stage { width: min(94vw, 1000px); aspect-ratio: 16 / 9; background: #000;
+    box-shadow: 0 18px 60px rgba(0,0,0,.55); position: relative; overflow: hidden; }
+  canvas { display: block; width: 100%; height: 100%; }
+  #head, #ui { width: min(94vw, 1000px); }
+  #head h1 { margin: 0 0 4px; font-size: 15px; font-weight: 600; letter-spacing: .02em; }
+  #head p { margin: 0; font-size: 12px; line-height: 1.5; color: #9a9aa8; }
+  #ui { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  #ui button { background: #1d1d26; color: #f2f2f6; border: 1px solid #343444;
+    border-radius: 7px; padding: 6px 12px; font-size: 12px; cursor: pointer; }
+  #ui button:hover { background: #272734; }
+  #ui input[type=range] { flex: 1 1 220px; min-width: 150px; accent-color: #7c8cff; }
+  #clock { font-variant-numeric: tabular-nums; font-size: 12px; color: #a9a9ba; min-width: 78px; }
+  #credit { width: min(94vw, 1000px); font-size: 11px; line-height: 1.6; color: #6f6f80; }
+  #credit b { color: #9c9cae; font-weight: 500; }
+  body.export, body.export #app { display: block; width: 640px; height: 360px; min-height: 0;
+    padding: 0; margin: 0; overflow: hidden; background: #000; }
+  body.export #stage { width: 640px; height: 360px; box-shadow: none; }
+  body.export #head, body.export #ui, body.export #credit { display: none; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="head">
+    <h1>M7 · 极简卡点</h1>
+    <p>大量留白的极简卡点：一刀只讲一件事，字用遮罩擦出，每个界面小动作都踩在拍子上。</p>
+  </div>
+  <div id="stage"><canvas id="c" width="640" height="360" aria-label="极简卡点 风格动画示例"></canvas></div>
+  <div id="ui">
+    <button id="play" type="button">暂停</button>
+    <button id="replay" type="button">重播</button>
+    <input id="timeline" type="range" min="0" max="6" step="0.01" value="0" aria-label="时间轴">
+    <span id="clock">0.00 / 6.00s</span>
+  </div>
+  <div id="credit">
+    <b>DeepSeek Harness 生成示例</b>（非原项目样片）· 来源：来自俯仰观照博主的动画画风整理 ·
+    许可：upstream-custom-noncommercial（俯仰观照整理稿，非商业） · 画面与文字均由代码绘制，静音。
+  </div>
+</div>
+<script>
+(() => {
+  'use strict';
+  // ===== 共享脚手架（可改，但导出合同不要破坏）=================================
+  const W = 640, H = 360, DURATION = 6;
+  const EXPORT = new URLSearchParams(location.search).get('export') === '1';
+  const canvas = document.getElementById('c');
+  const ctx = canvas.getContext('2d');
+  const FONT = '"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",sans-serif';
+
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  const lerp = (a, b, t) => a + (b - a) * t;
+  const smooth = t => t * t * (3 - 2 * t);
+  const easeOut = t => 1 - Math.pow(1 - t, 3);
+  const easeIn = t => t * t * t;
+  function rng(seed) { let s = seed >>> 0; return () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; }; }
+
+  // ===== 场景（每个 ID 独立设计；下面的注释区由构建器替换）===================
+  // DESC: 大量留白的极简卡点：一刀只讲一件事，字用遮罩擦出，每个界面小动作都踩在拍子上。
+// M7 极简卡点 · DeepSeek Harness 生成示例
+const M7_BG = '#fafaf7', M7_INK = '#111112', M7_ACCENT = '#ff4526';
+const M7_SHOT_LEN = 1.5;
+
+function m7p(t, a, b) { return clamp((t - a) / (b - a), 0, 1); }
+
+// 遮罩擦字：0.1 秒擦完，镜头不动
+function m7reveal(text, x, y, size, color, p, track, weight) {
+  if (p <= 0) return;
+  const e = 1 - Math.pow(1 - clamp(p / 0.35, 0, 1), 3);
+  ctx.save();
+  ctx.font = `${weight || 700} ${size}px ${FONT}`;
+  if ('letterSpacing' in ctx) ctx.letterSpacing = track || '-2px';
+  const tw = ctx.measureText(text).width;
+  ctx.beginPath();
+  ctx.rect(x - 8, y - size * 1.12, (tw + 20) * e, size * 1.4);
+  ctx.clip();
+  ctx.fillStyle = color;
+  ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+  ctx.fillText(text, x, y);
+  ctx.restore();
+  return tw;
+}
+
+function m7index(n) {
+  ctx.save();
+  ctx.fillStyle = 'rgba(17,17,18,.42)';
+  ctx.font = `500 13px ${FONT}`;
+  if ('letterSpacing' in ctx) ctx.letterSpacing = '1px';
+  ctx.textAlign = 'right'; ctx.textBaseline = 'alphabetic';
+  ctx.fillText('0' + n + ' / 04', 596, 40);
+  ctx.restore();
+}
+
+function m7shot(n, p) {
+  // 一刀只讲一件事：大标题在左，右侧留白
+  const titles = ['表格', '周报', '交给它', '也别自己扛'];
+  const sizes = [66, 66, 60, 44];
+  const subs = ['每天都有一份', '每周都要写', '一件事，交给它', '一件小事，也别自己扛'];
+  const y = n === 4 ? 210 : 208;
+
+  if (n === 4) {
+    m7reveal('一件小事，', 72, 178, sizes[n - 1], M7_INK, p, '-2px', 700);
+    m7reveal(titles[n - 1], 72, 232, sizes[n - 1], M7_INK, m7p(p, 0.12, 0.5), '-2px', 700);
+    // 强调色方块落在第二行末尾
+    const ap = m7p(p, 0.45, 0.55);
+    if (ap > 0) {
+      ctx.save(); ctx.globalAlpha = ap;
+      ctx.fillStyle = M7_ACCENT;
+      ctx.fillRect(286, 196, 22 * ap, 22 * ap);
+      ctx.restore();
+    }
+  } else {
+    m7reveal(titles[n - 1], 72, y, sizes[n - 1], M7_INK, p, '-2px', 700);
+    m7reveal(subs[n - 1], 74, y + 40, 20, 'rgba(17,17,18,.55)', m7p(p, 0.25, 0.5), '-0.5px', 400);
+  }
+
+  // 每刀一个界面小动作，踩在第二拍上
+  if (n === 1) {
+    const ap = m7p(p, 0.62, 0.72);
+    if (ap > 0) {
+      ctx.save();
+      ctx.fillStyle = 'rgba(17,17,18,.10)';
+      ctx.fillRect(74, 258, 210 * ap, 3);
+      ctx.fillStyle = M7_ACCENT;
+      ctx.fillRect(74, 258, 56 * ap, 3);
+      ctx.restore();
+    }
+  } else if (n === 2) {
+    for (let i = 0; i < 3; i++) {
+      const ap = m7p(p, 0.6 + i * 0.09, 0.7 + i * 0.09);
+      if (ap <= 0) continue;
+      ctx.save();
+      ctx.fillStyle = 'rgba(17,17,18,.10)';
+      ctx.fillRect(74, 256 + i * 12, 168 * ap, 2.4);
+      ctx.restore();
+    }
+  } else if (n === 3) {
+    const ap = m7p(p, 0.6, 0.7);
+    if (ap > 0) {
+      ctx.save();
+      ctx.fillStyle = M7_ACCENT;
+      ctx.fillRect(74 + 210 * ap, 262, 26, 26 * ap);
+      ctx.restore();
+    }
+  }
+}
+
+function drawScene(t) {
+  ctx.fillStyle = M7_BG; ctx.fillRect(0, 0, W, H);
+
+  // 极细的参考线：镜头稳，只留一条
+  ctx.save();
+  ctx.strokeStyle = 'rgba(17,17,18,.07)'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(44, 322.5); ctx.lineTo(596, 322.5); ctx.stroke();
+  ctx.restore();
+
+  const idx = Math.min(4, Math.floor(t / M7_SHOT_LEN) + 1);
+  // 切点上字幕已经在擦出：刀落下时画面不是空的
+  const local = t - (idx - 1) * M7_SHOT_LEN + 0.13;
+  const p = clamp(local / M7_SHOT_LEN, 0, 1);
+
+  // 切点用重拍：整秒不动，到 1.5/3/4.5 直接换
+  m7shot(idx, p);
+  m7index(idx);
+
+  // 右下角极小的说明
+  ctx.save();
+  ctx.fillStyle = 'rgba(17,17,18,.30)';
+  ctx.font = `500 13px ${FONT}`;
+  ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+  ctx.fillText('一刀，一件事', 44, 46);
+  ctx.restore();
+}
+
+  // ===== 共享渲染与署名 =======================================================
+  function watermark() {
+    const text = 'DeepSeek Harness 生成示例';
+    ctx.save();
+    ctx.font = '11px ' + FONT;
+    const w = ctx.measureText(text).width + 14;
+    const x = W - w - 8, y = H - 24;
+    ctx.fillStyle = 'rgba(0,0,0,.46)';
+    ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(x, y, w, 18, 4); else ctx.rect(x, y, w, 18);
+    ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,.82)';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(text, x + 7, y + 9.5);
+    ctx.restore();
+  }
+
+  function paint(t) {
+    ctx.save();
+    ctx.clearRect(0, 0, W, H);
+    try { drawScene(t); } catch (err) { console.error(err); }
+    ctx.restore();
+    watermark();
+  }
+
+  function renderAt(seconds) {
+    const t = ((Number(seconds) % DURATION) + DURATION) % DURATION;
+    paint(t);
+    syncUI(t);
+    return t;
+  }
+  window.renderAt = renderAt;
+
+  // ===== 播放、控制、减少动态 =================================================
+  const playBtn = document.getElementById('play');
+  const timeline = document.getElementById('timeline');
+  const clock = document.getElementById('clock');
+  let playing = false, base = 0, start = 0, current = 0;
+  let animationFrame = 0;
+  const reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function syncUI(t) {
+    if (EXPORT) return;
+    current = t;
+    if (timeline) timeline.value = String(t.toFixed(2));
+    if (clock) clock.textContent = t.toFixed(2) + ' / ' + DURATION.toFixed(2) + 's';
+  }
+  function frame(now) {
+    animationFrame = 0;
+    if (!playing) return;
+    const t = ((now - start) / 1000 + base) % DURATION;
+    paint(t);
+    syncUI(t);
+    animationFrame = requestAnimationFrame(frame);
+  }
+  function play() {
+    if (playing) return;
+    playing = true;
+    start = performance.now();
+    base = current;
+    if (playBtn) playBtn.textContent = '暂停';
+    animationFrame = requestAnimationFrame(frame);
+  }
+  function pause() {
+    playing = false;
+    cancelAnimationFrame(animationFrame);
+    animationFrame = 0;
+    if (playBtn) playBtn.textContent = '播放';
+  }
+  if (playBtn) playBtn.addEventListener('click', () => { playing ? pause() : play(); });
+  document.getElementById('replay')?.addEventListener('click', () => {
+    base = 0; start = performance.now(); paint(0); syncUI(0); play();
+  });
+  timeline?.addEventListener('input', () => {
+    pause(); paint(Number(timeline.value)); syncUI(Number(timeline.value));
+  });
+  window.addEventListener('keydown', e => {
+    if (e.code === 'Space') { e.preventDefault(); playing ? pause() : play(); }
+    if (e.key === 'r' || e.key === 'R') { base = 0; start = performance.now(); paint(0); syncUI(0); play(); }
+  });
+
+  if (EXPORT) {
+    document.body.classList.add('export');
+    renderAt(0);
+  } else if (reduced) {
+    renderAt(2.4);
+    pause();
+  } else {
+    renderAt(0);
+    play();
+  }
+})();
+</script>
+</body>
+</html>

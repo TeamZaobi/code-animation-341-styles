@@ -1,0 +1,440 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>V13 像素 · DeepSeek Harness 生成示例</title>
+<!--
+  Provenance
+  ----------
+  风格来源：code-animation-styles 目录（《来自俯仰观照博主的动画画风整理》整理稿）
+  catalog commit: 01576924a2b316d1f11ae33f75d3c005e8781451
+  style id: V13「像素」
+  license: MIT（mg-styles-15，Copyright (c) 2026 Vincentwei1021）
+  本文件：DeepSeek Harness（deepseek-flash）根据该风格提示词新写的候选示例，
+  不是原作者样片，也不是原项目演示；仅用于风格挑选预览。共享的只有时间轴、
+  尺寸、导出接口与页脚署名，画面与动作按本风格重新设计。
+  原文“只输出代码”等语句属于素材的一部分，不覆盖本任务的交付合同。
+-->
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; min-height: 100%; background: #0c0c10; color: #e9e9ee;
+    font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif; }
+  #app { min-height: 100vh; display: flex; flex-direction: column; align-items: center;
+    justify-content: center; gap: 12px; padding: 20px; }
+  #stage { width: min(94vw, 1000px); aspect-ratio: 16 / 9; background: #000;
+    box-shadow: 0 18px 60px rgba(0,0,0,.55); position: relative; overflow: hidden; }
+  canvas { display: block; width: 100%; height: 100%; }
+  #head, #ui { width: min(94vw, 1000px); }
+  #head h1 { margin: 0 0 4px; font-size: 15px; font-weight: 600; letter-spacing: .02em; }
+  #head p { margin: 0; font-size: 12px; line-height: 1.5; color: #9a9aa8; }
+  #ui { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  #ui button { background: #1d1d26; color: #f2f2f6; border: 1px solid #343444;
+    border-radius: 7px; padding: 6px 12px; font-size: 12px; cursor: pointer; }
+  #ui button:hover { background: #272734; }
+  #ui input[type=range] { flex: 1 1 220px; min-width: 150px; accent-color: #7c8cff; }
+  #clock { font-variant-numeric: tabular-nums; font-size: 12px; color: #a9a9ba; min-width: 78px; }
+  #credit { width: min(94vw, 1000px); font-size: 11px; line-height: 1.6; color: #6f6f80; }
+  #credit b { color: #9c9cae; font-weight: 500; }
+  body.export, body.export #app { display: block; width: 640px; height: 360px; min-height: 0;
+    padding: 0; margin: 0; overflow: hidden; background: #000; }
+  body.export #stage { width: 640px; height: 360px; box-shadow: none; }
+  body.export #head, body.export #ui, body.export #credit { display: none; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="head">
+    <h1>V13 · 像素</h1>
+    <p>像素风：320×180 内部分辨率、整数 2 倍放大，小人沿山坡一步步走到山顶，月亮与星星做 8fps 逐帧动画，标题「出发」打字出现。</p>
+  </div>
+  <div id="stage"><canvas id="c" width="640" height="360" aria-label="像素 风格动画示例"></canvas></div>
+  <div id="ui">
+    <button id="play" type="button">暂停</button>
+    <button id="replay" type="button">重播</button>
+    <input id="timeline" type="range" min="0" max="6" step="0.01" value="0" aria-label="时间轴">
+    <span id="clock">0.00 / 6.00s</span>
+  </div>
+  <div id="credit">
+    <b>DeepSeek Harness 生成示例</b>（非原项目样片）· 来源：来自俯仰观照博主的动画画风整理 ·
+    许可：MIT（mg-styles-15，Copyright (c) 2026 Vincentwei1021） · 画面与文字均由代码绘制，静音。
+  </div>
+</div>
+<script>
+(() => {
+  'use strict';
+  // ===== 共享脚手架（可改，但导出合同不要破坏）=================================
+  const W = 640, H = 360, DURATION = 6;
+  const EXPORT = new URLSearchParams(location.search).get('export') === '1';
+  const canvas = document.getElementById('c');
+  const ctx = canvas.getContext('2d');
+  const FONT = '"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",sans-serif';
+
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  const lerp = (a, b, t) => a + (b - a) * t;
+  const smooth = t => t * t * (3 - 2 * t);
+  const easeOut = t => 1 - Math.pow(1 - t, 3);
+  const easeIn = t => t * t * t;
+  function rng(seed) { let s = seed >>> 0; return () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; }; }
+
+  // ===== 场景（每个 ID 独立设计；下面的注释区由构建器替换）===================
+  // DESC: 像素风：320×180 内部分辨率、整数 2 倍放大，小人沿山坡一步步走到山顶，月亮与星星做 8fps 逐帧动画，标题「出发」打字出现。
+// V13 像素 · DeepSeek Harness 生成示例
+const V13_W = 320, V13_H = 180;
+const V13_PAL = {
+  sky0: '#141032', sky1: '#221A45', sky2: '#33255E', sky3: '#4A2E6E',
+  star: '#FFF4C2', moon: '#F6E7A6', moonShade: '#D9C583',
+  far: '#4B3A78', mid: '#33265C', near: '#241A43',
+  ground0: '#2F7A5E', ground1: '#3E9B72', ground2: '#276B52',
+  ink: '#160F2A', body: '#F2B33D', body2: '#D99426', hat: '#E4573F',
+  cloud: '#5A4788', white: '#FFFFFF',
+};
+// 低分辨率画布：所有像素都画在这里，最后整数放大
+const V13_LOW = document.createElement('canvas');
+V13_LOW.width = V13_W; V13_LOW.height = V13_H;
+const v13 = V13_LOW.getContext('2d');
+let V13_SCAN_PAT = null;
+
+function v13seg(t, a, b) { return clamp((t - a) / (b - a), 0, 1); }
+// 逐帧动画：量化到 8fps
+function v13f(t, fps) { return Math.floor(t * (fps || 8)); }
+function v13px(x, y, w, h, c) { v13.fillStyle = c; v13.fillRect(Math.round(x), Math.round(y), w, h); }
+
+const V13_STARS = (() => {
+  const r = rng(8013);
+  return Array.from({ length: 46 }, () => ({ x: Math.floor(r() * V13_W), y: Math.floor(r() * 110), s: r() > 0.82 ? 2 : 1, p: r() * 6.28 }));
+})();
+
+// 抖动渐变：用 2×2 Bayer 让天空两色之间的过渡有颗粒
+function v13Sky() {
+  v13.fillStyle = V13_PAL.sky0;
+  v13.fillRect(0, 0, V13_W, V13_H);
+  const bands = [
+    { y: 0, h: 46, c: V13_PAL.sky0 },
+    { y: 46, h: 34, c: V13_PAL.sky1 },
+    { y: 80, h: 30, c: V13_PAL.sky2 },
+    { y: 110, h: 26, c: '#3B2A66' },
+  ];
+  bands.forEach((b, i) => { v13.fillStyle = b.c; v13.fillRect(0, b.y, V13_W, b.h); });
+  // Bayer 抖动过渡
+  const pat = [[0, 2], [3, 1]];
+  for (let y = 40; y < 136; y += 2) {
+    for (let x = 0; x < V13_W; x += 2) {
+      const v = pat[(y / 2) % 2][(x / 2) % 2];
+      if (v < 2 && y < 60) v13px(x, y, 1, 1, V13_PAL.sky1);
+      if (v > 1 && y > 100) v13px(x, y, 1, 1, '#3B2A66');
+    }
+  }
+}
+
+// 月亮：8 帧呼吸，表面有固定陨石坑
+function v13Moon(t) {
+  const f = v13f(t, 2) % 2;
+  const cx = 244, cy = 44, r = 20 + f;
+  v13.save();
+  v13.beginPath(); v13.arc(cx, cy, r + 3, 0, Math.PI * 2);
+  v13.fillStyle = 'rgba(246,231,166,.16)'; v13.fill();
+  v13.beginPath(); v13.arc(cx, cy, r, 0, Math.PI * 2);
+  v13.fillStyle = V13_PAL.moon; v13.fill();
+  // 陨石坑（固定位置，逐帧不动）
+  v13.fillStyle = V13_PAL.moonShade;
+  v13.fillRect(cx - 8, cy - 6, 5, 4);
+  v13.fillRect(cx + 2, cy + 2, 7, 5);
+  v13.fillRect(cx - 4, cy + 9, 4, 3);
+  v13.fillRect(cx + 7, cy - 10, 3, 3);
+  // 右下暗面
+  v13.save();
+  v13.beginPath(); v13.arc(cx, cy, r, 0, Math.PI * 2); v13.clip();
+  v13.globalAlpha = 0.25;
+  v13.fillStyle = '#8C7A46';
+  v13.beginPath(); v13.arc(cx + 12, cy + 10, r, 0, Math.PI * 2); v13.fill();
+  v13.restore();
+  v13.restore();
+}
+
+// 三层视差山：每层是一串重叠的三角峰，按层速度横向滚动
+const V13_PEAKS = (() => {
+  const r = rng(515);
+  return Array.from({ length: 16 }, () => ({ x: r() * 760, h: 8 + r() * 22, w: 46 + r() * 46 }));
+})();
+function v13Mountains(t) {
+  const layers = [
+    { c: '#4B3A78', base: 132, sp: 2, seed: 0, sc: 1.0, alpha: 1 },
+    { c: '#33265C', base: 146, sp: 4, seed: 5, sc: 0.8, alpha: 1 },
+    { c: '#241A43', base: 158, sp: 7, seed: 9, sc: 0.62, alpha: 1 },
+  ];
+  layers.forEach((L, li) => {
+    const off = (t * L.sp) % 760;
+    v13.globalAlpha = L.alpha;
+    v13.fillStyle = L.c;
+    for (let i = 0; i < V13_PEAKS.length; i++) {
+      const p = V13_PEAKS[(i + L.seed) % V13_PEAKS.length];
+      const x = ((p.x - off) % 760 + 760) % 760 - 60;
+      const h = p.h * L.sc + 6;
+      const w = p.w * L.sc;
+      v13.beginPath();
+      v13.moveTo(x, L.base);
+      v13.lineTo(x + w / 2, L.base - h);
+      v13.lineTo(x + w, L.base);
+      v13.closePath(); v13.fill();
+      if (li === 0) {
+        v13.fillStyle = 'rgba(200,190,255,.22)';
+        v13.fillRect(Math.round(x + w / 2 - 3), Math.round(L.base - h), 6, 2);
+        v13.fillStyle = L.c;
+      }
+    }
+    // 山脚填满到地面
+    v13.fillStyle = L.c;
+    v13.fillRect(0, L.base, V13_W, 4);
+    v13.globalAlpha = 1;
+  });
+}
+
+// 地面：两层草坡 + 棕色土
+function v13Ground(t) {
+  v13.fillStyle = V13_PAL.ground2;
+  v13.fillRect(0, 150, V13_W, 30);
+  // 起伏的坡线（按像素阶梯）
+  v13.fillStyle = V13_PAL.ground1;
+  for (let x = 0; x < V13_W; x++) {
+    const y = 150 + Math.round(Math.sin(x * 0.05) * 4 + Math.sin(x * 0.017) * 3);
+    v13.fillRect(x, y, 1, 4);
+  }
+  v13.fillStyle = V13_PAL.ground0;
+  for (let x = 0; x < V13_W; x++) {
+    const y = 158 + Math.round(Math.sin(x * 0.031 + 1.6) * 3);
+    v13.fillRect(x, y, 1, V13_H - y);
+  }
+  // 草丛像素
+  const r = rng(3311);
+  for (let i = 0; i < 70; i++) {
+    const x = Math.floor(r() * V13_W), y = 156 + Math.floor(r() * 20);
+    v13px(x, y, 1, 2, r() > 0.5 ? '#48B586' : '#2A7358');
+  }
+}
+
+// 小人：4 帧走路（8fps），一跳，站在山顶
+function v13Hero(t) {
+  const walkP = v13seg(t, 1.1, 3.5);
+  const x = Math.round(lerp(52, 168, walkP));
+  const walking = t > 1.1 && t < 3.5;
+  const f = v13f(t, 8) % 4;
+  const jump = (t > 3.55 && t < 4.0) ? Math.sin(v13seg(t, 3.55, 4.0) * Math.PI) * 16 : 0;
+  const baseY = 156 - jump;
+  const legPhase = walking ? f : 0;
+  // 影子
+  v13.fillStyle = 'rgba(10,8,24,.35)';
+  v13.fillRect(x - 5, 160, 14, 2);
+  // 腿
+  v13px(x + 1, baseY - 4, 2, 4, V13_PAL.ink);
+  v13px(x + 5, baseY - 4, 2, 4, V13_PAL.ink);
+  if (walking) {
+    if (legPhase % 2 === 0) { v13px(x, baseY - 3, 3, 2, V13_PAL.ink); v13px(x + 5, baseY - 2, 3, 2, V13_PAL.ink); }
+    else { v13px(x + 2, baseY - 2, 3, 2, V13_PAL.ink); v13px(x + 6, baseY - 3, 3, 2, V13_PAL.ink); }
+  }
+  // 身体
+  v13px(x + 1, baseY - 10, 5, 6, V13_PAL.body);
+  v13px(x + 2, baseY - 9, 2, 3, V13_PAL.body2);
+  // 手臂
+  v13px(x - 1, baseY - 9, 2, 4, V13_PAL.body);
+  v13px(x + 6, baseY - 9, 2, 4, V13_PAL.body);
+  if (walking && legPhase % 2) { v13px(x + 7, baseY - 11, 2, 2, V13_PAL.body); }
+  // 头 + 帽子
+  v13px(x + 1, baseY - 16, 5, 5, V13_PAL.body);
+  v13px(x, baseY - 19, 7, 3, V13_PAL.hat);
+  v13px(x + 6, baseY - 18, 3, 1, V13_PAL.hat);
+  // 眼睛
+  v13px(x + 4, baseY - 14, 1, 1, V13_PAL.ink);
+  // 围巾（随风飘）
+  const fl = Math.sin(t * 10) * 1;
+  v13px(x - 3, baseY - 12 + fl, 3, 1, '#E4573F');
+}
+
+function v13Title(t) {
+  const p = v13seg(t, 3.7, 4.5);
+  if (p <= 0) return;
+  const chars = ['出', '发'];
+  v13.save();
+  v13.textAlign = 'center'; v13.textBaseline = 'middle';
+  v13.font = `700 18px "PingFang SC",${FONT}`;
+  chars.forEach((ch, i) => {
+    const k = clamp(p * 2 - i * 0.5, 0, 1);
+    if (k <= 0) return;
+    // 像素描边：先画一圈黑底再画亮字
+    v13.fillStyle = V13_PAL.ink;
+    v13.fillText(ch, 160 + i * 22 + 1, 52 + 1);
+    v13.fillText(ch, 160 + i * 22 - 1, 52 + 1);
+    v13.fillStyle = '#FFF4C2';
+    v13.fillText(ch, 160 + i * 22, 52);
+    // 打字光标
+    if (k < 1 && Math.floor(t * 8) % 2 === 0) {
+      v13px(150 + i * 22, 44, 2, 16, '#FFF4C2');
+    }
+  });
+  v13.restore();
+  if (p > 0.9) {
+    v13.save();
+    v13.globalAlpha = clamp((p - 0.9) * 10, 0, 1);
+    v13.fillStyle = 'rgba(255,244,194,.85)';
+    v13.font = `500 7px "PingFang SC",${FONT}`;
+    v13.textAlign = 'center'; v13.textBaseline = 'middle';
+    v13.fillText('P I X E L   Q U E S T   /   S T A G E   0 1', 160, 66);
+    v13.restore();
+  }
+}
+
+function v13ShootingStar(t) {
+  const p = v13seg(t, 4.4, 4.9);
+  if (p <= 0 || p >= 1) return;
+  const x = lerp(300, 60, p), y = lerp(10, 46, p);
+  for (let i = 0; i < 7; i++) {
+    v13px(x + i * 3, y - i * 2, 2, 1, i === 0 ? V13_PAL.white : `rgba(255,244,194,${0.8 - i * 0.1})`);
+  }
+}
+
+function drawScene(t) {
+  // 低分辨率世界
+  v13Sky();
+  for (const s of V13_STARS) {
+    if (Math.sin(t * 3 + s.p) > -0.4) v13px(s.x, s.y, s.s, s.s, V13_PAL.star);
+  }
+  v13Moon(t);
+  v13ShootingStar(t);
+  v13Mountains(t);
+  v13Ground(t);
+  v13Hero(t);
+  v13Title(t);
+
+  // 云（像素块，慢速飘）
+  const cx = ((t * 6) % (V13_W + 80)) - 40;
+  v13.fillStyle = 'rgba(90,71,136,.72)';
+  v13.fillRect(cx, 34, 32, 4); v13.fillRect(cx + 6, 30, 20, 4); v13.fillRect(cx + 12, 26, 10, 4);
+
+  // 放大到主画布（最近邻，硬边）
+  ctx.imageSmoothingEnabled = false;
+  ctx.clearRect(0, 0, W, H);
+  ctx.drawImage(V13_LOW, 0, 0, V13_W, V13_H, 0, 0, W, H);
+  ctx.imageSmoothingEnabled = true;
+
+  // CRT：扫描线 + 磷光辉光 + 暗角
+  if (!V13_SCAN_PAT) {
+    const c = document.createElement('canvas'); c.width = 2; c.height = 4;
+    const g = c.getContext('2d');
+    g.fillStyle = 'rgba(0,0,0,.22)';
+    g.fillRect(0, 0, 2, 2);
+    V13_SCAN_PAT = ctx.createPattern(c, 'repeat');
+  }
+  ctx.save();
+  ctx.fillStyle = V13_SCAN_PAT;
+  ctx.fillRect(0, 0, W, H);
+  ctx.restore();
+  // 轻微磷光
+  ctx.save();
+  ctx.globalCompositeOperation = 'lighter';
+  ctx.globalAlpha = 0.06;
+  ctx.fillStyle = '#7CFFB2';
+  ctx.fillRect(0, 0, W, H);
+  ctx.restore();
+  const vg = ctx.createRadialGradient(320, 180, 130, 320, 180, 380);
+  vg.addColorStop(0, 'rgba(0,0,0,0)');
+  vg.addColorStop(1, 'rgba(0,0,0,.45)');
+  ctx.fillStyle = vg; ctx.fillRect(0, 0, W, H);
+}
+
+  // ===== 共享渲染与署名 =======================================================
+  function watermark() {
+    const text = 'DeepSeek Harness 生成示例';
+    ctx.save();
+    ctx.font = '11px ' + FONT;
+    const w = ctx.measureText(text).width + 14;
+    const x = W - w - 8, y = H - 24;
+    ctx.fillStyle = 'rgba(0,0,0,.46)';
+    ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(x, y, w, 18, 4); else ctx.rect(x, y, w, 18);
+    ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,.82)';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(text, x + 7, y + 9.5);
+    ctx.restore();
+  }
+
+  function paint(t) {
+    ctx.save();
+    ctx.clearRect(0, 0, W, H);
+    try { drawScene(t); } catch (err) { console.error(err); }
+    ctx.restore();
+    watermark();
+  }
+
+  function renderAt(seconds) {
+    const t = ((Number(seconds) % DURATION) + DURATION) % DURATION;
+    paint(t);
+    syncUI(t);
+    return t;
+  }
+  window.renderAt = renderAt;
+
+  // ===== 播放、控制、减少动态 =================================================
+  const playBtn = document.getElementById('play');
+  const timeline = document.getElementById('timeline');
+  const clock = document.getElementById('clock');
+  let playing = false, base = 0, start = 0, current = 0;
+  let animationFrame = 0;
+  const reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function syncUI(t) {
+    if (EXPORT) return;
+    current = t;
+    if (timeline) timeline.value = String(t.toFixed(2));
+    if (clock) clock.textContent = t.toFixed(2) + ' / ' + DURATION.toFixed(2) + 's';
+  }
+  function frame(now) {
+    animationFrame = 0;
+    if (!playing) return;
+    const t = ((now - start) / 1000 + base) % DURATION;
+    paint(t);
+    syncUI(t);
+    animationFrame = requestAnimationFrame(frame);
+  }
+  function play() {
+    if (playing) return;
+    playing = true;
+    start = performance.now();
+    base = current;
+    if (playBtn) playBtn.textContent = '暂停';
+    animationFrame = requestAnimationFrame(frame);
+  }
+  function pause() {
+    playing = false;
+    cancelAnimationFrame(animationFrame);
+    animationFrame = 0;
+    if (playBtn) playBtn.textContent = '播放';
+  }
+  if (playBtn) playBtn.addEventListener('click', () => { playing ? pause() : play(); });
+  document.getElementById('replay')?.addEventListener('click', () => {
+    base = 0; start = performance.now(); paint(0); syncUI(0); play();
+  });
+  timeline?.addEventListener('input', () => {
+    pause(); paint(Number(timeline.value)); syncUI(Number(timeline.value));
+  });
+  window.addEventListener('keydown', e => {
+    if (e.code === 'Space') { e.preventDefault(); playing ? pause() : play(); }
+    if (e.key === 'r' || e.key === 'R') { base = 0; start = performance.now(); paint(0); syncUI(0); play(); }
+  });
+
+  if (EXPORT) {
+    document.body.classList.add('export');
+    renderAt(0);
+  } else if (reduced) {
+    renderAt(2.4);
+    pause();
+  } else {
+    renderAt(0);
+    play();
+  }
+})();
+</script>
+</body>
+</html>

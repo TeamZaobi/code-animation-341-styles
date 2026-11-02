@@ -1,0 +1,456 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>V8 赛博朋克界面 · DeepSeek Harness 生成示例</title>
+<!--
+  Provenance
+  ----------
+  风格来源：code-animation-styles 目录（《来自俯仰观照博主的动画画风整理》整理稿）
+  catalog commit: 01576924a2b316d1f11ae33f75d3c005e8781451
+  style id: V8「赛博朋克界面」
+  license: MIT（mg-styles-15，Copyright (c) 2026 Vincentwei1021）
+  本文件：DeepSeek Harness（deepseek-flash）根据该风格提示词新写的候选示例，
+  不是原作者样片，也不是原项目演示；仅用于风格挑选预览。共享的只有时间轴、
+  尺寸、导出接口与页脚署名，画面与动作按本风格重新设计。
+  原文“只输出代码”等语句属于素材的一部分，不覆盖本任务的交付合同。
+-->
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; min-height: 100%; background: #0c0c10; color: #e9e9ee;
+    font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif; }
+  #app { min-height: 100vh; display: flex; flex-direction: column; align-items: center;
+    justify-content: center; gap: 12px; padding: 20px; }
+  #stage { width: min(94vw, 1000px); aspect-ratio: 16 / 9; background: #000;
+    box-shadow: 0 18px 60px rgba(0,0,0,.55); position: relative; overflow: hidden; }
+  canvas { display: block; width: 100%; height: 100%; }
+  #head, #ui { width: min(94vw, 1000px); }
+  #head h1 { margin: 0 0 4px; font-size: 15px; font-weight: 600; letter-spacing: .02em; }
+  #head p { margin: 0; font-size: 12px; line-height: 1.5; color: #9a9aa8; }
+  #ui { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  #ui button { background: #1d1d26; color: #f2f2f6; border: 1px solid #343444;
+    border-radius: 7px; padding: 6px 12px; font-size: 12px; cursor: pointer; }
+  #ui button:hover { background: #272734; }
+  #ui input[type=range] { flex: 1 1 220px; min-width: 150px; accent-color: #7c8cff; }
+  #clock { font-variant-numeric: tabular-nums; font-size: 12px; color: #a9a9ba; min-width: 78px; }
+  #credit { width: min(94vw, 1000px); font-size: 11px; line-height: 1.6; color: #6f6f80; }
+  #credit b { color: #9c9cae; font-weight: 500; }
+  body.export, body.export #app { display: block; width: 640px; height: 360px; min-height: 0;
+    padding: 0; margin: 0; overflow: hidden; background: #000; }
+  body.export #stage { width: 640px; height: 360px; box-shadow: none; }
+  body.export #head, body.export #ui, body.export #credit { display: none; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="head">
+    <h1>V8 · 赛博朋克界面</h1>
+    <p>赛博朋克 HUD：青色线框在六边形网格上逐层生长，目标锁定框吸附收缩、环形雷达扫描、数据滚字与打字机字幕。</p>
+  </div>
+  <div id="stage"><canvas id="c" width="640" height="360" aria-label="赛博朋克界面 风格动画示例"></canvas></div>
+  <div id="ui">
+    <button id="play" type="button">暂停</button>
+    <button id="replay" type="button">重播</button>
+    <input id="timeline" type="range" min="0" max="6" step="0.01" value="0" aria-label="时间轴">
+    <span id="clock">0.00 / 6.00s</span>
+  </div>
+  <div id="credit">
+    <b>DeepSeek Harness 生成示例</b>（非原项目样片）· 来源：来自俯仰观照博主的动画画风整理 ·
+    许可：MIT（mg-styles-15，Copyright (c) 2026 Vincentwei1021） · 画面与文字均由代码绘制，静音。
+  </div>
+</div>
+<script>
+(() => {
+  'use strict';
+  // ===== 共享脚手架（可改，但导出合同不要破坏）=================================
+  const W = 640, H = 360, DURATION = 6;
+  const EXPORT = new URLSearchParams(location.search).get('export') === '1';
+  const canvas = document.getElementById('c');
+  const ctx = canvas.getContext('2d');
+  const FONT = '"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",sans-serif';
+
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  const lerp = (a, b, t) => a + (b - a) * t;
+  const smooth = t => t * t * (3 - 2 * t);
+  const easeOut = t => 1 - Math.pow(1 - t, 3);
+  const easeIn = t => t * t * t;
+  function rng(seed) { let s = seed >>> 0; return () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; }; }
+
+  // ===== 场景（每个 ID 独立设计；下面的注释区由构建器替换）===================
+  // DESC: 赛博朋克 HUD：青色线框在六边形网格上逐层生长，目标锁定框吸附收缩、环形雷达扫描、数据滚字与打字机字幕。
+// V8 赛博朋克界面 · DeepSeek Harness 生成示例
+const V8_BG = '#050A12', V8_CYAN = '#37E6FF', V8_ORANGE = '#FF8A2B';
+const V8_DIM = 'rgba(55,230,255,.28)', V8_TXT = '#B7F4FF';
+
+function v8seg(t, a, b) { return clamp((t - a) / (b - a), 0, 1); }
+function v8ease(p) { return 1 - Math.pow(1 - p, 3); }
+function v8in(p) { return p * p * p; }
+// 确定性"随机"数据
+function v8val(seed, t) {
+  const r = rng(seed);
+  const a = r(), b = r();
+  return Math.round((a * 900 + b * 99) * (0.6 + 0.4 * Math.sin(t * 3 + a * 6)));
+}
+
+// 扫描线（预计算一次）
+const V8_SCAN = (() => {
+  const c = document.createElement('canvas'); c.width = 4; c.height = 4;
+  const g = c.getContext('2d');
+  g.fillStyle = 'rgba(0,0,0,.30)';
+  g.fillRect(0, 0, 4, 1.4);
+  return c;
+})();
+let V8_SCAN_PAT = null;
+const V8_NOISE = (() => {
+  const r = rng(8802);
+  return Array.from({ length: 260 }, () => ({ x: r() * W, y: r() * H, w: 1 + r() * 2.2, h: 1, a: 0.05 + r() * 0.12 }));
+})();
+
+function v8glow(color, blur) {
+  ctx.shadowColor = color; ctx.shadowBlur = blur;
+}
+function v8text(text, x, y, size, color, align, weight) {
+  ctx.font = `${weight || 500} ${size}px "SFMono-Regular",Menlo,Consolas,${FONT}`;
+  ctx.textAlign = align || 'left';
+  ctx.textBaseline = 'alphabetic';
+  ctx.fillStyle = color;
+  ctx.fillText(text, x, y);
+}
+function v8hexGrid(t, alpha) {
+  const s = 26;
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  ctx.strokeStyle = V8_DIM; ctx.lineWidth = 1;
+  for (let row = -1; row < 12; row++) {
+    for (let col = -1; col < 16; col++) {
+      const cx = col * s * 1.5 + (row % 2 ? s * 0.75 : 0);
+      const cy = row * s * 0.87;
+      ctx.beginPath();
+      for (let i = 0; i < 6; i++) {
+        const a = Math.PI / 180 * (60 * i - 30);
+        const x = cx + Math.cos(a) * s * 0.86, y = cy + Math.sin(a) * s * 0.86;
+        i ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
+      }
+      ctx.closePath(); ctx.stroke();
+    }
+  }
+  ctx.restore();
+}
+
+// 四角括号锁定框：从大到小吸附
+function v8Bracket(cx, cy, r, p, color) {
+  if (p <= 0) return;
+  const e = v8ease(p);
+  const R = r * lerp(1.55, 1, e);
+  const len = r * 0.34;
+  ctx.save();
+  ctx.globalAlpha = e;
+  ctx.strokeStyle = color; ctx.lineWidth = 2;
+  v8glow(color, 8);
+  [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(([sx, sy]) => {
+    const x = cx + sx * R, y = cy + sy * R;
+    ctx.beginPath();
+    ctx.moveTo(x - sx * len, y); ctx.lineTo(x, y); ctx.lineTo(x, y - sy * len);
+    ctx.stroke();
+  });
+  ctx.restore();
+}
+
+function drawScene(t) {
+  if (!V8_SCAN_PAT) V8_SCAN_PAT = ctx.createPattern(V8_SCAN, 'repeat');
+  // 底色 + 中心冷光
+  ctx.fillStyle = V8_BG; ctx.fillRect(0, 0, W, H);
+  const bg = ctx.createRadialGradient(320, 200, 20, 320, 200, 340);
+  bg.addColorStop(0, 'rgba(12,54,74,.95)');
+  bg.addColorStop(0.55, 'rgba(6,22,36,.85)');
+  bg.addColorStop(1, 'rgba(3,8,14,1)');
+  ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+
+  v8hexGrid(t, 0.5);
+
+  // 中央全息目标：同心圆 + 十字准星 + 生长线框
+  const cx = 320, cy = 186;
+  const spin = t * 0.55;
+  ctx.save();
+  // 外圈虚线环（反向旋转）
+  ctx.strokeStyle = V8_DIM; ctx.lineWidth = 1.4;
+  ctx.setLineDash([5, 9]);
+  ctx.save();
+  ctx.translate(cx, cy); ctx.rotate(-spin * 0.6);
+  ctx.beginPath(); ctx.arc(0, 0, 118, 0, Math.PI * 2); ctx.stroke();
+  ctx.beginPath(); ctx.arc(0, 0, 132, 0, Math.PI * 2); ctx.stroke();
+  ctx.restore();
+  ctx.setLineDash([]);
+  // 主体：一个抽象的"信标"线框（多层三角），逐层描边生长
+  const build = v8ease(v8seg(t, -0.28, 1.5));
+  ctx.strokeStyle = V8_CYAN; ctx.lineWidth = 1.8;
+  v8glow(V8_CYAN, 10);
+  for (let i = 0; i < 3; i++) {
+    const p = clamp(build * 1.4 - i * 0.22, 0, 1);
+    if (p <= 0) continue;
+    const r = 30 + i * 22;
+    ctx.globalAlpha = 0.85 - i * 0.18;
+    ctx.beginPath();
+    const sides = 3, per = 3;
+    const total = sides * per;
+    const n = Math.floor(total * p);
+    for (let k = 0; k <= n; k++) {
+      const a = spin * (i % 2 ? -1 : 1) + (k % sides) * Math.PI * 2 / sides + Math.PI / 2;
+      const rr = r * (1 + (k % per) * 0.14);
+      const x = cx + Math.cos(a) * rr, y = cy + Math.sin(a) * rr * 0.86;
+      k ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
+    }
+    ctx.stroke();
+  }
+  ctx.restore();
+
+  // 十字准星
+  ctx.save();
+  ctx.strokeStyle = 'rgba(55,230,255,.72)'; ctx.lineWidth = 1.2;
+  ctx.setLineDash([3, 6]);
+  ctx.beginPath();
+  ctx.moveTo(cx - 150, cy); ctx.lineTo(cx - 46, cy);
+  ctx.moveTo(cx + 46, cy); ctx.lineTo(cx + 150, cy);
+  ctx.moveTo(cx, cy - 150); ctx.lineTo(cx, cy - 52);
+  ctx.moveTo(cx, cy + 52); ctx.lineTo(cx, cy + 154);
+  ctx.stroke();
+  ctx.restore();
+
+  // 目标锁定框：从 1.55 收到 1.0，然后锁定闪烁
+  const lockP = v8seg(t, 1.35, 1.95);
+  v8Bracket(cx, cy, 58, lockP, V8_CYAN);
+  if (lockP > 0.95) {
+    const blink = 0.55 + 0.45 * Math.sin((t - 1.95) * 9);
+    ctx.save();
+    ctx.globalAlpha = blink * 0.9;
+    ctx.strokeStyle = V8_ORANGE; ctx.lineWidth = 2;
+    v8glow(V8_ORANGE, 10);
+    ctx.strokeRect(cx - 62, cy - 62, 124, 124);
+    ctx.restore();
+  }
+
+  // 环形雷达扫描（右上）
+  const rx = 556, ry = 96, rr = 40;
+  ctx.save();
+  ctx.globalAlpha = 0.85;
+  ctx.strokeStyle = V8_DIM; ctx.lineWidth = 1.2;
+  ctx.beginPath(); ctx.arc(rx, ry, rr, 0, Math.PI * 2); ctx.stroke();
+  ctx.beginPath(); ctx.arc(rx, ry, rr * 0.62, 0, Math.PI * 2); ctx.stroke();
+  ctx.beginPath(); ctx.arc(rx, ry, rr * 0.3, 0, Math.PI * 2); ctx.stroke();
+  const sweep = (t * 1.4) % (Math.PI * 2);
+  const g = ctx.createConicGradient ? ctx.createConicGradient(sweep - 0.6, rx, ry) : null;
+  if (g) {
+    g.addColorStop(0, 'rgba(55,230,255,.55)');
+    g.addColorStop(0.18, 'rgba(55,230,255,0)');
+    g.addColorStop(1, 'rgba(55,230,255,0)');
+    ctx.fillStyle = g;
+  } else {
+    ctx.fillStyle = 'rgba(55,230,255,.18)';
+  }
+  ctx.beginPath(); ctx.moveTo(rx, ry); ctx.arc(rx, ry, rr, sweep - 0.6, sweep); ctx.closePath(); ctx.fill();
+  // 目标点
+  [[0.6, -0.4], [-0.45, 0.55], [0.1, -0.75]].forEach(([a, d], i) => {
+    const x = rx + Math.cos(a * 6 + t * 0.2) * rr * Math.abs(d);
+    const y = ry + Math.sin(a * 6 + t * 0.2) * rr * Math.abs(d);
+    ctx.fillStyle = i === 1 ? V8_ORANGE : V8_CYAN;
+    ctx.beginPath(); ctx.arc(x, y, 2.2, 0, Math.PI * 2); ctx.fill();
+  });
+  ctx.restore();
+
+  // 左侧数据流（随机跳变后落定）
+  ctx.save();
+  v8glow(V8_CYAN, 6);
+  for (let i = 0; i < 7; i++) {
+    const y = 76 + i * 26;
+    const settle = v8seg(t, 0.5 + i * 0.09, 1.1 + i * 0.09);
+    const raw = v8val(2200 + i * 31, t * 3);
+    const val = settle < 1 ? String(raw).padStart(4, '0') : String(120 + i * 37).padStart(4, '0');
+    ctx.globalAlpha = 0.35 + 0.55 * v8seg(t, 0.2 + i * 0.06, 0.5 + i * 0.06);
+    v8text('SIG.' + String(i + 1).padStart(2, '0'), 26, y, 10, 'rgba(55,230,255,.62)');
+    v8text(val, 96, y, 13, V8_TXT);
+    // 小条形指示
+    const bw = 46 * (0.35 + 0.65 * Math.abs(Math.sin(t * 1.4 + i)));
+    ctx.fillStyle = 'rgba(55,230,255,.5)';
+    ctx.fillRect(146, y - 8, bw, 3);
+  }
+  ctx.restore();
+
+  // 右侧竖向刻度尺
+  ctx.save();
+  ctx.globalAlpha = 0.75;
+  for (let i = 0; i < 18; i++) {
+    const y = 60 + i * 11;
+    const long = i % 3 === 0;
+    ctx.strokeStyle = long ? 'rgba(55,230,255,.75)' : 'rgba(55,230,255,.28)';
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(600, y); ctx.lineTo(600 + (long ? 22 : 12), y); ctx.stroke();
+  }
+  ctx.fillStyle = V8_ORANGE;
+  ctx.fillRect(600, 60 + ((t * 26) % 187), 22, 2);
+  ctx.restore();
+
+  // 顶部标题：打字机
+  const title = '信标-07  ·  目标已锁定';
+  const chars = Math.floor(clamp((t + 0.3) / 0.045, 0, title.length));
+  ctx.save();
+  v8glow(V8_CYAN, 14);
+  v8text('TARGET ACQUIRED', 320, 34, 11, 'rgba(55,230,255,.65)', 'center', 500);
+  ctx.restore();
+  ctx.save();
+  v8glow(V8_CYAN, 12);
+  v8text(title.slice(0, chars), 320, 58, 22, V8_TXT, 'center', 700);
+  // 打字机光标
+  if (chars < title.length ? Math.floor(t * 8) % 2 === 0 : Math.floor(t * 4) % 2 === 0) {
+    ctx.fillStyle = V8_CYAN;
+    const w = ctx.measureText(title.slice(0, chars)).width;
+    ctx.fillRect(320 + w / 2 + 3, 44, 9, 16);
+  }
+  ctx.restore();
+
+  // 底部读数条
+  ctx.save();
+  ctx.fillStyle = V8_ORANGE;
+  ctx.fillRect(30, 296, 96 * v8ease(v8seg(t, 1.9, 2.6)), 2);
+  ctx.globalAlpha = 0.9;
+  v8text('坐标 31°14′N  121°29′E', 30, 316, 12, 'rgba(183,244,255,.8)');
+  v8text('距 离  0.42 KM', 30, 334, 12, 'rgba(255,138,43,.9)');
+  v8text('CHANNEL 09  /  LIVE', 610, 316, 11, 'rgba(55,230,255,.7)', 'right');
+  v8text('SYS  ' + String(Math.round(96 + Math.sin(t * 2) * 3)) + '%', 610, 334, 11, 'rgba(55,230,255,.7)', 'right');
+  ctx.restore();
+
+  // 四角 HUD 边框
+  ctx.save();
+  ctx.strokeStyle = 'rgba(55,230,255,.5)'; ctx.lineWidth = 1.4;
+  v8glow(V8_CYAN, 6);
+  const m = 12, L = 26;
+  [[m, m, 1, 1], [W - m, m, -1, 1], [m, H - m, 1, -1], [W - m, H - m, -1, -1]].forEach(([x, y, dx, dy]) => {
+    ctx.beginPath();
+    ctx.moveTo(x + dx * L, y); ctx.lineTo(x, y); ctx.lineTo(x, y + dy * L);
+    ctx.stroke();
+  });
+  ctx.restore();
+
+  // 扫描线 + 噪点 + 轻微色差（红/蓝偏一像素的边）
+  ctx.save();
+  ctx.globalAlpha = 0.9;
+  ctx.fillStyle = V8_SCAN_PAT;
+  ctx.fillRect(0, 0, W, H);
+  ctx.restore();
+  ctx.save();
+  for (const p of V8_NOISE) {
+    ctx.globalAlpha = p.a;
+    ctx.fillStyle = V8_CYAN;
+    ctx.fillRect(p.x, p.y + ((t * 40) % H), p.w, p.h);
+  }
+  ctx.restore();
+  ctx.save();
+  ctx.globalAlpha = 0.09;
+  ctx.globalCompositeOperation = 'lighter';
+  ctx.fillStyle = '#FF2B5E'; ctx.fillRect(2, 0, W, H);
+  ctx.fillStyle = '#00B3FF'; ctx.fillRect(-2, 0, W, H);
+  ctx.restore();
+
+  // 顶部与底部的黑色走带，更像录屏信号
+  ctx.fillStyle = 'rgba(0,0,0,.55)';
+  ctx.fillRect(0, 0, W, 8);
+  ctx.fillRect(0, H - 8, W, 8);
+}
+
+  // ===== 共享渲染与署名 =======================================================
+  function watermark() {
+    const text = 'DeepSeek Harness 生成示例';
+    ctx.save();
+    ctx.font = '11px ' + FONT;
+    const w = ctx.measureText(text).width + 14;
+    const x = W - w - 8, y = H - 24;
+    ctx.fillStyle = 'rgba(0,0,0,.46)';
+    ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(x, y, w, 18, 4); else ctx.rect(x, y, w, 18);
+    ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,.82)';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(text, x + 7, y + 9.5);
+    ctx.restore();
+  }
+
+  function paint(t) {
+    ctx.save();
+    ctx.clearRect(0, 0, W, H);
+    try { drawScene(t); } catch (err) { console.error(err); }
+    ctx.restore();
+    watermark();
+  }
+
+  function renderAt(seconds) {
+    const t = ((Number(seconds) % DURATION) + DURATION) % DURATION;
+    paint(t);
+    syncUI(t);
+    return t;
+  }
+  window.renderAt = renderAt;
+
+  // ===== 播放、控制、减少动态 =================================================
+  const playBtn = document.getElementById('play');
+  const timeline = document.getElementById('timeline');
+  const clock = document.getElementById('clock');
+  let playing = false, base = 0, start = 0, current = 0;
+  let animationFrame = 0;
+  const reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function syncUI(t) {
+    if (EXPORT) return;
+    current = t;
+    if (timeline) timeline.value = String(t.toFixed(2));
+    if (clock) clock.textContent = t.toFixed(2) + ' / ' + DURATION.toFixed(2) + 's';
+  }
+  function frame(now) {
+    animationFrame = 0;
+    if (!playing) return;
+    const t = ((now - start) / 1000 + base) % DURATION;
+    paint(t);
+    syncUI(t);
+    animationFrame = requestAnimationFrame(frame);
+  }
+  function play() {
+    if (playing) return;
+    playing = true;
+    start = performance.now();
+    base = current;
+    if (playBtn) playBtn.textContent = '暂停';
+    animationFrame = requestAnimationFrame(frame);
+  }
+  function pause() {
+    playing = false;
+    cancelAnimationFrame(animationFrame);
+    animationFrame = 0;
+    if (playBtn) playBtn.textContent = '播放';
+  }
+  if (playBtn) playBtn.addEventListener('click', () => { playing ? pause() : play(); });
+  document.getElementById('replay')?.addEventListener('click', () => {
+    base = 0; start = performance.now(); paint(0); syncUI(0); play();
+  });
+  timeline?.addEventListener('input', () => {
+    pause(); paint(Number(timeline.value)); syncUI(Number(timeline.value));
+  });
+  window.addEventListener('keydown', e => {
+    if (e.code === 'Space') { e.preventDefault(); playing ? pause() : play(); }
+    if (e.key === 'r' || e.key === 'R') { base = 0; start = performance.now(); paint(0); syncUI(0); play(); }
+  });
+
+  if (EXPORT) {
+    document.body.classList.add('export');
+    renderAt(0);
+  } else if (reduced) {
+    renderAt(2.4);
+    pause();
+  } else {
+    renderAt(0);
+    play();
+  }
+})();
+</script>
+</body>
+</html>

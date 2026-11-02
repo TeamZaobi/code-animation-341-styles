@@ -13,6 +13,8 @@
     "R": 7,
     "O": 98
   },
-  "withAnimatedPreview": 31,
-  "withPreview": 224
+  "withAnimatedPreview": 140,
+  "withPreview": 333,
+  "withGeneratedPreview": 109,
+  "withOriginalAnimatedPreview": 31
 }
